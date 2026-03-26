@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "apps/web" },
+    { "path": "apps/admin" },
+    { "path": "apps/native" },
+    { "path": "packages/backend/convex" },
+    { "path": "packages/transactional" }
+  ]
+}

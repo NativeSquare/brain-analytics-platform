@@ -1,12 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { IconEye, IconEyeOff } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-export interface PasswordInputProps
-  extends Omit<React.ComponentProps<"input">, "type"> {}
+export type PasswordInputProps = Omit<React.ComponentProps<"input">, "type">
 
 const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ className, ...props }, ref) => {
@@ -36,9 +35,9 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? (
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
+            <IconEyeOff className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <IconEye className="h-4 w-4 text-muted-foreground" />
           )}
         </Button>
       </div>

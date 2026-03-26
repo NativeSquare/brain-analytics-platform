@@ -1,6 +1,6 @@
 # Story 1.3: Build Core Layout & Sidebar Navigation
 
-Status: ready-for-dev
+Status: review
 Story Type: frontend
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
@@ -64,7 +64,7 @@ so that I can move between Calendar, Documents, Players, Dashboards, and Setting
   - [x] 5.3: Confirmed `useIsMobile` hook (768px breakpoint) used by `SidebarProvider` in `ui/sidebar.tsx`
   - [x] 5.4: Confirmed `tooltip={item.label}` on all `SidebarMenuButton` components + `SidebarRail` present
 
-- [x] **Task 6: Validate no regressions** (AC: #9)
+- [ ] **Task 6: Validate no regressions** (AC: #9) _(partial — automated checks pass, manual checks deferred)_
   - [x] 6.1: `pnpm typecheck` — passes with zero errors (all 5 packages)
   - [x] 6.2: `pnpm lint` — admin lint errors are all pre-existing (accept-invite-form, password-input, sidebar.tsx Math.random). No new errors introduced
   - [ ] 6.3: Dev server start — deferred to manual verification

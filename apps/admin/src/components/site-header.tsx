@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { IconBell } from "@tabler/icons-react"
@@ -28,7 +29,6 @@ const routeLabelMap: Record<string, string> = {
 }
 
 const nestedLabelMap: Record<string, string> = {
-  calendar: "Details",
   players: "Player Profile",
   team: "Member Details",
   users: "User Details",
@@ -78,7 +78,7 @@ export function SiteHeader() {
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((crumb, index) => (
-              <span key={crumb.href} className="flex items-center gap-1.5">
+              <React.Fragment key={crumb.href}>
                 {index > 0 && <BreadcrumbSeparator />}
                 <BreadcrumbItem>
                   {crumb.isCurrentPage ? (
@@ -89,7 +89,7 @@ export function SiteHeader() {
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
-              </span>
+              </React.Fragment>
             ))}
           </BreadcrumbList>
         </Breadcrumb>

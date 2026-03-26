@@ -2,8 +2,8 @@
 # Project: Brain Analytics Platform
 
 project_name: "Brain Analytics Platform"
-user_name: "User"
-communication_language: "english"
+user_name: "Alex"
+communication_language: "French"
 document_output_language: "english"
 user_skill_level: "expert"
 output_folder: "_bmad-output"

@@ -228,31 +228,60 @@ Claude Opus 4.6
 
 ### Debug Log References
 
-None — no errors encountered during implementation.
+- EPERM on `apps/native/node_modules/.bin/jiti.ps1` — OneDrive file sync locking. Workaround: pre-install deps via `pnpm add --filter web`, then `rm -f` locked files before `shadcn add --overwrite`.
 
 ### Completion Notes List
 
 - Preset `b7lRK5amaQ` applied via `npx shadcn@latest init --preset b7lRK5amaQ`. Changed style from `new-york` to `radix-nova`, baseColor from `neutral` to `mist`, iconLibrary from `lucide` to `tabler`.
-- 53 UI components were re-installed by the preset with updated `@tabler/icons-react` imports (replacing `lucide-react`).
+- 29 UI components were re-installed by `shadcn add --overwrite` with updated `@tabler/icons-react` imports (replacing `lucide-react`).
 - Preset added `Outfit` (`--font-sans`) and `Instrument_Sans` (`--font-heading`) fonts to `layout.tsx`. Removed unused `Geist` sans font import (kept `Geist_Mono` for `--font-mono`).
 - `password-input.tsx` had its `lucide-react` imports updated to `@tabler/icons-react` (`IconEye`/`IconEyeOff`). Also fixed pre-existing lint error (empty interface → type alias).
 - `ThemeProvider` from `next-themes` integrated into root layout with `attribute="class"`, `defaultTheme="system"`, `enableSystem`, `disableTransitionOnChange`.
 - `suppressHydrationWarning` added to `<html>` element.
 - `ThemeToggle` component created at `apps/web/src/components/shared/ThemeToggle.tsx` using `@tabler/icons-react` sun/moon icons.
 - Metadata updated: title `"BrainAnalytics"`, description `"Football Operations Platform"`.
-- `pnpm typecheck` passes with zero errors across all packages.
-- `pnpm lint` for admin shows only pre-existing issues in untouched files — zero new issues introduced by this story.
-- New `shadcn` package added as dependency by the preset init command.
-- New CSS variables have non-zero chroma (~0.004–0.021 range with hue ~213–228) confirming branded blue-toned palette.
+- `pnpm typecheck` passes with zero errors across all packages (5/5 tasks).
+- `pnpm --filter web lint` passes with 0 errors, 6 warnings (all pre-existing in untouched auth/data-table files).
+- New `shadcn`, `@base-ui/react`, `cmdk`, `radix-ui`, `embla-carousel-react`, `react-day-picker`, `date-fns`, `react-resizable-panels`, `input-otp`, `sonner`, `next-themes` packages added as dependencies.
+- New CSS variables have non-zero chroma (~0.002–0.021 range with hue ~197–228) confirming branded blue-toned mist palette.
+- `@import "shadcn/tailwind.css"` added to globals.css by preset for additional radix-nova style tokens.
+- `--font-heading` CSS variable added for `Instrument_Sans` heading font.
 
 ### File List
 
-- `apps/web/src/app/globals.css` — Modified (CSS variables updated by preset)
-- `apps/web/components.json` — Modified (style, baseColor, iconLibrary updated)
-- `apps/web/src/app/layout.tsx` — Modified (ThemeProvider, suppressHydrationWarning, metadata, fonts)
-- `apps/web/src/components/shared/ThemeToggle.tsx` — Created (theme toggle component)
-- `apps/web/src/components/custom/password-input.tsx` — Modified (lucide→tabler icons, lint fix)
-- `apps/web/src/components/ui/*.tsx` — Modified (53 files re-installed by preset with tabler icons)
-- `apps/web/src/lib/utils.ts` — Modified (updated by preset)
-- `apps/web/package.json` — Modified (shadcn dependency added by preset)
+- `apps/web/src/app/globals.css` — Modified (CSS variables updated by preset, `shadcn/tailwind.css` import added)
+- `apps/web/components.json` — Modified (style→radix-nova, baseColor→mist, iconLibrary→tabler, menuColor/menuAccent added)
+- `apps/web/src/app/layout.tsx` — Modified (ThemeProvider, suppressHydrationWarning, metadata, Outfit+Instrument_Sans fonts, removed unused Geist import)
+- `apps/web/src/components/shared/ThemeToggle.tsx` — Created (theme toggle component with tabler icons)
+- `apps/web/src/components/custom/password-input.tsx` — Modified (lucide→tabler icons, empty interface→type alias lint fix)
+- `apps/web/src/components/ui/accordion.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/breadcrumb.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/button.tsx` — Modified (reinstalled with radix-nova style)
+- `apps/web/src/components/ui/calendar.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/carousel.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/checkbox.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/combobox.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/command.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/context-menu.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/dialog.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/dropdown-menu.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/input-group.tsx` — Modified (reinstalled)
+- `apps/web/src/components/ui/input-otp.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/input.tsx` — Modified (reinstalled with radix-nova style)
+- `apps/web/src/components/ui/menubar.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/native-select.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/navigation-menu.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/pagination.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/radio-group.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/resizable.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/select.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/separator.tsx` — Modified (reinstalled)
+- `apps/web/src/components/ui/sheet.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/sidebar.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/skeleton.tsx` — Modified (reinstalled)
+- `apps/web/src/components/ui/sonner.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/spinner.tsx` — Modified (reinstalled with tabler icons)
+- `apps/web/src/components/ui/textarea.tsx` — Modified (reinstalled with radix-nova style)
+- `apps/web/src/components/ui/tooltip.tsx` — Modified (reinstalled)
+- `apps/web/package.json` — Modified (new dependencies added by preset)
 - `pnpm-lock.yaml` — Modified (lockfile updated)

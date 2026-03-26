@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import { IconBell } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -13,44 +15,57 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-export function SiteHeader() {
-  const pathname = usePathname()
+// --- Data-driven breadcrumb config ---
 
-  const getBreadcrumbs = () => {
-    const segments = pathname.split("/").filter(Boolean)
+const routeLabelMap: Record<string, string> = {
+  calendar: "Calendar",
+  documents: "Documents",
+  players: "Players",
+  dashboards: "Dashboards",
+  settings: "Settings",
+  team: "Team",
+  users: "Users",
+}
 
-    if (segments.length === 0) {
-      return [{ label: "General", href: "/", isCurrentPage: true }]
-    }
+const nestedLabelMap: Record<string, string> = {
+  calendar: "Details",
+  players: "Player Profile",
+  team: "Member Details",
+  users: "User Details",
+}
 
-    if (segments[0] === "team") {
-      if (segments.length === 1) {
-        return [{ label: "Team", href: "/team", isCurrentPage: true }]
-      }
-      if (segments.length === 2) {
-        return [
-          { label: "Team", href: "/team", isCurrentPage: false },
-          { label: "Member Details", href: pathname, isCurrentPage: true },
-        ]
-      }
-    }
+type BreadcrumbEntry = {
+  label: string
+  href: string
+  isCurrentPage: boolean
+}
 
-    if (segments[0] === "users") {
-      if (segments.length === 1) {
-        return [{ label: "Users", href: "/users", isCurrentPage: true }]
-      }
-      if (segments.length === 2) {
-        return [
-          { label: "Users", href: "/users", isCurrentPage: false },
-          { label: "User Details", href: pathname, isCurrentPage: true },
-        ]
-      }
-    }
+function getBreadcrumbs(pathname: string): BreadcrumbEntry[] {
+  const segments = pathname.split("/").filter(Boolean)
 
-    return [{ label: "General", href: "/", isCurrentPage: true }]
+  if (segments.length === 0) {
+    return [{ label: "Home", href: "/", isCurrentPage: true }]
   }
 
-  const breadcrumbs = getBreadcrumbs()
+  const root = segments[0]
+  const rootLabel = routeLabelMap[root] ?? root.charAt(0).toUpperCase() + root.slice(1)
+
+  if (segments.length === 1) {
+    return [{ label: rootLabel, href: `/${root}`, isCurrentPage: true }]
+  }
+
+  // Nested route: e.g. /players/abc123 or /calendar/today
+  const nestedLabel = nestedLabelMap[root] ?? segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
+
+  return [
+    { label: rootLabel, href: `/${root}`, isCurrentPage: false },
+    { label: nestedLabel, href: pathname, isCurrentPage: true },
+  ]
+}
+
+export function SiteHeader() {
+  const pathname = usePathname()
+  const breadcrumbs = getBreadcrumbs(pathname)
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -62,14 +77,9 @@ export function SiteHeader() {
         />
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/team">General</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
             {breadcrumbs.map((crumb, index) => (
               <span key={crumb.href} className="flex items-center gap-1.5">
-                <BreadcrumbSeparator />
+                {index > 0 && <BreadcrumbSeparator />}
                 <BreadcrumbItem>
                   {crumb.isCurrentPage ? (
                     <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
@@ -83,6 +93,13 @@ export function SiteHeader() {
             ))}
           </BreadcrumbList>
         </Breadcrumb>
+
+        {/* Right-side actions */}
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="ghost" size="icon" aria-label="Notifications">
+            <IconBell className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </header>
   )

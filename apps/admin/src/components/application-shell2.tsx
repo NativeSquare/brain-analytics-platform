@@ -7,10 +7,15 @@ import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
+  IconBrain,
+  IconCalendar,
+  IconChartBar,
   IconChevronRight,
   IconDotsVertical,
-  IconInnerShadowTop,
+  IconFolders,
   IconLogout,
+  IconSettings,
+  IconShirtSport,
   IconUsers,
   IconUsersGroup,
 } from "@tabler/icons-react";
@@ -69,7 +74,18 @@ type NavGroup = {
 
 const navGroups: NavGroup[] = [
   {
-    title: "General",
+    title: "Platform",
+    defaultOpen: true,
+    items: [
+      { label: "Calendar", icon: IconCalendar, href: "/calendar" },
+      { label: "Documents", icon: IconFolders, href: "/documents" },
+      { label: "Players", icon: IconShirtSport, href: "/players" },
+      { label: "Dashboards", icon: IconChartBar, href: "/dashboards" },
+      { label: "Settings", icon: IconSettings, href: "/settings" },
+    ],
+  },
+  {
+    title: "Management",
     defaultOpen: true,
     items: [
       { label: "Users", icon: IconUsersGroup, href: "/users" },
@@ -238,15 +254,15 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip="Admin Panel">
-              <Link href="/team">
+            <SidebarMenuButton size="lg" asChild tooltip="BrainAnalytics">
+              <Link href="/">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-sm bg-primary">
-                  <IconInnerShadowTop className="size-5 text-primary-foreground" />
+                  <IconBrain className="size-5 text-primary-foreground" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Admin Panel</span>
+                  <span className="font-medium">BrainAnalytics</span>
                   <span className="text-xs text-muted-foreground">
-                    Management
+                    Football Ops
                   </span>
                 </div>
               </Link>

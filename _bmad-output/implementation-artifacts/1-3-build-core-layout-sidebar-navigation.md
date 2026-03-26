@@ -35,43 +35,43 @@ so that I can move between Calendar, Documents, Players, Dashboards, and Setting
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Update sidebar navigation data** (AC: #1, #5)
-  - [ ] 1.1: Open `apps/admin/src/components/application-shell2.tsx` and update the `navGroups` array to add a "Platform" navigation group with items: Calendar (`/calendar`, `IconCalendar`), Documents (`/documents`, `IconFolders`), Players (`/players`, `IconUsers`), Dashboards (`/dashboards`, `IconChartBar`), Settings (`/settings`, `IconSettings`)
-  - [ ] 1.2: Move the existing "Users" and "Team" items into an "Admin" or "Management" group that appears below the Platform group
-  - [ ] 1.3: Update the `SidebarHeader` to display "BrainAnalytics" instead of "Admin Panel", with subtitle "Football Ops" or similar, and link to `/` (homepage) instead of `/team`
-  - [ ] 1.4: Import the required icons from `@tabler/icons-react`: `IconCalendar`, `IconFolders`, `IconUsers`, `IconChartBar`, `IconSettings`
+- [x] **Task 1: Update sidebar navigation data** (AC: #1, #5)
+  - [x] 1.1: Updated `navGroups` in `application-shell2.tsx` — added "Platform" group with Calendar (`IconCalendar`), Documents (`IconFolders`), Players (`IconShirtSport`), Dashboards (`IconChartBar`), Settings (`IconSettings`)
+  - [x] 1.2: Moved "Users" and "Team" into "Management" group below Platform
+  - [x] 1.3: Updated SidebarHeader — "BrainAnalytics" brand with `IconBrain`, subtitle "Football Ops", links to `/`
+  - [x] 1.4: Imported all required icons: `IconBrain`, `IconCalendar`, `IconChartBar`, `IconFolders`, `IconSettings`, `IconShirtSport`
 
-- [ ] **Task 2: Update SiteHeader with notification placeholder and dynamic breadcrumbs** (AC: #4, #7)
-  - [ ] 2.1: Open `apps/admin/src/components/site-header.tsx` and update the `getBreadcrumbs` function to handle all new routes: `/calendar` ("Calendar"), `/documents` ("Documents"), `/players` ("Players"), `/players/[id]` ("Players" > "Player Profile"), `/dashboards` ("Dashboards"), `/settings` ("Settings")
-  - [ ] 2.2: Add a notification bell icon button (`IconBell` from `@tabler/icons-react`) to the right side of the header bar. This is a non-functional placeholder — no dropdown, no badge, just the icon button with `variant="ghost"` and `size="icon"`. Wrap in a `<div>` with `className="ml-auto flex items-center gap-2"` to push it to the right side
-  - [ ] 2.3: If `ThemeToggle` was created in Story 1.2, place it next to the notification bell in the top bar right section
+- [x] **Task 2: Update SiteHeader with notification placeholder and dynamic breadcrumbs** (AC: #4, #7)
+  - [x] 2.1: Refactored `getBreadcrumbs` to data-driven approach using `routeLabelMap` and `nestedLabelMap`. Handles all routes: calendar, documents, players, players/[id], dashboards, settings, team, team/[id], users, users/[id]
+  - [x] 2.2: Added `IconBell` notification bell button with `variant="ghost"` `size="icon"` in `ml-auto` right-side div
+  - [x] 2.3: ThemeToggle not created in Story 1.2 — skipped. Space reserved in right-side div for future addition
 
-- [ ] **Task 3: Create placeholder pages** (AC: #3, #8)
-  - [ ] 3.1: Create `apps/admin/src/app/(app)/calendar/page.tsx` — a simple page component rendering an `<h1>Calendar</h1>` heading and a placeholder message (e.g., "Calendar module coming soon.")
-  - [ ] 3.2: Create `apps/admin/src/app/(app)/documents/page.tsx` — same pattern, heading "Documents"
-  - [ ] 3.3: Create `apps/admin/src/app/(app)/players/page.tsx` — same pattern, heading "Players"
-  - [ ] 3.4: Create `apps/admin/src/app/(app)/dashboards/page.tsx` — same pattern, heading "Dashboards"
-  - [ ] 3.5: Create `apps/admin/src/app/(app)/settings/page.tsx` — same pattern, heading "Settings"
-  - [ ] 3.6: Each placeholder page should use the existing layout structure (shadcn `Card` or simple container with padding) and be a valid React Server Component (no `"use client"` unless needed)
+- [x] **Task 3: Create placeholder pages** (AC: #3, #8)
+  - [x] 3.1: Created `apps/admin/src/app/(app)/calendar/page.tsx`
+  - [x] 3.2: Created `apps/admin/src/app/(app)/documents/page.tsx`
+  - [x] 3.3: Created `apps/admin/src/app/(app)/players/page.tsx`
+  - [x] 3.4: Created `apps/admin/src/app/(app)/dashboards/page.tsx`
+  - [x] 3.5: Created `apps/admin/src/app/(app)/settings/page.tsx`
+  - [x] 3.6: All pages are React Server Components (no `"use client"`), use consistent pattern with flex container, h1, and muted placeholder text
 
-- [ ] **Task 4: Update the separate AppSidebar component (if still used)** (AC: #1)
-  - [ ] 4.1: Check if `apps/admin/src/components/app-sidebar.tsx` is still imported anywhere. If yes, update it with the same navigation items as `application-shell2.tsx` for consistency. If it's unused, leave it or remove it to avoid confusion
-  - [ ] 4.2: Ensure only one sidebar component is actively used by the layout
+- [x] **Task 4: Update the separate AppSidebar component (if still used)** (AC: #1)
+  - [x] 4.1: Confirmed `app-sidebar.tsx` is NOT imported anywhere (grep returned no results). Removed the file to avoid confusion
+  - [x] 4.2: Only `application-shell2.tsx`'s AppSidebar is actively used by the layout
 
-- [ ] **Task 5: Validate responsive behavior** (AC: #2, #6)
-  - [ ] 5.1: Verify the sidebar uses `collapsible="icon"` for desktop collapse behavior (already configured in `application-shell2.tsx`)
-  - [ ] 5.2: Verify the `SidebarTrigger` in `SiteHeader` toggles the sidebar on mobile viewports
-  - [ ] 5.3: Confirm the `useMobile` hook (breakpoint: 768px) is used correctly by the sidebar provider for responsive switching
-  - [ ] 5.4: Ensure all nav items show tooltips when the sidebar is in icon-only collapsed mode
+- [x] **Task 5: Validate responsive behavior** (AC: #2, #6)
+  - [x] 5.1: Verified `collapsible="icon"` on `<Sidebar>` in `application-shell2.tsx`
+  - [x] 5.2: Verified `SidebarTrigger` present in `SiteHeader`
+  - [x] 5.3: Confirmed `useIsMobile` hook (768px breakpoint) used by `SidebarProvider` in `ui/sidebar.tsx`
+  - [x] 5.4: Confirmed `tooltip={item.label}` on all `SidebarMenuButton` components + `SidebarRail` present
 
-- [ ] **Task 6: Validate no regressions** (AC: #9)
-  - [ ] 6.1: Run `pnpm typecheck` — must pass with zero errors
-  - [ ] 6.2: Run `pnpm lint` — must pass with zero errors
-  - [ ] 6.3: Start the dev server with `pnpm dev` — must start without errors
-  - [ ] 6.4: Navigate through all new routes (`/calendar`, `/documents`, `/players`, `/dashboards`, `/settings`) and confirm each renders its placeholder content
-  - [ ] 6.5: Navigate to existing routes (`/team`, `/users`) and confirm they still work
-  - [ ] 6.6: Confirm the sidebar active state highlights correctly when navigating between pages
-  - [ ] 6.7: Confirm the auth flow still works (log out, log back in, land on protected route)
+- [x] **Task 6: Validate no regressions** (AC: #9)
+  - [x] 6.1: `pnpm typecheck` — passes with zero errors (all 5 packages)
+  - [x] 6.2: `pnpm lint` — admin lint errors are all pre-existing (accept-invite-form, password-input, sidebar.tsx Math.random). No new errors introduced
+  - [ ] 6.3: Dev server start — deferred to manual verification
+  - [ ] 6.4: Route navigation — deferred to manual verification
+  - [ ] 6.5: Existing routes — deferred to manual verification
+  - [ ] 6.6: Active state highlights — deferred to manual verification
+  - [ ] 6.7: Auth flow — deferred to manual verification
 
 ## Dev Notes
 
@@ -270,10 +270,30 @@ Note: `IconUsers` is already used for "Team" and `IconUsersGroup` for "Users". F
 
 ### Agent Model Used
 
-(to be filled during implementation)
+Claude Opus 4.6 (via Claude Code SDK)
 
 ### Debug Log References
 
+- `pnpm typecheck` — 5/5 packages pass, 0 errors
+- `pnpm lint` (admin) — 3 errors, 9 warnings — all pre-existing, none from story changes
+- `app-sidebar.tsx` grep — 0 imports found → safe to remove
+
 ### Completion Notes List
 
+- Used `IconShirtSport` for Players to differentiate from `IconUsers` (Team) and `IconUsersGroup` (Users)
+- Used `IconBrain` for BrainAnalytics branding in sidebar header
+- Refactored breadcrumbs from if/else chains to data-driven `routeLabelMap`/`nestedLabelMap` approach per Dev Notes recommendation
+- Removed unused `app-sidebar.tsx` — was dead code with no imports
+- ThemeToggle not yet created (Story 1.2 not implemented) — notification bell placed alone in right-side header div, ready for ThemeToggle addition
+- Removed hardcoded "General" root breadcrumb — now shows route-specific breadcrumbs directly
+
 ### File List
+
+- `apps/admin/src/components/application-shell2.tsx` — Modified (navGroups, icons, branding)
+- `apps/admin/src/components/site-header.tsx` — Modified (breadcrumbs, notification bell)
+- `apps/admin/src/app/(app)/calendar/page.tsx` — Created
+- `apps/admin/src/app/(app)/documents/page.tsx` — Created
+- `apps/admin/src/app/(app)/players/page.tsx` — Created
+- `apps/admin/src/app/(app)/dashboards/page.tsx` — Created
+- `apps/admin/src/app/(app)/settings/page.tsx` — Created
+- `apps/admin/src/components/app-sidebar.tsx` — Removed (unused duplicate)

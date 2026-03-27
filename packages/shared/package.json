@@ -8,5 +8,8 @@
     "./constants": "./constants.js",
     "./roles": "./roles.ts",
     "./calendar": "./calendar.ts"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   }
 }

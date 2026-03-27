@@ -67,3 +67,39 @@ export const getTeamRoles = query({
     return [...USER_ROLES];
   },
 });
+
+/**
+ * Search team users by name for invitation selectors.
+ * Returns up to 50 results, filtered by optional search string (case-insensitive).
+ * Accessible to any authenticated team member (AC #13: team-scoped).
+ */
+export const searchTeamUsers = query({
+  args: {
+    search: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const allUsers = await ctx.db
+      .query("users")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    let filtered = allUsers;
+
+    if (args.search && args.search.trim().length > 0) {
+      const term = args.search.trim().toLowerCase();
+      filtered = allUsers.filter((u) => {
+        const name = (u.fullName ?? u.name ?? u.email ?? "").toLowerCase();
+        return name.includes(term);
+      });
+    }
+
+    return filtered.slice(0, 50).map((u) => ({
+      _id: u._id,
+      fullName: u.fullName ?? u.name ?? u.email ?? "Unknown",
+      email: u.email,
+      role: u.role,
+    }));
+  },
+});

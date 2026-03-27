@@ -3,9 +3,12 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
+import { Plus } from "lucide-react";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
+import { Button } from "@/components/ui/button";
 import { CalendarView } from "@/components/calendar/CalendarView";
+import { CreateEventDialog } from "@/components/calendar/CreateEventDialog";
 import { EventDetail } from "@/components/calendar/EventDetail";
 import { DayEventsPanel } from "@/components/calendar/DayEventsPanel";
 
@@ -24,11 +27,16 @@ function getCurrentMonth() {
 
 export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Panel state — only one panel open at a time
   const [selectedEventId, setSelectedEventId] =
     useState<Id<"calendarEvents"> | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+
+  // Current user for role-based UI
+  const currentUser = useQuery(api.table.users.currentUser);
+  const isAdmin = currentUser?.role === "admin";
 
   // Primary data subscription
   const events = useQuery(api.calendar.queries.getMonthEvents, {
@@ -68,11 +76,19 @@ export default function CalendarPage() {
   return (
     <div className="space-y-4 p-4 md:p-6">
       {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
-        <p className="text-muted-foreground text-sm">
-          View and manage your team&apos;s schedule
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
+          <p className="text-muted-foreground text-sm">
+            View and manage your team&apos;s schedule
+          </p>
+        </div>
+        {isAdmin && (
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 size-4" />
+            Create Event
+          </Button>
+        )}
       </div>
 
       {/* Calendar grid */}
@@ -97,6 +113,14 @@ export default function CalendarPage() {
         onClose={handleCloseDay}
         onEventClick={handleDayEventClick}
       />
+
+      {/* Create event dialog (admin only) */}
+      {isAdmin && (
+        <CreateEventDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+        />
+      )}
     </div>
   );
 }

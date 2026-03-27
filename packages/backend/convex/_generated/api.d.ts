@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as calendar_mutations from "../calendar/mutations.js";
 import type * as calendar_queries from "../calendar/queries.js";
 import type * as crons from "../crons.js";
 import type * as emails from "../emails.js";
@@ -20,13 +21,18 @@ import type * as invitations_queries from "../invitations/queries.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_auth_ResendOTP from "../lib/auth/ResendOTP.js";
 import type * as lib_auth_ResendOTPPasswordReset from "../lib/auth/ResendOTPPasswordReset.js";
+import type * as lib_notifications from "../lib/notifications.js";
 import type * as migrations from "../migrations.js";
 import type * as seed from "../seed.js";
 import type * as storage from "../storage.js";
 import type * as table_admin from "../table/admin.js";
 import type * as table_adminInvites from "../table/adminInvites.js";
+import type * as table_calendarEventSeries from "../table/calendarEventSeries.js";
+import type * as table_calendarEventUsers from "../table/calendarEventUsers.js";
+import type * as table_calendarEvents from "../table/calendarEvents.js";
 import type * as table_feedback from "../table/feedback.js";
 import type * as table_invitations from "../table/invitations.js";
+import type * as table_notifications from "../table/notifications.js";
 import type * as table_teams from "../table/teams.js";
 import type * as table_users from "../table/users.js";
 import type * as users_mutations from "../users/mutations.js";
@@ -41,6 +47,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  "calendar/mutations": typeof calendar_mutations;
   "calendar/queries": typeof calendar_queries;
   crons: typeof crons;
   emails: typeof emails;
@@ -52,13 +59,18 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/auth/ResendOTP": typeof lib_auth_ResendOTP;
   "lib/auth/ResendOTPPasswordReset": typeof lib_auth_ResendOTPPasswordReset;
+  "lib/notifications": typeof lib_notifications;
   migrations: typeof migrations;
   seed: typeof seed;
   storage: typeof storage;
   "table/admin": typeof table_admin;
   "table/adminInvites": typeof table_adminInvites;
+  "table/calendarEventSeries": typeof table_calendarEventSeries;
+  "table/calendarEventUsers": typeof table_calendarEventUsers;
+  "table/calendarEvents": typeof table_calendarEvents;
   "table/feedback": typeof table_feedback;
   "table/invitations": typeof table_invitations;
+  "table/notifications": typeof table_notifications;
   "table/teams": typeof table_teams;
   "table/users": typeof table_users;
   "users/mutations": typeof users_mutations;

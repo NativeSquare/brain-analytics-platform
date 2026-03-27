@@ -28,6 +28,7 @@ import type * as lib_notifications from "../lib/notifications.js";
 import type * as migrations from "../migrations.js";
 import type * as notifications_mutations from "../notifications/mutations.js";
 import type * as notifications_queries from "../notifications/queries.js";
+import type * as players_queries from "../players/queries.js";
 import type * as seed from "../seed.js";
 import type * as storage from "../storage.js";
 import type * as table_admin from "../table/admin.js";
@@ -76,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   "notifications/mutations": typeof notifications_mutations;
   "notifications/queries": typeof notifications_queries;
+  "players/queries": typeof players_queries;
   seed: typeof seed;
   storage: typeof storage;
   "table/admin": typeof table_admin;

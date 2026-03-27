@@ -182,7 +182,8 @@ export function CalendarView({
   useEffect(() => {
     if (!calendarApp || !events) return;
     const mapped = mapEvents(events);
-    calendarApp.events.set(mapped);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    calendarApp.events.set(mapped as any);
   }, [calendarApp, events]);
 
   if (events === undefined) {

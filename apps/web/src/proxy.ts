@@ -12,11 +12,19 @@ const isAuthRoute = createRouteMatcher([
   "/verify-email",
   "/otp",
 ]);
-const isProtectedRoute = createRouteMatcher(["/dashboard"]); // TODO : Redirect to /app by default
+const isProtectedRoute = createRouteMatcher([
+  "/dashboards",
+  "/players",
+  "/calendar",
+  "/documents",
+  "/team",
+  "/settings",
+  "/users",
+]);
 
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   if (isAuthRoute(request) && (await convexAuth.isAuthenticated())) {
-    return nextjsMiddlewareRedirect(request, "/dashboard");
+    return nextjsMiddlewareRedirect(request, "/dashboards");
   }
   if (isProtectedRoute(request) && !(await convexAuth.isAuthenticated())) {
     return nextjsMiddlewareRedirect(request, "/login");

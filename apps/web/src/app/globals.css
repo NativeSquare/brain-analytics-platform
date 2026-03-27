@@ -120,8 +120,7 @@
 
 /* Schedule-X calendar requires an explicit height — its internals use height:100% */
 .sx-react-calendar-wrapper {
-  flex: 1;
-  min-height: 600px;
+  height: 800px;
 }
 
 @layer base {

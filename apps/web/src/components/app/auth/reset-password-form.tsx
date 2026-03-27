@@ -66,7 +66,7 @@ export function ResetPasswordForm({
         flow: "reset-verification",
       })
       // Password reset successful - user is now signed in, redirect to dashboard
-      router.replace("/dashboard")
+      router.replace("/dashboards")
     } catch (error) {
       setFormError(getConvexErrorMessage(error))
       setIsLoading(false)

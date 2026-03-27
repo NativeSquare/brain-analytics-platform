@@ -1,5 +1,6 @@
 "use client";
 
+import "temporal-polyfill/global";
 import { memo, useEffect, useMemo } from "react";
 import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewMonthGrid } from "@schedule-x/calendar";
@@ -195,7 +196,7 @@ export function CalendarView({
   }
 
   return (
-    <div className="sx-react-calendar-wrapper">
+    <div className="sx-react-calendar-wrapper" style={{ height: "800px" }}>
       <ScheduleXCalendar
         calendarApp={calendarApp}
         customComponents={{ monthGridEvent: MonthGridEvent }}

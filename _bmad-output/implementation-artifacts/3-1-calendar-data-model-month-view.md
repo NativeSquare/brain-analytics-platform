@@ -144,16 +144,16 @@ The original epic acceptance criteria (epics.md, Story 3.1) reference:
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireAuth(ctx)` returning `{ user, teamId }` |
 | `teams` table in schema | Story 2.1 | `packages/backend/convex/table/teams.ts` must exist and be registered in `schema.ts` |
 | Users table with `teamId` and 6-role `role` field | Story 2.1 | `packages/backend/convex/table/users.ts` must have `teamId` and the expanded role union |
-| Sidebar navigation with Calendar link | Story 1.3 | `apps/admin/src/` sidebar should include `/calendar` route |
+| Sidebar navigation with Calendar link | Story 1.3 | `apps/web/src/` sidebar should include `/calendar` route |
 | shadcn/ui theme configured | Story 1.2 | shadcn preset applied, CSS variables active |
 
 ### Current State (Baseline)
 
 **`convex/schema.ts`:** Imports `authTables`, `adminInvites`, `feedback`, `users`. **No calendar tables exist.**
 
-**`apps/admin/src/components/ui/calendar.tsx`:** A basic `react-day-picker` date picker component. **This is NOT the calendar view** — it's a form input component. The Schedule-X month view is a completely separate concern.
+**`apps/web/src/components/ui/calendar.tsx`:** A basic `react-day-picker` date picker component. **This is NOT the calendar view** — it's a form input component. The Schedule-X month view is a completely separate concern.
 
-**`apps/admin/src/app/(app)/`:** Contains existing routes for `/team`, `/users`. **No `/calendar` route exists.**
+**`apps/web/src/app/(app)/`:** Contains existing routes for `/team`, `/users`. **No `/calendar` route exists.**
 
 **Schedule-X:** **Not installed.** Must be added as a dependency in Task 1.
 
@@ -222,12 +222,12 @@ Events that span midnight or cross month boundaries are included if their `start
 | `packages/backend/convex/schema.ts` | Modified | Register three new calendar tables |
 | `packages/shared/constants.ts` (or `calendar.ts`) | Modified/Created | EVENT_TYPES, EventType, EVENT_TYPE_COLORS, RECURRENCE_FREQUENCIES |
 | `packages/backend/convex/calendar/queries.ts` | Created | getMonthEvents, getEventDetail, getDayEvents queries |
-| `apps/admin/src/components/shared/EventTypeBadge.tsx` | Created (conditional) | Only if not already created by Story 1.4 |
-| `apps/admin/src/components/calendar/CalendarView.tsx` | Created | Schedule-X month view wrapper component |
-| `apps/admin/src/components/calendar/EventCard.tsx` | Created | Event display in calendar grid cell |
-| `apps/admin/src/components/calendar/EventDetail.tsx` | Created | Event detail side panel (Sheet) |
-| `apps/admin/src/components/calendar/DayEventsPanel.tsx` | Created | Day events list panel |
-| `apps/admin/src/app/(app)/calendar/page.tsx` | Created | Calendar page with month view |
+| `apps/web/src/components/shared/EventTypeBadge.tsx` | Created (conditional) | Only if not already created by Story 1.4 |
+| `apps/web/src/components/calendar/CalendarView.tsx` | Created | Schedule-X month view wrapper component |
+| `apps/web/src/components/calendar/EventCard.tsx` | Created | Event display in calendar grid cell |
+| `apps/web/src/components/calendar/EventDetail.tsx` | Created | Event detail side panel (Sheet) |
+| `apps/web/src/components/calendar/DayEventsPanel.tsx` | Created | Day events list panel |
+| `apps/web/src/app/(app)/calendar/page.tsx` | Created | Calendar page with month view |
 | `packages/backend/convex/calendar/__tests__/queries.test.ts` | Created | Unit tests for calendar queries |
 
 ### What This Story Does NOT Include
@@ -340,9 +340,9 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 | `packages/shared/package.json` | Modified — added `./calendar` export |
 | `packages/backend/convex/calendar/queries.ts` | Created |
 | `packages/backend/convex/_generated/api.d.ts` | Modified — added calendar/queries module |
-| `apps/admin/src/components/calendar/CalendarView.tsx` | Created |
-| `apps/admin/src/components/calendar/EventCard.tsx` | Created |
-| `apps/admin/src/components/calendar/EventDetail.tsx` | Created |
-| `apps/admin/src/components/calendar/DayEventsPanel.tsx` | Created |
-| `apps/admin/src/app/(app)/calendar/page.tsx` | Modified — replaced placeholder with full calendar page |
+| `apps/web/src/components/calendar/CalendarView.tsx` | Created |
+| `apps/web/src/components/calendar/EventCard.tsx` | Created |
+| `apps/web/src/components/calendar/EventDetail.tsx` | Created |
+| `apps/web/src/components/calendar/DayEventsPanel.tsx` | Created |
+| `apps/web/src/app/(app)/calendar/page.tsx` | Modified — replaced placeholder with full calendar page |
 | `packages/backend/convex/calendar/__tests__/queries.test.ts` | Created — 11 tests |

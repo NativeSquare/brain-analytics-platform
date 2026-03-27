@@ -82,7 +82,7 @@ so that all modules use consistent visual patterns without duplicating code and 
 ## Tasks / Subtasks
 
 - [x] Task 1: Create `components/shared/` directory structure (AC: #6)
-  - [x] 1.1 Create `apps/admin/src/components/shared/` directory
+  - [x] 1.1 Create `apps/web/src/components/shared/` directory
   - [x] 1.2 Create barrel `index.ts` export file
 
 - [x] Task 2: Build EventTypeBadge component (AC: #1)
@@ -130,7 +130,7 @@ so that all modules use consistent visual patterns without duplicating code and 
 
 ### Architecture Patterns
 
-- **Component location**: All components go in `apps/admin/src/components/shared/` per architecture decision. [Source: architecture.md#Component Organization]
+- **Component location**: All components go in `apps/web/src/components/shared/` per architecture decision. [Source: architecture.md#Component Organization]
 - **Naming convention**: PascalCase for component files (`EventTypeBadge.tsx`, `StatusBadge.tsx`). [Source: architecture.md#Naming Patterns]
 - **Styling approach**: Tailwind CSS v4 + CVA (class-variance-authority) + `cn()` utility from `@/lib/utils`. Extend existing `Badge` component variants rather than creating from scratch. [Source: architecture.md#Styling Solution]
 - **No backend dependency**: These are pure presentational components. All data flows via props. Backend wiring happens in consuming epics (Epic 3, 4, 5).
@@ -181,7 +181,7 @@ so that all modules use consistent visual patterns without duplicating code and 
 
 ### Project Structure Notes
 
-- **Alignment**: Files will be created under `apps/admin/src/components/shared/` matching the architecture's component organization structure exactly. [Source: architecture.md#Project Structure]
+- **Alignment**: Files will be created under `apps/web/src/components/shared/` matching the architecture's component organization structure exactly. [Source: architecture.md#Project Structure]
 - **No conflicts**: The `shared/` directory does not exist yet — this story creates it.
 - **Cross-module usage**: EventTypeBadge will be consumed by `components/calendar/` (Epic 3). StatusBadge by `components/players/` (Epic 5). ReadTrackingIndicator by `components/documents/` (Epic 4). FolderBreadcrumb by `components/documents/` (Epic 4). NotificationCenter by `app/(app)/layout.tsx` (Epic 3, Story 3.7).
 
@@ -240,17 +240,17 @@ Claude Opus 4.6
 ### File List
 
 **Files created:**
-- `apps/admin/src/components/shared/EventTypeBadge.tsx`
-- `apps/admin/src/components/shared/StatusBadge.tsx`
-- `apps/admin/src/components/shared/ReadTrackingIndicator.tsx`
-- `apps/admin/src/components/shared/FolderBreadcrumb.tsx`
-- `apps/admin/src/components/shared/NotificationCenter.tsx`
-- `apps/admin/src/components/shared/index.ts`
+- `apps/web/src/components/shared/EventTypeBadge.tsx`
+- `apps/web/src/components/shared/StatusBadge.tsx`
+- `apps/web/src/components/shared/ReadTrackingIndicator.tsx`
+- `apps/web/src/components/shared/FolderBreadcrumb.tsx`
+- `apps/web/src/components/shared/NotificationCenter.tsx`
+- `apps/web/src/components/shared/index.ts`
 
 **Existing files referenced (read-only):**
-- `apps/admin/src/components/ui/badge.tsx`
-- `apps/admin/src/components/ui/breadcrumb.tsx`
-- `apps/admin/src/components/ui/progress.tsx`
-- `apps/admin/src/components/ui/popover.tsx`
-- `apps/admin/src/components/ui/dropdown-menu.tsx`
-- `apps/admin/src/lib/utils.ts`
+- `apps/web/src/components/ui/badge.tsx`
+- `apps/web/src/components/ui/breadcrumb.tsx`
+- `apps/web/src/components/ui/progress.tsx`
+- `apps/web/src/components/ui/popover.tsx`
+- `apps/web/src/components/ui/dropdown-menu.tsx`
+- `apps/web/src/lib/utils.ts`

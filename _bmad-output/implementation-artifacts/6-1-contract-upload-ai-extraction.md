@@ -143,7 +143,7 @@ so that I can quickly view structured contract data without reading the full doc
 ### Frontend Tasks
 
 - [ ] **Task 6: Create ContractCard Component** (AC: 1, 5)
-  - [ ] 6.1: Create `apps/admin/src/components/players/ContractCard.tsx`
+  - [ ] 6.1: Create `apps/web/src/components/players/ContractCard.tsx`
   - [ ] 6.2: Subscribe to `api.contracts.queries.getContract` with `useQuery` passing `playerId`
   - [ ] 6.3: Render states:
     - **No contract**: Empty state with "Upload Contract" CTA button
@@ -161,7 +161,7 @@ so that I can quickly view structured contract data without reading the full doc
   - [ ] 6.6: Display "Not found in document" placeholder for null/empty fields
 
 - [ ] **Task 7: Create Contract Upload Dialog** (AC: 2, 7)
-  - [ ] 7.1: Create `apps/admin/src/components/players/ContractUploadDialog.tsx`
+  - [ ] 7.1: Create `apps/web/src/components/players/ContractUploadDialog.tsx`
   - [ ] 7.2: Use shadcn Dialog with file input restricted to `accept=".pdf,application/pdf"`
   - [ ] 7.3: Implement upload flow:
     - Client-side: `useMutation(api.contracts.mutations.uploadContract)` + `useAction` for `storage.generateUploadUrl`
@@ -171,7 +171,7 @@ so that I can quickly view structured contract data without reading the full doc
   - [ ] 7.6: If player already has a contract, show confirmation dialog before replacing
 
 - [ ] **Task 8: Create Contract Edit Form** (AC: 6)
-  - [ ] 8.1: Create `apps/admin/src/components/players/ContractEditForm.tsx`
+  - [ ] 8.1: Create `apps/web/src/components/players/ContractEditForm.tsx`
   - [ ] 8.2: Use `react-hook-form` + Zod schema for contract fields validation
   - [ ] 8.3: Pre-populate form with current extracted data
   - [ ] 8.4: Call `updateContractFields` mutation on save
@@ -179,7 +179,7 @@ so that I can quickly view structured contract data without reading the full doc
   - [ ] 8.6: Show `toast.success("Contract updated")` on successful save
 
 - [ ] **Task 9: Integrate Contract Tab into Player Profile** (AC: 1)
-  - [ ] 9.1: Add "Contract" tab to player profile page at `apps/admin/src/app/(app)/players/[playerId]/page.tsx`
+  - [ ] 9.1: Add "Contract" tab to player profile page at `apps/web/src/app/(app)/players/[playerId]/page.tsx`
   - [ ] 9.2: Conditionally render the Contract tab only when current user has admin role (check via `useCurrentUser` hook or a dedicated role query)
   - [ ] 9.3: Render `ContractCard` component within the Contract tab content area
   - [ ] 9.4: Ensure tab is completely absent (not just hidden) for non-admin users
@@ -225,10 +225,10 @@ so that I can quickly view structured contract data without reading the full doc
 
 - Alignment with architecture.md project structure:
   - Backend: `packages/backend/convex/contracts/` — queries.ts, mutations.ts, actions.ts
-  - Frontend: `apps/admin/src/components/players/ContractCard.tsx`, `ContractUploadDialog.tsx`, `ContractEditForm.tsx`
+  - Frontend: `apps/web/src/components/players/ContractCard.tsx`, `ContractUploadDialog.tsx`, `ContractEditForm.tsx`
   - Schema: `packages/backend/convex/schema.ts` — add `contracts` table definition
   - Tests: `packages/backend/convex/contracts/__tests__/mutations.test.ts`
-  - Player profile page: `apps/admin/src/app/(app)/players/[playerId]/page.tsx` — add Contract tab
+  - Player profile page: `apps/web/src/app/(app)/players/[playerId]/page.tsx` — add Contract tab
 - No new routes needed — Contract tab lives within the existing player profile page.
 - Depends on `convex/lib/auth.ts` (requireAuth, requireRole) being implemented (Epic 2 prerequisite).
 

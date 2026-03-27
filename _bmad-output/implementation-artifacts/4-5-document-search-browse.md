@@ -60,20 +60,20 @@ so that I can quickly find the document I need.
   - [x] 2.3: Ensure backward compatibility — if `fileType` is not provided, behavior is identical to the current `getFolderContents`.
 
 - [x] **Task 3: Build `DocumentSearchBar` component** (AC: #2, #3, #11)
-  - [x] 3.1: Create `apps/admin/src/components/documents/DocumentSearchBar.tsx`. Renders a shadcn `Input` with a `Search` icon (from `lucide-react`) prefix and placeholder "Search documents...".
+  - [x] 3.1: Create `apps/web/src/components/documents/DocumentSearchBar.tsx`. Renders a shadcn `Input` with a `Search` icon (from `lucide-react`) prefix and placeholder "Search documents...".
   - [x] 3.2: Accept props: `value: string`, `onChange: (value: string) => void`, `onClear: () => void`.
   - [x] 3.3: Add a clear button (`X` icon) that appears when the input has text. Clicking it calls `onClear()` and clears the input.
   - [x] 3.4: Implement `/` keyboard shortcut: add a global `keydown` event listener on the documents page (in the parent component) that focuses the search input when `/` is pressed and the input is not already focused (and no other input/textarea is focused). Pressing `Escape` while the search input is focused calls `onClear()` and blurs the input.
   - [x] 3.5: Style with appropriate width (full-width on mobile, constrained on desktop), border, and focus ring consistent with the design system.
 
 - [x] **Task 4: Build `DocumentTypeFilter` component** (AC: #5)
-  - [x] 4.1: Create `apps/admin/src/components/documents/DocumentTypeFilter.tsx`. Renders a shadcn `Select` component with options: "All Types" (value: `""`), "PDF" (value: `"pdf"`), "Images" (value: `"image"`), "Spreadsheets" (value: `"spreadsheet"`), "Video Links" (value: `"video"`).
+  - [x] 4.1: Create `apps/web/src/components/documents/DocumentTypeFilter.tsx`. Renders a shadcn `Select` component with options: "All Types" (value: `""`), "PDF" (value: `"pdf"`), "Images" (value: `"image"`), "Spreadsheets" (value: `"spreadsheet"`), "Video Links" (value: `"video"`).
   - [x] 4.2: Accept props: `value: string`, `onChange: (value: string) => void`.
   - [x] 4.3: Each option includes a file type icon prefix (from `lucide-react`): `FileText` for PDF, `Image` for Images, `Table` for Spreadsheets, `Video` for Video Links, `Files` for All Types.
   - [x] 4.4: Style to sit alongside the search bar in a horizontal toolbar layout.
 
 - [x] **Task 5: Build `DocumentSearchResults` component** (AC: #4, #7, #12)
-  - [x] 5.1: Create `apps/admin/src/components/documents/DocumentSearchResults.tsx`. Accepts props: `results: DocumentSearchResult[]`, `totalCount: number`, `searchTerm: string`, `isLoading: boolean`, `onResultClick: (result: DocumentSearchResult) => void`, `isAdmin: boolean`.
+  - [x] 5.1: Create `apps/web/src/components/documents/DocumentSearchResults.tsx`. Accepts props: `results: DocumentSearchResult[]`, `totalCount: number`, `searchTerm: string`, `isLoading: boolean`, `onResultClick: (result: DocumentSearchResult) => void`, `isAdmin: boolean`.
   - [x] 5.2: When `isLoading` is `true` (query returning `undefined`), render skeleton placeholders (4-6 skeleton rows matching the result card layout).
   - [x] 5.3: When `results` is empty and not loading, render the empty state: `SearchX` icon (from `lucide-react`), message "No documents found matching '[searchTerm]'", subtext "Try a different search term or check your filters."
   - [x] 5.4: When results exist, render a list of result cards. Each card shows:
@@ -87,13 +87,13 @@ so that I can quickly find the document I need.
   - [x] 5.7: Add hover state and cursor pointer on result cards. Use consistent spacing and dividers between results.
 
 - [x] **Task 6: Build `DocumentSearchToolbar` component** (AC: #2, #5, #10)
-  - [x] 6.1: Create `apps/admin/src/components/documents/DocumentSearchToolbar.tsx`. Composes `DocumentSearchBar` and `DocumentTypeFilter` in a horizontal layout (flexbox row, gap between items).
+  - [x] 6.1: Create `apps/web/src/components/documents/DocumentSearchToolbar.tsx`. Composes `DocumentSearchBar` and `DocumentTypeFilter` in a horizontal layout (flexbox row, gap between items).
   - [x] 6.2: Accept props: `searchTerm: string`, `onSearchChange: (value: string) => void`, `fileType: string`, `onFileTypeChange: (value: string) => void`.
   - [x] 6.3: On mobile viewports (< 640px), stack the search bar and filter vertically. On desktop, display side-by-side.
   - [x] 6.4: Include the `/` keyboard shortcut label as a hint inside or near the search bar (e.g., a small `kbd` tag showing `/` inside the input, visible on desktop only).
 
 - [x] **Task 7: Integrate search and filter into the Documents page** (AC: #3, #6, #9, #10)
-  - [x] 7.1: Modify `apps/admin/src/app/(app)/documents/page.tsx`. Add state management for search and filtering:
+  - [x] 7.1: Modify `apps/web/src/app/(app)/documents/page.tsx`. Add state management for search and filtering:
     - Read `search` and `type` from URL search params on mount
     - Create state: `searchTerm` (string, from URL or empty), `debouncedSearchTerm` (debounced version, 300ms delay), `fileType` (string, from URL or empty)
   - [x] 7.2: Implement debounce: use a `useEffect` with `setTimeout` to update `debouncedSearchTerm` 300ms after `searchTerm` changes. Clear the timeout on cleanup.
@@ -107,7 +107,7 @@ so that I can quickly find the document I need.
   - [x] 7.7: When file type filter is active in browse mode (no search term), pass the `fileType` to the existing folder contents query/display. Documents not matching the filter are hidden; subfolders remain visible. Show a "Filtered by: [type]" chip or indicator near the filter dropdown. Provide a way to clear the filter (clicking the chip or selecting "All Types").
 
 - [x] **Task 8: Build `useDocumentSearch` custom hook** (AC: #3, #10)
-  - [x] 8.1: Create `apps/admin/src/hooks/useDocumentSearch.ts`. Encapsulates all search/filter state logic to keep the page component clean.
+  - [x] 8.1: Create `apps/web/src/hooks/useDocumentSearch.ts`. Encapsulates all search/filter state logic to keep the page component clean.
   - [x] 8.2: The hook manages: `searchTerm`, `debouncedSearchTerm` (300ms debounce), `fileType`, and syncs with URL search params.
   - [x] 8.3: Exports: `{ searchTerm, debouncedSearchTerm, fileType, setSearchTerm, setFileType, clearSearch, isSearchActive }`.
   - [x] 8.4: `isSearchActive` returns `true` when `debouncedSearchTerm.length >= 2`.
@@ -198,8 +198,8 @@ This story directly implements:
 | `folders` table with CRUD | Story 4.1 | `getFolders`, `getFolderBreadcrumb` queries must exist |
 | `checkDocumentAccess` / `filterByAccess` | Story 4.3 | `packages/backend/convex/lib/permissions.ts` must export access-checking utilities |
 | `requireAuth` helper | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireAuth` |
-| Documents page with folder browser | Story 4.1 | `apps/admin/src/app/(app)/documents/page.tsx` must exist with folder navigation |
-| `DocumentCard` component | Story 4.1 | `apps/admin/src/components/documents/DocumentCard.tsx` must exist |
+| Documents page with folder browser | Story 4.1 | `apps/web/src/app/(app)/documents/page.tsx` must exist with folder navigation |
+| `DocumentCard` component | Story 4.1 | `apps/web/src/components/documents/DocumentCard.tsx` must exist |
 | Read tracking integration (optional) | Story 4.4 | `ReadTracker` component and `getReadStats` query. If not available, search results render without read tracking indicators. |
 | shadcn/ui Input, Select, Skeleton, Badge | Story 1.2 | Components installed in admin app |
 | `documentUserPermissions` table | Story 4.3 | Required for individual user permission checks in search |
@@ -210,11 +210,11 @@ This story directly implements:
 
 **`convex/documents/mutations.ts`:** Should exist from Stories 4.1-4.4. This story does NOT modify mutations.
 
-**`apps/admin/src/app/(app)/documents/page.tsx`:** Should exist from Story 4.1 with folder browsing via URL search params (`?folder=<id>`). This story MODIFIES it to add the search toolbar, file type filtering, and conditional search results view.
+**`apps/web/src/app/(app)/documents/page.tsx`:** Should exist from Story 4.1 with folder browsing via URL search params (`?folder=<id>`). This story MODIFIES it to add the search toolbar, file type filtering, and conditional search results view.
 
-**`apps/admin/src/components/documents/`:** Should contain `FolderCard.tsx`, `DocumentCard.tsx`, `DocumentDetail.tsx`, `FolderCreateDialog.tsx`, `FolderRenameDialog.tsx`, `FolderDeleteDialog.tsx`, `DocumentFolderBreadcrumb.tsx`, `UploadDialog.tsx`, `PermissionsPanel.tsx`, `ReadTrackerDetail.tsx` from Stories 4.1-4.4. This story ADDS `DocumentSearchBar.tsx`, `DocumentTypeFilter.tsx`, `DocumentSearchResults.tsx`, `DocumentSearchToolbar.tsx`.
+**`apps/web/src/components/documents/`:** Should contain `FolderCard.tsx`, `DocumentCard.tsx`, `DocumentDetail.tsx`, `FolderCreateDialog.tsx`, `FolderRenameDialog.tsx`, `FolderDeleteDialog.tsx`, `DocumentFolderBreadcrumb.tsx`, `UploadDialog.tsx`, `PermissionsPanel.tsx`, `ReadTrackerDetail.tsx` from Stories 4.1-4.4. This story ADDS `DocumentSearchBar.tsx`, `DocumentTypeFilter.tsx`, `DocumentSearchResults.tsx`, `DocumentSearchToolbar.tsx`.
 
-**`apps/admin/src/hooks/`:** May contain `useCurrentUser.ts`. This story ADDS `useDocumentSearch.ts`.
+**`apps/web/src/hooks/`:** May contain `useCurrentUser.ts`. This story ADDS `useDocumentSearch.ts`.
 
 ### Search Implementation Strategy
 
@@ -384,12 +384,12 @@ Documents Page (page.tsx) [MODIFIED]
 | File | Change Type | Description |
 |------|-------------|-------------|
 | `packages/backend/convex/documents/queries.ts` | Modified | Add `searchDocuments` query; optionally extend `getFolderContents` with `fileType` filter |
-| `apps/admin/src/components/documents/DocumentSearchBar.tsx` | **Created** | Search input with icon, clear button, keyboard shortcuts |
-| `apps/admin/src/components/documents/DocumentTypeFilter.tsx` | **Created** | File type filter select dropdown |
-| `apps/admin/src/components/documents/DocumentSearchResults.tsx` | **Created** | Search results list with highlighted names, folder paths, empty state |
-| `apps/admin/src/components/documents/DocumentSearchToolbar.tsx` | **Created** | Composes search bar + type filter in a toolbar layout |
-| `apps/admin/src/hooks/useDocumentSearch.ts` | **Created** | Custom hook: search state, debounce, URL sync |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Modified | Integrate search toolbar, conditional search/browse views, file type filtering |
+| `apps/web/src/components/documents/DocumentSearchBar.tsx` | **Created** | Search input with icon, clear button, keyboard shortcuts |
+| `apps/web/src/components/documents/DocumentTypeFilter.tsx` | **Created** | File type filter select dropdown |
+| `apps/web/src/components/documents/DocumentSearchResults.tsx` | **Created** | Search results list with highlighted names, folder paths, empty state |
+| `apps/web/src/components/documents/DocumentSearchToolbar.tsx` | **Created** | Composes search bar + type filter in a toolbar layout |
+| `apps/web/src/hooks/useDocumentSearch.ts` | **Created** | Custom hook: search state, debounce, URL sync |
+| `apps/web/src/app/(app)/documents/page.tsx` | Modified | Integrate search toolbar, conditional search/browse views, file type filtering |
 | `packages/backend/convex/documents/__tests__/search.test.ts` | **Created** | Unit tests for searchDocuments query |
 
 ### What This Story Does NOT Include
@@ -482,11 +482,11 @@ Claude Opus 4.6 (via Claude Code)
 | File | Change |
 |------|--------|
 | `packages/backend/convex/documents/queries.ts` | Modified — added `matchesFileType` helper, `searchDocuments` query, extended `getFolderContents` with `fileType` param |
-| `apps/admin/src/components/documents/DocumentSearchBar.tsx` | **Created** — Search input with icon, clear button, Escape handling |
-| `apps/admin/src/components/documents/DocumentTypeFilter.tsx` | **Created** — File type filter select dropdown |
-| `apps/admin/src/components/documents/DocumentSearchResults.tsx` | **Created** — Search results list with highlighted names, folder paths, empty state, read tracking |
-| `apps/admin/src/components/documents/DocumentSearchToolbar.tsx` | **Created** — Composes search bar + type filter, owns `/` keyboard shortcut |
-| `apps/admin/src/hooks/useDocumentSearch.ts` | **Created** — Custom hook: search state, debounce, URL sync |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Modified — Integrated search toolbar, conditional search/browse views, file type filtering, SharedDialogs extraction |
+| `apps/web/src/components/documents/DocumentSearchBar.tsx` | **Created** — Search input with icon, clear button, Escape handling |
+| `apps/web/src/components/documents/DocumentTypeFilter.tsx` | **Created** — File type filter select dropdown |
+| `apps/web/src/components/documents/DocumentSearchResults.tsx` | **Created** — Search results list with highlighted names, folder paths, empty state, read tracking |
+| `apps/web/src/components/documents/DocumentSearchToolbar.tsx` | **Created** — Composes search bar + type filter, owns `/` keyboard shortcut |
+| `apps/web/src/hooks/useDocumentSearch.ts` | **Created** — Custom hook: search state, debounce, URL sync |
+| `apps/web/src/app/(app)/documents/page.tsx` | Modified — Integrated search toolbar, conditional search/browse views, file type filtering, SharedDialogs extraction |
 | `packages/backend/convex/documents/__tests__/search.test.ts` | **Created** — 20 unit tests for searchDocuments and getFolderContents fileType |
 | `_bmad-output/implementation-artifacts/4-5-document-search-browse.md` | Modified — Task checkmarks, dev agent record |

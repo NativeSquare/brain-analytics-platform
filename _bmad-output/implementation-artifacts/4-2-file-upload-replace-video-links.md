@@ -125,13 +125,13 @@ so that the team always has access to current materials.
   - [x]8.1: Add `getDocument` query to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentId: v.id("documents") }`. Call `requireAuth(ctx)`. Fetch the document, validate `teamId` match. Fetch the owner user record to get `fullName`. Return the document fields plus `ownerName: owner.fullName ?? owner.email`.
 
 - [x] **Task 9: Build FileDropZone component** (AC: #3, #4)
-  - [x]9.1: Create `apps/admin/src/components/documents/FileDropZone.tsx`. A styled drag-and-drop zone using native HTML drag events (`onDragOver`, `onDrop`, `onDragEnter`, `onDragLeave`). Displays: a dashed border zone with an upload icon (`Upload` from `lucide-react`), text "Drag and drop a file here, or click to browse", and a hidden `<input type="file">` triggered on click.
+  - [x]9.1: Create `apps/web/src/components/documents/FileDropZone.tsx`. A styled drag-and-drop zone using native HTML drag events (`onDragOver`, `onDrop`, `onDragEnter`, `onDragLeave`). Displays: a dashed border zone with an upload icon (`Upload` from `lucide-react`), text "Drag and drop a file here, or click to browse", and a hidden `<input type="file">` triggered on click.
   - [x]9.2: Accept props: `onFileSelected: (file: File) => void`, `accept: string` (MIME type string for the input's `accept` attribute), `maxSize: number` (bytes — for client-side validation).
   - [x]9.3: Visual feedback: border color changes on drag-over (e.g., primary color highlight). Show selected file name and size after selection. Show inline error if file exceeds max size or has unsupported type.
   - [x]9.4: After a file is selected (via drop or click), validate size and type client-side. If valid, call `onFileSelected(file)`. If invalid, display the error inline and do not call the callback.
 
 - [x] **Task 10: Build UploadDialog component** (AC: #1, #2, #3, #4, #5, #8, #9, #10)
-  - [x]10.1: Create `apps/admin/src/components/documents/UploadDialog.tsx`. Uses shadcn `Dialog`. Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `folderId: Id<"folders">`, `folderName: string`.
+  - [x]10.1: Create `apps/web/src/components/documents/UploadDialog.tsx`. Uses shadcn `Dialog`. Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `folderId: Id<"folders">`, `folderName: string`.
   - [x]10.2: Inside the dialog, render a `Tabs` component (shadcn) with two tabs: "File Upload" and "Video Link".
   - [x]10.3: **File Upload tab**: Uses `react-hook-form` + `zodResolver(uploadFileSchema)`. Contains: `FileDropZone` component, `Input` for document name (placeholder: "Document name (optional — defaults to filename)"), read-only folder display showing `folderName`. Submit button: "Upload". Disable submit while uploading.
   - [x]10.4: **Video Link tab**: Uses `react-hook-form` + `zodResolver(addVideoLinkSchema)`. Contains: `Input` for video URL (placeholder: "https://..."), `Input` for document name (required, placeholder: "Video name"), read-only folder display. Submit button: "Add Link".
@@ -148,13 +148,13 @@ so that the team always has access to current materials.
     - On error: `toast.error(errorMessage)`
 
 - [x] **Task 11: Build DocumentCard component** (AC: #11, #18, #20)
-  - [x]11.1: Create `apps/admin/src/components/documents/DocumentCard.tsx`. Renders a list item (row) for a single document in the folder contents view. Displays: type icon (use `FileText` for PDF, `Image` for images, `FileSpreadsheet` for xlsx/csv, `Video` or `Play` for video links — from `lucide-react`), document name, file size (formatted via `formatFileSize`) or "Video Link" label, upload date (formatted with `date-fns` `format(date, "MMM d, yyyy")`).
+  - [x]11.1: Create `apps/web/src/components/documents/DocumentCard.tsx`. Renders a list item (row) for a single document in the folder contents view. Displays: type icon (use `FileText` for PDF, `Image` for images, `FileSpreadsheet` for xlsx/csv, `Video` or `Play` for video links — from `lucide-react`), document name, file size (formatted via `formatFileSize`) or "Video Link" label, upload date (formatted with `date-fns` `format(date, "MMM d, yyyy")`).
   - [x]11.2: The entire row is clickable — clicking opens the document detail view.
   - [x]11.3: For admin users, render a context menu (shadcn `DropdownMenu`) triggered by a three-dot icon button on the right side. Menu items: "View Details" (eye icon), "Replace File" (visible only if document has `storageId`, not for video links), "Delete" (trash icon).
   - [x]11.4: Accept props: `document: DocumentType` (the document object from the query), `isAdmin: boolean`, `onViewDetails: () => void`, `onReplace: () => void`, `onDelete: () => void`.
 
 - [x] **Task 12: Build DocumentDetail component** (AC: #12, #13, #15, #18, #20)
-  - [x]12.1: Create `apps/admin/src/components/documents/DocumentDetail.tsx`. Renders in a `Sheet` (shadcn side panel) or `Dialog`. Accepts props: `documentId: Id<"documents"> | null`, `open: boolean`, `onOpenChange: (open: boolean) => void`.
+  - [x]12.1: Create `apps/web/src/components/documents/DocumentDetail.tsx`. Renders in a `Sheet` (shadcn side panel) or `Dialog`. Accepts props: `documentId: Id<"documents"> | null`, `open: boolean`, `onOpenChange: (open: boolean) => void`.
   - [x]12.2: When `documentId` is set, call `useQuery(api.documents.queries.getDocument, { documentId })` to fetch details. Show skeleton while loading.
   - [x]12.3: Display: document name (large text), type badge (file type or "Video Link"), file size (formatted), original filename, uploaded by (owner name), upload date, last updated date.
   - [x]12.4: **For file documents**: render an "Open / Download" button. On click, call `useQuery(api.documents.queries.getDocumentUrl, { documentId })` to get the signed URL, then `window.open(url, "_blank")`.
@@ -163,7 +163,7 @@ so that the team always has access to current materials.
   - [x]12.7: **For admins — Delete button**: clicking opens the `DocumentDeleteDialog` (Task 14).
 
 - [x] **Task 13: Build ReplaceFileDialog component** (AC: #14, #15)
-  - [x]13.1: Create `apps/admin/src/components/documents/ReplaceFileDialog.tsx`. Uses shadcn `Dialog`. Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `documentId: Id<"documents">`, `documentName: string`.
+  - [x]13.1: Create `apps/web/src/components/documents/ReplaceFileDialog.tsx`. Uses shadcn `Dialog`. Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `documentId: Id<"documents">`, `documentName: string`.
   - [x]13.2: Contains a `FileDropZone` component with the same file type restrictions and 50MB limit as the upload dialog.
   - [x]13.3: On file selection and confirmation:
     - Set `isReplacing = true`, show loading state
@@ -175,12 +175,12 @@ so that the team always has access to current materials.
   - [x]13.4: Warning text in the dialog: "This will permanently replace the current file. The previous version cannot be recovered."
 
 - [x] **Task 14: Build DocumentDeleteDialog component** (AC: #16, #17)
-  - [x]14.1: Create `apps/admin/src/components/documents/DocumentDeleteDialog.tsx`. Uses shadcn `AlertDialog`. Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `documentId: Id<"documents">`, `documentName: string`, `onDeleted: () => void`.
+  - [x]14.1: Create `apps/web/src/components/documents/DocumentDeleteDialog.tsx`. Uses shadcn `AlertDialog`. Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `documentId: Id<"documents">`, `documentName: string`, `onDeleted: () => void`.
   - [x]14.2: Confirmation message: "Are you sure you want to delete '[documentName]'? This will permanently remove the file and cannot be undone."
   - [x]14.3: On confirm: call `useMutation(api.documents.mutations.deleteDocument)` with `{ documentId }`. Show `toast.success("Document deleted")`. Call `onDeleted()` callback (to close detail view if open). On `ConvexError`: `toast.error(error.data.message)`.
 
 - [x] **Task 15: Integrate upload, detail, and actions into Documents page** (AC: #1, #9, #11, #12, #18, #20)
-  - [x]15.1: Modify `apps/admin/src/app/(app)/documents/page.tsx` (created in Story 4.1).
+  - [x]15.1: Modify `apps/web/src/app/(app)/documents/page.tsx` (created in Story 4.1).
   - [x]15.2: Add state management for: `isUploadDialogOpen`, `selectedDocumentId` (for detail view), `isDetailOpen`, `isReplaceDialogOpen`, `isDeleteDialogOpen`, `documentToReplace`, `documentToDelete`.
   - [x]15.3: When `currentFolderId` is set and user is admin, render the "Upload" button (shadcn `Button` with `Upload` icon) in the page header area next to the "New Subfolder" button.
   - [x]15.4: In the folder contents view (Task 10.4 from Story 4.1), replace the simple document list items with `DocumentCard` components. Pass each document object, admin status, and action handlers.
@@ -190,7 +190,7 @@ so that the team always has access to current materials.
   - [x]15.8: Wire all action handlers: DocumentCard "View Details" -> open detail, "Replace File" -> open replace dialog, "Delete" -> open delete dialog. DocumentDetail "Replace File" -> open replace dialog, "Delete" -> open delete dialog.
 
 - [x] **Task 16: Implement document icon helper** (AC: #11)
-  - [x]16.1: Create `apps/admin/src/components/documents/documentIcons.ts` (or add to a utils file). Export a function `getDocumentIcon(document: { extension?: string, videoUrl?: string }): LucideIcon` that returns the appropriate icon component: `FileText` for pdf, `Image` for jpg/jpeg/png, `FileSpreadsheet` for xlsx/csv, `Video` for video links, `File` as default fallback.
+  - [x]16.1: Create `apps/web/src/components/documents/documentIcons.ts` (or add to a utils file). Export a function `getDocumentIcon(document: { extension?: string, videoUrl?: string }): LucideIcon` that returns the appropriate icon component: `FileText` for pdf, `Image` for jpg/jpeg/png, `FileSpreadsheet` for xlsx/csv, `Video` for video links, `File` as default fallback.
 
 - [x] **Task 17: Write backend unit tests** (AC: #6, #7, #13, #14, #16, #19)
   - [x]17.1: Add tests to `packages/backend/convex/documents/__tests__/mutations.test.ts` (file may exist from Story 4.1).
@@ -279,7 +279,7 @@ The original epic acceptance criteria (epics.md, Story 4.2) state:
 | `folders` table schema | Story 4.1 | `packages/backend/convex/table/folders.ts` must exist |
 | `documentReads` table schema (for cascade delete) | Story 4.1 | `packages/backend/convex/table/documentReads.ts` must exist |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export both |
-| Documents page (`/documents`) with folder browser | Story 4.1 | `apps/admin/src/app/(app)/documents/page.tsx` must exist with folder navigation |
+| Documents page (`/documents`) with folder browser | Story 4.1 | `apps/web/src/app/(app)/documents/page.tsx` must exist with folder navigation |
 | `generateUploadUrl` mutation | Template | `packages/backend/convex/storage.ts` must export `generateUploadUrl` |
 | shadcn/ui Dialog, Sheet, Tabs, AlertDialog, DropdownMenu, Button, Input | Story 1.2 | Components must be installed in admin app |
 
@@ -291,9 +291,9 @@ The original epic acceptance criteria (epics.md, Story 4.2) state:
 
 **`convex/storage.ts`:** Exists in the template with `generateUploadUrl` mutation and `getImageUrl`/`getImageUrls` queries. The `generateUploadUrl` will be reused directly for the document upload flow.
 
-**`apps/admin/src/components/documents/`:** Should exist from Story 4.1 with `FolderCard.tsx`, `FolderCreateDialog.tsx`, `FolderRenameDialog.tsx`, `FolderDeleteDialog.tsx`, `DocumentFolderBreadcrumb.tsx`. This story adds `UploadDialog.tsx`, `DocumentCard.tsx`, `DocumentDetail.tsx`, `ReplaceFileDialog.tsx`, `DocumentDeleteDialog.tsx`, `FileDropZone.tsx`, `documentIcons.ts`.
+**`apps/web/src/components/documents/`:** Should exist from Story 4.1 with `FolderCard.tsx`, `FolderCreateDialog.tsx`, `FolderRenameDialog.tsx`, `FolderDeleteDialog.tsx`, `DocumentFolderBreadcrumb.tsx`. This story adds `UploadDialog.tsx`, `DocumentCard.tsx`, `DocumentDetail.tsx`, `ReplaceFileDialog.tsx`, `DocumentDeleteDialog.tsx`, `FileDropZone.tsx`, `documentIcons.ts`.
 
-**`apps/admin/src/app/(app)/documents/page.tsx`:** Should exist from Story 4.1 with folder browsing UI. This story modifies it to add the Upload button, document list rendering with `DocumentCard`, and dialog integrations.
+**`apps/web/src/app/(app)/documents/page.tsx`:** Should exist from Story 4.1 with folder browsing UI. This story modifies it to add the Upload button, document list rendering with `DocumentCard`, and dialog integrations.
 
 ### Upload Flow Sequence
 
@@ -369,14 +369,14 @@ Documents Page (page.tsx)
 | `packages/shared/constants.js` (or `documents.ts`) | Modified/Created | Document constants: MIME types, extensions, max size, format utilities |
 | `packages/backend/convex/documents/mutations.ts` | Modified | Add `uploadDocument`, `addVideoLink`, `replaceFile`, `deleteDocument` mutations |
 | `packages/backend/convex/documents/queries.ts` | Modified | Add `getDocumentUrl`, `getDocument` queries |
-| `apps/admin/src/components/documents/FileDropZone.tsx` | Created | Drag-and-drop file input component |
-| `apps/admin/src/components/documents/UploadDialog.tsx` | Created | Upload dialog with File/Video tabs |
-| `apps/admin/src/components/documents/DocumentCard.tsx` | Created | Document list item with icon, metadata, admin actions |
-| `apps/admin/src/components/documents/DocumentDetail.tsx` | Created | Document detail side panel/dialog |
-| `apps/admin/src/components/documents/ReplaceFileDialog.tsx` | Created | Replace file confirmation + upload dialog |
-| `apps/admin/src/components/documents/DocumentDeleteDialog.tsx` | Created | Delete confirmation dialog |
-| `apps/admin/src/components/documents/documentIcons.ts` | Created | File type to icon mapping utility |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Modified | Add Upload button, DocumentCard rendering, dialog integrations |
+| `apps/web/src/components/documents/FileDropZone.tsx` | Created | Drag-and-drop file input component |
+| `apps/web/src/components/documents/UploadDialog.tsx` | Created | Upload dialog with File/Video tabs |
+| `apps/web/src/components/documents/DocumentCard.tsx` | Created | Document list item with icon, metadata, admin actions |
+| `apps/web/src/components/documents/DocumentDetail.tsx` | Created | Document detail side panel/dialog |
+| `apps/web/src/components/documents/ReplaceFileDialog.tsx` | Created | Replace file confirmation + upload dialog |
+| `apps/web/src/components/documents/DocumentDeleteDialog.tsx` | Created | Delete confirmation dialog |
+| `apps/web/src/components/documents/documentIcons.ts` | Created | File type to icon mapping utility |
+| `apps/web/src/app/(app)/documents/page.tsx` | Modified | Add Upload button, DocumentCard rendering, dialog integrations |
 | `packages/backend/convex/documents/__tests__/mutations.test.ts` | Modified | Add tests for uploadDocument, addVideoLink, replaceFile, deleteDocument |
 | `packages/backend/convex/documents/__tests__/queries.test.ts` | Modified | Add tests for getDocumentUrl, getDocument |
 
@@ -451,7 +451,7 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 ### Completion Notes List
 
 - **Task 1**: Extended `packages/shared/documents.ts` with `SUPPORTED_MIME_TYPES`, `EXTENSION_TO_MIME`, `MIME_TO_EXTENSION`, `formatFileSize()`, `extractExtension()`.
-- **Task 2**: Created `apps/admin/src/components/documents/schemas.ts` with `uploadFileSchema` (File + size + MIME validation) and `addVideoLinkSchema` (URL + name validation). Co-located in frontend since `z.instanceof(File)` is browser-only.
+- **Task 2**: Created `apps/web/src/components/documents/schemas.ts` with `uploadFileSchema` (File + size + MIME validation) and `addVideoLinkSchema` (URL + name validation). Co-located in frontend since `z.instanceof(File)` is browser-only.
 - **Tasks 3-6**: Added `uploadDocument`, `addVideoLink`, `replaceFile`, `deleteDocument` mutations to `mutations.ts`. All enforce `requireRole(ctx, ["admin"])`, validate folder/document team ownership, handle Convex storage operations.
 - **Tasks 7-8**: Added `getDocumentUrl` (returns signed URL or null for video links) and `getDocument` (returns full metadata + ownerName) queries to `queries.ts`. Both use `requireAuth` and validate team membership.
 - **Task 9**: Created `FileDropZone.tsx` with drag-and-drop, click-to-browse, client-side size/type validation, visual feedback on drag-over, and inline error display.
@@ -470,14 +470,14 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 - `packages/shared/documents.ts` — Modified: added SUPPORTED_MIME_TYPES, EXTENSION_TO_MIME, MIME_TO_EXTENSION, formatFileSize(), extractExtension()
 - `packages/backend/convex/documents/mutations.ts` — Modified: added uploadDocument, addVideoLink, replaceFile, deleteDocument mutations
 - `packages/backend/convex/documents/queries.ts` — Modified: added getDocumentUrl, getDocument queries
-- `apps/admin/src/components/documents/schemas.ts` — Created: Zod validation schemas for upload forms
-- `apps/admin/src/components/documents/FileDropZone.tsx` — Created: drag-and-drop file input component
-- `apps/admin/src/components/documents/UploadDialog.tsx` — Created: upload dialog with File/Video tabs
-- `apps/admin/src/components/documents/DocumentCard.tsx` — Created: document list item with icon, metadata, admin actions
-- `apps/admin/src/components/documents/DocumentDetail.tsx` — Created: document detail side panel
-- `apps/admin/src/components/documents/ReplaceFileDialog.tsx` — Created: replace file dialog
-- `apps/admin/src/components/documents/DocumentDeleteDialog.tsx` — Created: delete confirmation dialog
-- `apps/admin/src/components/documents/documentIcons.ts` — Created: file type to icon mapping utility
-- `apps/admin/src/app/(app)/documents/page.tsx` — Modified: integrated Upload button, DocumentCard, all dialogs
+- `apps/web/src/components/documents/schemas.ts` — Created: Zod validation schemas for upload forms
+- `apps/web/src/components/documents/FileDropZone.tsx` — Created: drag-and-drop file input component
+- `apps/web/src/components/documents/UploadDialog.tsx` — Created: upload dialog with File/Video tabs
+- `apps/web/src/components/documents/DocumentCard.tsx` — Created: document list item with icon, metadata, admin actions
+- `apps/web/src/components/documents/DocumentDetail.tsx` — Created: document detail side panel
+- `apps/web/src/components/documents/ReplaceFileDialog.tsx` — Created: replace file dialog
+- `apps/web/src/components/documents/DocumentDeleteDialog.tsx` — Created: delete confirmation dialog
+- `apps/web/src/components/documents/documentIcons.ts` — Created: file type to icon mapping utility
+- `apps/web/src/app/(app)/documents/page.tsx` — Modified: integrated Upload button, DocumentCard, all dialogs
 - `packages/backend/convex/documents/__tests__/mutations.test.ts` — Modified: added 15 tests for new mutations
 - `packages/backend/convex/documents/__tests__/queries.test.ts` — Modified: added 5 tests for new queries

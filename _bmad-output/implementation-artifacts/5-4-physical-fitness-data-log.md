@@ -62,7 +62,7 @@ so that the club can track player fitness trends.
   - [ ] 5.1: Create a shared Zod schema for the fitness entry form (co-located with the `FitnessLog` component or in a shared location). Schema: `date: z.number({ required_error: "Date is required" })`, `weightKg: z.number().min(30, "Weight must be at least 30 kg").max(200, "Weight cannot exceed 200 kg").optional().or(z.literal("")).transform(v => v === "" ? undefined : v)`, `bodyFatPercentage: z.number().min(1, "Body fat must be at least 1%").max(60, "Body fat cannot exceed 60%").optional().or(z.literal("")).transform(v => v === "" ? undefined : v)`, `notes: z.string().max(2000, "Notes cannot exceed 2000 characters").optional()`. Add a `.refine()` to validate that at least one of `weightKg`, `bodyFatPercentage`, or `notes` is provided (error message: "At least one data field is required").
 
 - [ ] **Task 6: Build FitnessLog component** (AC: #1, #3, #4, #12, #13)
-  - [ ] 6.1: Create `apps/admin/src/components/players/FitnessLog.tsx`. Accepts `playerId: Id<"players">` and `canEdit: boolean` props.
+  - [ ] 6.1: Create `apps/web/src/components/players/FitnessLog.tsx`. Accepts `playerId: Id<"players">` and `canEdit: boolean` props.
   - [ ] 6.2: Call `useQuery(api.players.queries.getPlayerFitness, { playerId })`. Handle loading state with `Skeleton` components. Handle empty state with a centered message ("No fitness data recorded yet") and an icon (e.g., activity/heart icon).
   - [ ] 6.3: Render the latest metrics summary section above the table: a row of stat cards showing: "Latest Weight: {value} kg" (with date), "Latest Body Fat: {value}%" (with date), "Entries: {count}", "Date Range: {earliest} — {latest}". If 2+ weight entries exist, show a trend indicator arrow (up if latest weight > previous weight, down if less, stable/dash if equal). Compute using `useMemo`.
   - [ ] 6.4: Render the data table with columns: Date (formatted via `date-fns` `format(new Date(date), "dd MMM yyyy")`), Weight (formatted as `{value} kg` with 1 decimal, or "—" if null), Body Fat (formatted as `{value}%` with 1 decimal, or "—" if null), Notes (truncated with ellipsis, full text in a `Tooltip`). If `canEdit` is true, add an Actions column.
@@ -70,7 +70,7 @@ so that the club can track player fitness trends.
   - [ ] 6.6: If `canEdit`, render an "Add Entry" button above the table (aligned right, next to or above the summary section).
 
 - [ ] **Task 7: Build FitnessFormDialog component** (AC: #5, #7, #8)
-  - [ ] 7.1: Create `apps/admin/src/components/players/FitnessFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingEntry?: PlayerFitness` (for edit mode), `open: boolean`, `onClose: () => void`.
+  - [ ] 7.1: Create `apps/web/src/components/players/FitnessFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingEntry?: PlayerFitness` (for edit mode), `open: boolean`, `onClose: () => void`.
   - [ ] 7.2: Use `react-hook-form` with `zodResolver` and the Zod schema from Task 5. In edit mode, pre-populate `defaultValues` from `existingEntry`. In create mode, default `date` to today's timestamp and leave optional fields empty.
   - [ ] 7.3: Render the form inside a shadcn `Dialog` (or `Sheet`) with title "Add Fitness Entry" (create mode) or "Edit Fitness Entry" (edit mode).
   - [ ] 7.4: Form fields: Date picker for `date` (using `react-day-picker` calendar inside a `Popover`, matching existing date picker patterns from Story 5.3), `Input` (type=number, step=0.1) for weight (kg), `Input` (type=number, step=0.1) for body fat (%), `Textarea` for notes/test results. Display inline validation errors below each field. Show helper text: "At least one measurement or note is required."
@@ -78,13 +78,13 @@ so that the club can track player fitness trends.
   - [ ] 7.6: "Cancel" button closes the dialog without saving.
 
 - [ ] **Task 8: Build DeleteFitnessDialog component** (AC: #10)
-  - [ ] 8.1: Create `apps/admin/src/components/players/DeleteFitnessDialog.tsx`. Accepts props: `fitnessId: Id<"playerFitness">`, `date: number`, `open: boolean`, `onClose: () => void`.
+  - [ ] 8.1: Create `apps/web/src/components/players/DeleteFitnessDialog.tsx`. Accepts props: `fitnessId: Id<"playerFitness">`, `date: number`, `open: boolean`, `onClose: () => void`.
   - [ ] 8.2: Render a shadcn `AlertDialog` with title "Delete Fitness Entry" and description "Delete fitness entry from {formatted date}? This action cannot be undone."
   - [ ] 8.3: "Delete" button (destructive variant) calls `deletePlayerFitness` mutation. On success: show toast ("Fitness entry deleted"), close the dialog. On error: catch `ConvexError` and display via toast.
   - [ ] 8.4: "Cancel" button closes the dialog.
 
 - [ ] **Task 9: Integrate FitnessLog into the Player Profile page** (AC: #1)
-  - [ ] 9.1: In `apps/admin/src/components/players/PlayerProfileTabs.tsx` (or wherever the "Fitness" tab content is rendered), replace the placeholder content with the `FitnessLog` component. Pass `playerId` from the profile context and `canEdit` derived from the current user's role (check `user.role === "admin" || user.role === "physio"` from the current user query or from `tabAccess` data).
+  - [ ] 9.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx` (or wherever the "Fitness" tab content is rendered), replace the placeholder content with the `FitnessLog` component. Pass `playerId` from the profile context and `canEdit` derived from the current user's role (check `user.role === "admin" || user.role === "physio"` from the current user query or from `tabAccess` data).
   - [ ] 9.2: Ensure the Fitness tab correctly receives the player ID from the parent page component and passes it down.
 
 - [ ] **Task 10: Write backend unit tests** (AC: #2, #6, #9, #11, #14)
@@ -183,7 +183,7 @@ The original epic acceptance criteria (epics.md, Story 5.4) state:
 | `players` table defined in schema | Story 5.1 | `packages/backend/convex/table/players.ts` must exist |
 | `getPlayerById` query | Story 5.1 | `packages/backend/convex/players/queries.ts` must export `getPlayerById` |
 | `getPlayerTabAccess` query | Story 5.1 | Must exist to determine if user is admin/physio for conditional UI rendering |
-| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/admin/src/app/(app)/players/[playerId]/page.tsx` must exist with tabbed layout |
+| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/web/src/app/(app)/players/[playerId]/page.tsx` must exist with tabbed layout |
 | `PlayerProfileTabs` component with "Fitness" tab placeholder | Story 5.1 | Must exist and render tab shell |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export these |
 | shadcn/ui components: Dialog, AlertDialog, Table, Button, Input, Textarea, Form, Popover, DropdownMenu, Badge, Card, Tooltip | Story 1.2 | All must be available in `components/ui/` |
@@ -199,13 +199,13 @@ The original epic acceptance criteria (epics.md, Story 5.4) state:
 
 **`convex/players/mutations.ts`:** Exists from Story 5.2 with player-related mutations and from Story 5.3 with `addPlayerStats`, `updatePlayerStats`, `deletePlayerStats`. **No fitness-related mutations** — must be added.
 
-**`apps/admin/src/components/players/FitnessLog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/FitnessLog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/FitnessFormDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/FitnessFormDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/DeleteFitnessDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/DeleteFitnessDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. The "Fitness" tab currently renders a placeholder ("Coming soon"). Must be updated to render `FitnessLog`.
+**`apps/web/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. The "Fitness" tab currently renders a placeholder ("Coming soon"). Must be updated to render `FitnessLog`.
 
 **Auth utilities:** `requireAuth(ctx)` and `requireRole(ctx, roles)` exist in `packages/backend/convex/lib/auth.ts` from Story 2.1. `requireRole(ctx, ["admin"])` is used in Stories 5.2/5.3. `requireRole(ctx, ["admin", "physio"])` is used for the first time in this story.
 
@@ -385,10 +385,10 @@ const latestMetrics = useMemo(() => {
 |------|-------------|-------------|
 | `packages/backend/convex/players/queries.ts` | Modified | Add `getPlayerFitness` query |
 | `packages/backend/convex/players/mutations.ts` | Modified | Add `addPlayerFitness`, `updatePlayerFitness`, `deletePlayerFitness` mutations |
-| `apps/admin/src/components/players/FitnessLog.tsx` | Created | Fitness data table + latest metrics summary section |
-| `apps/admin/src/components/players/FitnessFormDialog.tsx` | Created | Add/edit fitness entry form in a dialog |
-| `apps/admin/src/components/players/DeleteFitnessDialog.tsx` | Created | Confirmation dialog for fitness entry deletion |
-| `apps/admin/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Fitness" tab placeholder with `FitnessLog` component |
+| `apps/web/src/components/players/FitnessLog.tsx` | Created | Fitness data table + latest metrics summary section |
+| `apps/web/src/components/players/FitnessFormDialog.tsx` | Created | Add/edit fitness entry form in a dialog |
+| `apps/web/src/components/players/DeleteFitnessDialog.tsx` | Created | Confirmation dialog for fitness entry deletion |
+| `apps/web/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Fitness" tab placeholder with `FitnessLog` component |
 | `packages/backend/convex/players/__tests__/fitness.test.ts` | Created | Unit tests for fitness queries and mutations |
 
 ### What This Story Does NOT Include

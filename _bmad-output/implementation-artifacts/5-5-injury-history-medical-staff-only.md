@@ -70,14 +70,14 @@ so that the medical team has a complete record of each player's injury history a
   - [ ] 6.2: Create an extended schema for edit mode that adds: `status: z.enum(["current", "recovered"])`, `clearanceDate: z.number().optional()`. Add a `.refine()` that warns (not blocks) if status is "recovered" but no clearance date is provided.
 
 - [ ] **Task 7: Build InjuryLog component** (AC: #1, #3, #4, #13, #16)
-  - [ ] 7.1: Create `apps/admin/src/components/players/InjuryLog.tsx`. Accepts `playerId: Id<"players">` prop. (No `canEdit` prop needed — only medical/admin users can even see this component, so all viewers can edit.)
+  - [ ] 7.1: Create `apps/web/src/components/players/InjuryLog.tsx`. Accepts `playerId: Id<"players">` prop. (No `canEdit` prop needed — only medical/admin users can even see this component, so all viewers can edit.)
   - [ ] 7.2: Call `useQuery(api.players.queries.getPlayerInjuries, { playerId })`. Handle loading state with `Skeleton` components. Handle empty state with a centered message ("No injury records") and a medical icon.
   - [ ] 7.3: Render the current injury summary section above the table: stat cards showing "Current Injuries: {count}" (with red accent if > 0), "Recovered: {count}", "Total Records: {count}". Below the stat cards, if any current injuries exist, list them as compact items: "{injuryType} — {date}". Compute using `useMemo`.
   - [ ] 7.4: Render the data table with columns: Date (formatted via `date-fns` `format(new Date(date), "dd MMM yyyy")`), Injury Type, Severity (badge — `minor` = yellow variant, `moderate` = orange variant, `severe` = red/destructive variant), Status (badge — `current` = red/destructive, `recovered` = green/success), Est. Recovery (string or "—"), Clearance Date (formatted date or "—"), Actions column with a `DropdownMenu` containing "Edit" and "Delete" options.
   - [ ] 7.5: Render a "Log Injury" button above the table (aligned right, next to or above the summary section).
 
 - [ ] **Task 8: Build InjuryFormDialog component** (AC: #5, #7, #8)
-  - [ ] 8.1: Create `apps/admin/src/components/players/InjuryFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingEntry?: PlayerInjury` (for edit mode), `open: boolean`, `onClose: () => void`.
+  - [ ] 8.1: Create `apps/web/src/components/players/InjuryFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingEntry?: PlayerInjury` (for edit mode), `open: boolean`, `onClose: () => void`.
   - [ ] 8.2: Use `react-hook-form` with `zodResolver` and the appropriate Zod schema (create schema for new entries, edit schema for existing). In edit mode, pre-populate `defaultValues` from `existingEntry`. In create mode, default `date` to today's timestamp.
   - [ ] 8.3: Render the form inside a shadcn `Dialog` (or `Sheet`) with title "Log Injury" (create mode) or "Update Injury" (edit mode).
   - [ ] 8.4: Create mode form fields: Date picker for `date` (using `react-day-picker` calendar inside a `Popover`, matching date picker patterns from Story 5.3/5.4), `Input` for injury type (text, required), `Select` for severity (options: "Minor", "Moderate", "Severe" — values: "minor", "moderate", "severe"), `Input` for estimated recovery (optional, text), `Textarea` for notes (optional). Display inline validation errors.
@@ -86,19 +86,19 @@ so that the medical team has a complete record of each player's injury history a
   - [ ] 8.7: "Cancel" button closes the dialog without saving.
 
 - [ ] **Task 9: Build DeleteInjuryDialog component** (AC: #10)
-  - [ ] 9.1: Create `apps/admin/src/components/players/DeleteInjuryDialog.tsx`. Accepts props: `injuryId: Id<"playerInjuries">`, `date: number`, `open: boolean`, `onClose: () => void`.
+  - [ ] 9.1: Create `apps/web/src/components/players/DeleteInjuryDialog.tsx`. Accepts props: `injuryId: Id<"playerInjuries">`, `date: number`, `open: boolean`, `onClose: () => void`.
   - [ ] 9.2: Render a shadcn `AlertDialog` with title "Delete Injury Record" and description "Delete injury record from {formatted date}? This action cannot be undone."
   - [ ] 9.3: "Delete" button (destructive variant) calls `deleteInjury` mutation. On success: show toast ("Injury record deleted"), close the dialog. On error: catch `ConvexError` and display via toast.
   - [ ] 9.4: "Cancel" button closes the dialog.
 
 - [ ] **Task 10: Integrate InjuryLog into the Player Profile page** (AC: #1)
-  - [ ] 10.1: In `apps/admin/src/components/players/PlayerProfileTabs.tsx`, replace the "Injuries" tab placeholder content with the `InjuryLog` component. Pass `playerId` from the profile context. The Injuries tab is already conditionally rendered based on `tabAccess.showInjuries` (from Story 5.1).
+  - [ ] 10.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, replace the "Injuries" tab placeholder content with the `InjuryLog` component. Pass `playerId` from the profile context. The Injuries tab is already conditionally rendered based on `tabAccess.showInjuries` (from Story 5.1).
   - [ ] 10.2: Ensure the Injuries tab correctly receives the player ID from the parent page component and passes it down.
 
 - [ ] **Task 11: Add injury status indicator to PlayerTable and PlayerProfileHeader** (AC: #12)
-  - [ ] 11.1: In `apps/admin/src/components/players/PlayerTable.tsx`, for each player row call `useQuery(api.players.queries.getPlayerInjuryStatus, { playerId: player._id })`. If `hasCurrentInjury` is `true`, render a small injury indicator icon next to the player name or status badge. Use a Lucide icon such as `HeartPulse`, `Cross`, or `Activity` in red/destructive color. Wrap in a `Tooltip` with text "Currently injured".
+  - [ ] 11.1: In `apps/web/src/components/players/PlayerTable.tsx`, for each player row call `useQuery(api.players.queries.getPlayerInjuryStatus, { playerId: player._id })`. If `hasCurrentInjury` is `true`, render a small injury indicator icon next to the player name or status badge. Use a Lucide icon such as `HeartPulse`, `Cross`, or `Activity` in red/destructive color. Wrap in a `Tooltip` with text "Currently injured".
   - [ ] 11.2: **Performance consideration:** If the player list can have many rows and per-row queries are a concern, consider an alternative: create a batch query `getPlayersInjuryStatuses` that accepts `{ playerIds: Id<"players">[] }` and returns a map of `{ [playerId]: boolean }`. Call it once from the PlayerTable with all visible player IDs. This avoids N+1 queries. Choose whichever approach fits the current codebase pattern.
-  - [ ] 11.3: In `apps/admin/src/components/players/PlayerProfileHeader.tsx`, also call `getPlayerInjuryStatus` and display the injury indicator icon next to the player name if currently injured. This is visible to all roles as a non-detailed status signal.
+  - [ ] 11.3: In `apps/web/src/components/players/PlayerProfileHeader.tsx`, also call `getPlayerInjuryStatus` and display the injury indicator icon next to the player name if currently injured. This is visible to all roles as a non-detailed status signal.
 
 - [ ] **Task 12: Write backend unit tests** (AC: #2, #6, #9, #11, #12, #14, #15)
   - [ ] 12.1: Create `packages/backend/convex/players/__tests__/injuries.test.ts` using `@convex-dev/test` + `vitest`.
@@ -215,7 +215,7 @@ The original epic acceptance criteria (epics.md, Story 5.5) state:
 | `players` table defined in schema | Story 5.1 | `packages/backend/convex/table/players.ts` must exist |
 | `getPlayerById` query | Story 5.1 | `packages/backend/convex/players/queries.ts` must export `getPlayerById` |
 | `getPlayerTabAccess` query | Story 5.1 | Must exist and return `showInjuries: true` for admin/physio roles |
-| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/admin/src/app/(app)/players/[playerId]/page.tsx` must exist with tabbed layout |
+| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/web/src/app/(app)/players/[playerId]/page.tsx` must exist with tabbed layout |
 | `PlayerProfileTabs` with "Injuries" tab placeholder | Story 5.1 | Must exist, Injuries tab conditionally visible for admin/physio |
 | `PlayerTable` component | Story 5.1 | Must exist at `components/players/PlayerTable.tsx` |
 | `PlayerProfileHeader` component | Story 5.1 | Must exist at `components/players/PlayerProfileHeader.tsx` |
@@ -232,17 +232,17 @@ The original epic acceptance criteria (epics.md, Story 5.5) state:
 
 **`convex/players/mutations.ts`:** Exists from Story 5.2+ with player-related mutations and fitness/stats CRUD mutations. **No injury-related mutations** — must be added.
 
-**`apps/admin/src/components/players/InjuryLog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/InjuryLog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/InjuryFormDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/InjuryFormDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/DeleteInjuryDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/DeleteInjuryDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. The "Injuries" tab currently renders a placeholder. Must be updated to render `InjuryLog`. The tab is already conditionally visible based on `tabAccess.showInjuries`.
+**`apps/web/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. The "Injuries" tab currently renders a placeholder. Must be updated to render `InjuryLog`. The tab is already conditionally visible based on `tabAccess.showInjuries`.
 
-**`apps/admin/src/components/players/PlayerTable.tsx`:** Exists from Story 5.1. Currently shows player rows without injury indicators. Must be updated to show injury status indicator.
+**`apps/web/src/components/players/PlayerTable.tsx`:** Exists from Story 5.1. Currently shows player rows without injury indicators. Must be updated to show injury status indicator.
 
-**`apps/admin/src/components/players/PlayerProfileHeader.tsx`:** Exists from Story 5.1. Must be updated to show injury indicator icon.
+**`apps/web/src/components/players/PlayerProfileHeader.tsx`:** Exists from Story 5.1. Must be updated to show injury indicator icon.
 
 **Auth utilities:** `requireAuth(ctx)` and `requireRole(ctx, roles)` exist in `packages/backend/convex/lib/auth.ts`. Multi-role access with `["admin", "physio"]` was first used in Story 5.4 and should be verified working.
 
@@ -388,12 +388,12 @@ const injuryStatus = useQuery(api.players.queries.getPlayerInjuryStatus, { playe
 |------|-------------|-------------|
 | `packages/backend/convex/players/queries.ts` | Modified | Add `getPlayerInjuries` and `getPlayerInjuryStatus` queries |
 | `packages/backend/convex/players/mutations.ts` | Modified | Add `logInjury`, `updateInjury`, `deleteInjury` mutations |
-| `apps/admin/src/components/players/InjuryLog.tsx` | Created | Injury data table + current injury summary section |
-| `apps/admin/src/components/players/InjuryFormDialog.tsx` | Created | Log/edit injury form in a dialog |
-| `apps/admin/src/components/players/DeleteInjuryDialog.tsx` | Created | Confirmation dialog for injury record deletion |
-| `apps/admin/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Injuries" tab placeholder with `InjuryLog` component |
-| `apps/admin/src/components/players/PlayerTable.tsx` | Modified | Add injury status indicator icon per player row |
-| `apps/admin/src/components/players/PlayerProfileHeader.tsx` | Modified | Add injury status indicator icon |
+| `apps/web/src/components/players/InjuryLog.tsx` | Created | Injury data table + current injury summary section |
+| `apps/web/src/components/players/InjuryFormDialog.tsx` | Created | Log/edit injury form in a dialog |
+| `apps/web/src/components/players/DeleteInjuryDialog.tsx` | Created | Confirmation dialog for injury record deletion |
+| `apps/web/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Injuries" tab placeholder with `InjuryLog` component |
+| `apps/web/src/components/players/PlayerTable.tsx` | Modified | Add injury status indicator icon per player row |
+| `apps/web/src/components/players/PlayerProfileHeader.tsx` | Modified | Add injury status indicator icon |
 | `packages/backend/convex/players/__tests__/injuries.test.ts` | Created | Unit tests for injury queries and mutations |
 
 ### What This Story Does NOT Include
@@ -443,7 +443,7 @@ const injuryStatus = useQuery(api.players.queries.getPlayerInjuryStatus, { playe
 ### Project Structure Notes
 
 - All files align with the unified project structure from architecture.md
-- New components are placed in `apps/admin/src/components/players/` (feature-grouped)
+- New components are placed in `apps/web/src/components/players/` (feature-grouped)
 - New Convex functions are placed in `packages/backend/convex/players/` (module-grouped)
 - Tests are co-located in `packages/backend/convex/players/__tests__/`
 - No new directories are created — all files fit into existing structure

@@ -29,7 +29,7 @@ so that I can move between Calendar, Documents, Players, Dashboards, and Setting
 
 7. **Breadcrumb navigation updates dynamically** — The `SiteHeader` breadcrumb component generates breadcrumbs based on the current route for all new pages: Calendar, Documents, Players, Dashboards, Settings, plus nested sub-pages.
 
-8. **Placeholder pages exist for all nav targets** — Each navigation destination has a placeholder `page.tsx` inside `apps/admin/src/app/(app)/` that renders a heading and "Coming Soon" message. Pages: `calendar/page.tsx`, `documents/page.tsx`, `players/page.tsx`, `dashboards/page.tsx`, `settings/page.tsx`.
+8. **Placeholder pages exist for all nav targets** — Each navigation destination has a placeholder `page.tsx` inside `apps/web/src/app/(app)/` that renders a heading and "Coming Soon" message. Pages: `calendar/page.tsx`, `documents/page.tsx`, `players/page.tsx`, `dashboards/page.tsx`, `settings/page.tsx`.
 
 9. **No regressions** — `pnpm typecheck` and `pnpm lint` pass with zero errors. The dev server starts without errors. Existing auth flow, protected routes, and theme toggle continue to work.
 
@@ -47,11 +47,11 @@ so that I can move between Calendar, Documents, Players, Dashboards, and Setting
   - [x] 2.3: ThemeToggle not created in Story 1.2 — skipped. Space reserved in right-side div for future addition
 
 - [x] **Task 3: Create placeholder pages** (AC: #3, #8)
-  - [x] 3.1: Created `apps/admin/src/app/(app)/calendar/page.tsx`
-  - [x] 3.2: Created `apps/admin/src/app/(app)/documents/page.tsx`
-  - [x] 3.3: Created `apps/admin/src/app/(app)/players/page.tsx`
-  - [x] 3.4: Created `apps/admin/src/app/(app)/dashboards/page.tsx`
-  - [x] 3.5: Created `apps/admin/src/app/(app)/settings/page.tsx`
+  - [x] 3.1: Created `apps/web/src/app/(app)/calendar/page.tsx`
+  - [x] 3.2: Created `apps/web/src/app/(app)/documents/page.tsx`
+  - [x] 3.3: Created `apps/web/src/app/(app)/players/page.tsx`
+  - [x] 3.4: Created `apps/web/src/app/(app)/dashboards/page.tsx`
+  - [x] 3.5: Created `apps/web/src/app/(app)/settings/page.tsx`
   - [x] 3.6: All pages are React Server Components (no `"use client"`), use consistent pattern with flex container, h1, and muted placeholder text
 
 - [x] **Task 4: Update the separate AppSidebar component (if still used)** (AC: #1)
@@ -81,8 +81,8 @@ This story builds the **application shell** — the persistent layout wrapper th
 
 **Key architectural decisions from architecture.md:**
 
-- **Page structure:** All protected pages live under `apps/admin/src/app/(app)/` — the `(app)` route group applies the `ApplicationShell` layout via its `layout.tsx`
-- **Component organization:** Sidebar and header are in `apps/admin/src/components/` (app-level components, not feature-specific)
+- **Page structure:** All protected pages live under `apps/web/src/app/(app)/` — the `(app)` route group applies the `ApplicationShell` layout via its `layout.tsx`
+- **Component organization:** Sidebar and header are in `apps/web/src/components/` (app-level components, not feature-specific)
 - **Navigation items per FR37:** Calendar, Documents, Players, Dashboards, Settings
 - **Sidebar UI:** Uses shadcn/ui `Sidebar` component system (already installed, 441+ lines in `ui/sidebar.tsx`)
 - **Icon library:** `@tabler/icons-react` (already installed and used in existing sidebar)
@@ -140,7 +140,7 @@ Footer: NavUser (avatar + name + email + logout)
 Each placeholder page follows this minimal pattern:
 
 ```tsx
-// apps/admin/src/app/(app)/calendar/page.tsx
+// apps/web/src/app/(app)/calendar/page.tsx
 export default function CalendarPage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-6">
@@ -257,14 +257,14 @@ Note: `IconUsers` is already used for "Team" and `IconUsersGroup` for "Users". F
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `apps/admin/src/components/application-shell2.tsx` | Modified | Update navGroups with platform nav items, update sidebar header branding, add new icon imports |
-| `apps/admin/src/components/site-header.tsx` | Modified | Add notification bell placeholder, expand breadcrumb route handling, add right-side action area |
-| `apps/admin/src/app/(app)/calendar/page.tsx` | Created | Placeholder page for Calendar |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Created | Placeholder page for Documents |
-| `apps/admin/src/app/(app)/players/page.tsx` | Created | Placeholder page for Players |
-| `apps/admin/src/app/(app)/dashboards/page.tsx` | Created | Placeholder page for Dashboards |
-| `apps/admin/src/app/(app)/settings/page.tsx` | Created | Placeholder page for Settings |
-| `apps/admin/src/components/app-sidebar.tsx` | Modified/Removed | Resolve duplicate sidebar — update for consistency or remove if unused |
+| `apps/web/src/components/application-shell2.tsx` | Modified | Update navGroups with platform nav items, update sidebar header branding, add new icon imports |
+| `apps/web/src/components/site-header.tsx` | Modified | Add notification bell placeholder, expand breadcrumb route handling, add right-side action area |
+| `apps/web/src/app/(app)/calendar/page.tsx` | Created | Placeholder page for Calendar |
+| `apps/web/src/app/(app)/documents/page.tsx` | Created | Placeholder page for Documents |
+| `apps/web/src/app/(app)/players/page.tsx` | Created | Placeholder page for Players |
+| `apps/web/src/app/(app)/dashboards/page.tsx` | Created | Placeholder page for Dashboards |
+| `apps/web/src/app/(app)/settings/page.tsx` | Created | Placeholder page for Settings |
+| `apps/web/src/components/app-sidebar.tsx` | Modified/Removed | Resolve duplicate sidebar — update for consistency or remove if unused |
 
 ## Dev Agent Record
 
@@ -289,11 +289,11 @@ Claude Opus 4.6 (via Claude Code SDK)
 
 ### File List
 
-- `apps/admin/src/components/application-shell2.tsx` — Modified (navGroups, icons, branding)
-- `apps/admin/src/components/site-header.tsx` — Modified (breadcrumbs, notification bell)
-- `apps/admin/src/app/(app)/calendar/page.tsx` — Created
-- `apps/admin/src/app/(app)/documents/page.tsx` — Created
-- `apps/admin/src/app/(app)/players/page.tsx` — Created
-- `apps/admin/src/app/(app)/dashboards/page.tsx` — Created
-- `apps/admin/src/app/(app)/settings/page.tsx` — Created
-- `apps/admin/src/components/app-sidebar.tsx` — Removed (unused duplicate)
+- `apps/web/src/components/application-shell2.tsx` — Modified (navGroups, icons, branding)
+- `apps/web/src/components/site-header.tsx` — Modified (breadcrumbs, notification bell)
+- `apps/web/src/app/(app)/calendar/page.tsx` — Created
+- `apps/web/src/app/(app)/documents/page.tsx` — Created
+- `apps/web/src/app/(app)/players/page.tsx` — Created
+- `apps/web/src/app/(app)/dashboards/page.tsx` — Created
+- `apps/web/src/app/(app)/settings/page.tsx` — Created
+- `apps/web/src/components/app-sidebar.tsx` — Removed (unused duplicate)

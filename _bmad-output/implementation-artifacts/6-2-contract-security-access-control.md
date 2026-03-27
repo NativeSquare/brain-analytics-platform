@@ -119,14 +119,14 @@ so that sensitive financial information is protected at every layer of the syste
 ### Frontend Tasks
 
 - [ ] **Task 5: Implement Contract Tab Conditional Rendering** (AC: 1, 3, 4, 5, 7)
-  - [ ] 5.1: In `apps/admin/src/app/(app)/players/[playerId]/page.tsx`:
+  - [ ] 5.1: In `apps/web/src/app/(app)/players/[playerId]/page.tsx`:
     - Subscribe to `api.contracts.queries.canViewContract` via `useQuery` passing the current `playerId`
     - Only include the "Contract" tab in the tabs array when `canViewContract` returns `true`
     - Do NOT render a hidden/disabled tab — completely omit it from the DOM
   - [ ] 5.2: If `canViewContract` is still loading (`undefined`), do not flash the tab — wait for resolution before rendering tabs
 
 - [ ] **Task 6: Update ContractCard for Read-Only Mode** (AC: 4)
-  - [ ] 6.1: In `apps/admin/src/components/players/ContractCard.tsx`:
+  - [ ] 6.1: In `apps/web/src/components/players/ContractCard.tsx`:
     - Read the `readOnly` flag from the `getContract` query response
     - When `readOnly === true`:
       - Hide the "Upload Contract" button
@@ -229,8 +229,8 @@ async function isPlayerSelf(ctx, playerId: Id<"players">): Promise<boolean> {
 - Backend queries: `packages/backend/convex/contracts/queries.ts` — modify existing file from Story 6.1
 - Backend mutations: `packages/backend/convex/contracts/mutations.ts` — verify existing file from Story 6.1
 - Backend tests: `packages/backend/convex/contracts/__tests__/security.test.ts` — new file
-- Frontend player profile: `apps/admin/src/app/(app)/players/[playerId]/page.tsx` — modify tab logic
-- Frontend ContractCard: `apps/admin/src/components/players/ContractCard.tsx` — add read-only mode
+- Frontend player profile: `apps/web/src/app/(app)/players/[playerId]/page.tsx` — modify tab logic
+- Frontend ContractCard: `apps/web/src/components/players/ContractCard.tsx` — add read-only mode
 - No new routes needed — all changes are within existing player profile page
 
 ### Dependencies

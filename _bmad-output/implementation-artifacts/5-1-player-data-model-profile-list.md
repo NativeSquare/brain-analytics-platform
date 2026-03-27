@@ -63,33 +63,33 @@ so that I can quickly find and manage any player.
   - [x] 3.4: Implement `getPlayerTabAccess` query: accepts `{ playerId: v.id("players") }`, calls `requireAuth(ctx)`. Returns `{ showInjuries: boolean, showContract: boolean, isSelf: boolean }` based on the current user's role: `showInjuries` is `true` for `admin` or `physio` roles, `showContract` is `true` for `admin` role or if the player's `userId` matches the current user's ID, `isSelf` is `true` if the player's `userId` matches the current user's ID. This query controls conditional tab visibility in the profile UI.
 
 - [x] **Task 4: Build PlayerStatusBadge component** (AC: #7, #11)
-  - [x] 4.1: Create `apps/admin/src/components/shared/PlayerStatusBadge.tsx` (or extend existing `StatusBadge.tsx` from Story 1.4 if it exists). Accepts a `status` prop of type `"active" | "onLoan" | "leftClub"`. Renders a shadcn `Badge` with variant styling: `active` = green border/background/text with green dot, `onLoan` = amber/yellow border/background/text with yellow dot, `leftClub` = gray border/background/text with gray dot. Displays the human-readable label from `PLAYER_STATUS_LABELS`.
+  - [x] 4.1: Create `apps/web/src/components/shared/PlayerStatusBadge.tsx` (or extend existing `StatusBadge.tsx` from Story 1.4 if it exists). Accepts a `status` prop of type `"active" | "onLoan" | "leftClub"`. Renders a shadcn `Badge` with variant styling: `active` = green border/background/text with green dot, `onLoan` = amber/yellow border/background/text with yellow dot, `leftClub` = gray border/background/text with gray dot. Displays the human-readable label from `PLAYER_STATUS_LABELS`.
 
 - [x] **Task 5: Build PlayerTable component** (AC: #7, #10)
-  - [x] 5.1: Create `apps/admin/src/components/players/PlayerTable.tsx`. Accepts `players` array prop and an `onPlayerClick` callback.
+  - [x] 5.1: Create `apps/web/src/components/players/PlayerTable.tsx`. Accepts `players` array prop and an `onPlayerClick` callback.
   - [x] 5.2: Render a table (using shadcn `Table` components or TanStack React Table) with columns: Photo (avatar), Name (`firstName lastName`), Position, Squad Number (#), Status (using `PlayerStatusBadge`), Nationality.
   - [x] 5.3: The Photo column renders a shadcn `Avatar` with the player's photo URL as `AvatarImage` source. If no photo, render `AvatarFallback` with the player's initials (first letter of firstName + first letter of lastName).
   - [x] 5.4: Each row is clickable — triggers `onPlayerClick(player._id)`.
   - [x] 5.5: Style rows with hover state and cursor pointer. Ensure the table is responsive with horizontal scroll on narrow viewports.
 
 - [x] **Task 6: Build PlayerListFilters component** (AC: #8, #9)
-  - [x] 6.1: Create `apps/admin/src/components/players/PlayerListFilters.tsx`. Accepts `currentStatus`, `onStatusChange`, `searchValue`, and `onSearchChange` props.
+  - [x] 6.1: Create `apps/web/src/components/players/PlayerListFilters.tsx`. Accepts `currentStatus`, `onStatusChange`, `searchValue`, and `onSearchChange` props.
   - [x] 6.2: Render a status filter using shadcn `Tabs` or segmented button group with options: "All", "Active", "On Loan", "Left the Club". The "All" option passes `undefined` as status value. Highlight the current selection.
   - [x] 6.3: Render a search input (shadcn `Input` with a search icon from `lucide-react` or `@tabler/icons-react`). Debounce the `onSearchChange` callback by 300ms using a `useEffect` + `setTimeout` pattern or a `useDebouncedValue` hook.
 
 - [x] **Task 7: Build PlayerProfileHeader component** (AC: #11)
-  - [x] 7.1: Create `apps/admin/src/components/players/PlayerProfileHeader.tsx`. Accepts the full player object.
+  - [x] 7.1: Create `apps/web/src/components/players/PlayerProfileHeader.tsx`. Accepts the full player object.
   - [x] 7.2: Render: large `Avatar` (96px) with player photo or initials fallback, player full name (`firstName lastName`) as heading, position text, squad number badge (e.g., "#10"), `PlayerStatusBadge`, and nationality flag/text if available.
   - [x] 7.3: Style as a horizontal header card. Include a "Back to Players" link using `router.back()` or a link to `/players`.
 
 - [x] **Task 8: Build PlayerProfileTabs component** (AC: #11)
-  - [x] 8.1: Create `apps/admin/src/components/players/PlayerProfileTabs.tsx`. Accepts `tabAccess` prop (from `getPlayerTabAccess` query result) and `player` object.
+  - [x] 8.1: Create `apps/web/src/components/players/PlayerProfileTabs.tsx`. Accepts `tabAccess` prop (from `getPlayerTabAccess` query result) and `player` object.
   - [x] 8.2: Render shadcn `Tabs` component with the following tabs: "Bio" (always visible), "Performance" (always visible), "Fitness" (always visible), "Injuries" (visible only when `tabAccess.showInjuries === true`), "Contract" (visible only when `tabAccess.showContract === true`), "Integrations" (always visible).
   - [x] 8.3: "Bio" tab content: Display player bio fields in a read-only grid layout — Date of Birth (formatted with `date-fns`), Nationality, Position, Squad Number, Preferred Foot, Height (cm), Weight (kg), Phone, Personal Email, Address, Emergency Contact (Name, Relationship, Phone). Use a two-column grid with label + value pairs. Show "—" for empty optional fields.
   - [x] 8.4: All other tabs ("Performance", "Fitness", "Injuries", "Contract", "Integrations") render a placeholder component with an icon, the tab name, and text "Coming in a future update" or "Coming soon". These will be replaced by real content in Stories 5.3–5.7 and 6.1.
 
 - [x] **Task 9: Build the Players list page** (AC: #7, #8, #9, #10, #12, #13)
-  - [x] 9.1: Create `apps/admin/src/app/(app)/players/page.tsx`.
+  - [x] 9.1: Create `apps/web/src/app/(app)/players/page.tsx`.
   - [x] 9.2: Read URL search params for `status` and `search` filters. Use `useSearchParams()` and `useRouter()` from `next/navigation`.
   - [x] 9.3: Call `useQuery(api.players.queries.getPlayers, { status, search })` passing filter values. Handle `undefined` result (loading) with skeleton placeholders.
   - [x] 9.4: Render the page layout: page title "Players" with an optional "Add Player" button placeholder (visible to admin only — actual creation form is Story 5.2, button can be disabled or show toast "Coming soon"). Below, render `PlayerListFilters` wired to URL search params. Below filters, render `PlayerTable` with the query results.
@@ -98,17 +98,17 @@ so that I can quickly find and manage any player.
   - [x] 9.7: Show empty state when `players` array is empty: centered icon, "No players yet" message, and "Add your first player" CTA button for admins.
 
 - [x] **Task 10: Build the Player Profile page** (AC: #11, #12, #15)
-  - [x] 10.1: Create `apps/admin/src/app/(app)/players/[playerId]/page.tsx`.
+  - [x] 10.1: Create `apps/web/src/app/(app)/players/[playerId]/page.tsx`.
   - [x] 10.2: Extract `playerId` from route params. Call `useQuery(api.players.queries.getPlayerById, { playerId })` and `useQuery(api.players.queries.getPlayerTabAccess, { playerId })`.
   - [x] 10.3: Handle loading state: show skeleton while queries return `undefined`. Handle not-found state: if `getPlayerById` returns `null` after loading, show "Player not found" with a link back to `/players`.
   - [x] 10.4: Render `PlayerProfileHeader` with the player data. Below, render `PlayerProfileTabs` with the player data and tab access.
 
 - [x] **Task 11: Add Players to sidebar navigation** (AC: #7)
-  - [x] 11.1: In `apps/admin/src/components/application-shell2.tsx`, add a new `NavItem` to the `navGroups` array: `{ label: "Players", icon: IconShirtSport, href: "/players" }`. Import `IconShirtSport` (or `IconUsers` / `IconBall` if preferred) from `@tabler/icons-react`.
+  - [x] 11.1: In `apps/web/src/components/application-shell2.tsx`, add a new `NavItem` to the `navGroups` array: `{ label: "Players", icon: IconShirtSport, href: "/players" }`. Import `IconShirtSport` (or `IconUsers` / `IconBall` if preferred) from `@tabler/icons-react`.
   - [x] 11.2: Verify the sidebar link renders and navigates correctly.
 
 - [x] **Task 12: Update site header breadcrumbs** (AC: #7, #11)
-  - [x] 12.1: In `apps/admin/src/components/site-header.tsx`, update the `getBreadcrumbs()` function to handle `/players` path segments. Add cases: `/players` renders "Players" breadcrumb linking to `/players`. `/players/{playerId}` renders "Players > Player Profile" (or the player's name if available).
+  - [x] 12.1: In `apps/web/src/components/site-header.tsx`, update the `getBreadcrumbs()` function to handle `/players` path segments. Add cases: `/players` renders "Players" breadcrumb linking to `/players`. `/players/{playerId}` renders "Players > Player Profile" (or the player's name if available).
 
 - [x] **Task 13: Write backend unit tests** (AC: #5, #6, #14)
   - [x] 13.1: Create `packages/backend/convex/players/__tests__/queries.test.ts` using `@convex-dev/test` + `vitest`.
@@ -195,12 +195,12 @@ The original epic acceptance criteria (epics.md, Story 5.1) reference a single p
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireAuth(ctx)` returning `{ user, teamId }` and `requireRole(ctx, roles)` |
 | `teams` table in schema | Story 2.1 | `packages/backend/convex/table/teams.ts` must exist and be registered in `schema.ts` |
 | Users table with `teamId` and 6-role `role` field | Story 2.1 | User schema must have `teamId` and expanded role union (`admin`, `coach`, `analyst`, `physio`, `player`, `staff`) |
-| Sidebar navigation component | Story 1.3 | `apps/admin/src/components/application-shell2.tsx` must have the `navGroups` array to extend |
+| Sidebar navigation component | Story 1.3 | `apps/web/src/components/application-shell2.tsx` must have the `navGroups` array to extend |
 | shadcn/ui theme configured | Story 1.2 | shadcn preset applied, CSS variables active |
-| Avatar UI component | Story 1.2 | `apps/admin/src/components/ui/avatar.tsx` must exist (already present in codebase) |
-| Badge UI component | Story 1.2 | `apps/admin/src/components/ui/badge.tsx` must exist (already present in codebase) |
-| Tabs UI component | Story 1.2 | `apps/admin/src/components/ui/tabs.tsx` must exist (already present in codebase) |
-| Table UI component | Story 1.2 | `apps/admin/src/components/ui/table.tsx` must exist (already present in codebase) |
+| Avatar UI component | Story 1.2 | `apps/web/src/components/ui/avatar.tsx` must exist (already present in codebase) |
+| Badge UI component | Story 1.2 | `apps/web/src/components/ui/badge.tsx` must exist (already present in codebase) |
+| Tabs UI component | Story 1.2 | `apps/web/src/components/ui/tabs.tsx` must exist (already present in codebase) |
+| Table UI component | Story 1.2 | `apps/web/src/components/ui/table.tsx` must exist (already present in codebase) |
 
 ### Current State (Baseline)
 
@@ -210,9 +210,9 @@ The original epic acceptance criteria (epics.md, Story 5.1) reference a single p
 
 **`convex/players/` directory:** **Does not exist.** Must be created.
 
-**`apps/admin/src/app/(app)/`:** Contains routes for `/team` and `/users`. **No `/players` route exists.**
+**`apps/web/src/app/(app)/`:** Contains routes for `/team` and `/users`. **No `/players` route exists.**
 
-**`apps/admin/src/components/`:** Contains `app/`, `custom/`, `ui/` directories. **No `players/` directory exists.** The `shared/` directory may or may not exist depending on whether Story 1.4 has been completed. If `shared/StatusBadge.tsx` already exists from Story 1.4, extend or reuse it; otherwise create `PlayerStatusBadge.tsx` in a new `shared/` directory.
+**`apps/web/src/components/`:** Contains `app/`, `custom/`, `ui/` directories. **No `players/` directory exists.** The `shared/` directory may or may not exist depending on whether Story 1.4 has been completed. If `shared/StatusBadge.tsx` already exists from Story 1.4, extend or reuse it; otherwise create `PlayerStatusBadge.tsx` in a new `shared/` directory.
 
 **Sidebar navigation (`application-shell2.tsx`):** The `navGroups` array currently contains "Users" and "Team" items under a "General" group. Players must be added.
 
@@ -349,15 +349,15 @@ Note: This controls **tab visibility only**. The actual data queries in Stories 
 | `packages/backend/convex/schema.ts` | Modified | Register four new player tables |
 | `packages/shared/constants.js` (or new `players.ts`) | Modified/Created | Player constants: positions, statuses, labels, preferred foot, injury severities |
 | `packages/backend/convex/players/queries.ts` | Created | getPlayers, getPlayerById, getPlayerTabAccess |
-| `apps/admin/src/components/shared/PlayerStatusBadge.tsx` | Created | Player status badge component (Active/On Loan/Left the Club) |
-| `apps/admin/src/components/players/PlayerTable.tsx` | Created | Player list table with columns |
-| `apps/admin/src/components/players/PlayerListFilters.tsx` | Created | Status filter tabs + search input |
-| `apps/admin/src/components/players/PlayerProfileHeader.tsx` | Created | Player profile header with photo, name, status |
-| `apps/admin/src/components/players/PlayerProfileTabs.tsx` | Created | Tabbed profile layout (Bio + placeholder tabs) |
-| `apps/admin/src/app/(app)/players/page.tsx` | Created | Player list page with filtering and search |
-| `apps/admin/src/app/(app)/players/[playerId]/page.tsx` | Created | Player profile page with tabbed layout |
-| `apps/admin/src/components/application-shell2.tsx` | Modified | Add Players nav item to sidebar |
-| `apps/admin/src/components/site-header.tsx` | Modified | Add /players breadcrumb segments |
+| `apps/web/src/components/shared/PlayerStatusBadge.tsx` | Created | Player status badge component (Active/On Loan/Left the Club) |
+| `apps/web/src/components/players/PlayerTable.tsx` | Created | Player list table with columns |
+| `apps/web/src/components/players/PlayerListFilters.tsx` | Created | Status filter tabs + search input |
+| `apps/web/src/components/players/PlayerProfileHeader.tsx` | Created | Player profile header with photo, name, status |
+| `apps/web/src/components/players/PlayerProfileTabs.tsx` | Created | Tabbed profile layout (Bio + placeholder tabs) |
+| `apps/web/src/app/(app)/players/page.tsx` | Created | Player list page with filtering and search |
+| `apps/web/src/app/(app)/players/[playerId]/page.tsx` | Created | Player profile page with tabbed layout |
+| `apps/web/src/components/application-shell2.tsx` | Modified | Add Players nav item to sidebar |
+| `apps/web/src/components/site-header.tsx` | Modified | Add /players breadcrumb segments |
 | `packages/backend/convex/players/__tests__/queries.test.ts` | Created | Unit tests for player queries |
 
 ### What This Story Does NOT Include
@@ -449,11 +449,11 @@ None.
 - `packages/shared/package.json` — Modified (added `./players` export)
 - `packages/backend/convex/players/queries.ts` — Created
 - `packages/backend/convex/_generated/api.d.ts` — Modified (registered players/queries)
-- `apps/admin/src/components/shared/PlayerStatusBadge.tsx` — Created
-- `apps/admin/src/components/players/PlayerTable.tsx` — Created
-- `apps/admin/src/components/players/PlayerListFilters.tsx` — Created
-- `apps/admin/src/components/players/PlayerProfileHeader.tsx` — Created
-- `apps/admin/src/components/players/PlayerProfileTabs.tsx` — Created
-- `apps/admin/src/app/(app)/players/page.tsx` — Modified (replaced placeholder)
-- `apps/admin/src/app/(app)/players/[playerId]/page.tsx` — Created
+- `apps/web/src/components/shared/PlayerStatusBadge.tsx` — Created
+- `apps/web/src/components/players/PlayerTable.tsx` — Created
+- `apps/web/src/components/players/PlayerListFilters.tsx` — Created
+- `apps/web/src/components/players/PlayerProfileHeader.tsx` — Created
+- `apps/web/src/components/players/PlayerProfileTabs.tsx` — Created
+- `apps/web/src/app/(app)/players/page.tsx` — Modified (replaced placeholder)
+- `apps/web/src/app/(app)/players/[playerId]/page.tsx` — Created
 - `packages/backend/convex/players/__tests__/queries.test.ts` — Created

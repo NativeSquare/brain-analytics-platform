@@ -149,7 +149,7 @@ so that **my club events appear alongside my personal calendar and stay in sync 
 ### Frontend Tasks
 
 - [x] **Task 7: Build CalendarSyncDialog component** (AC: #2, #7)
-  - [x] 7.1: Create `apps/admin/src/components/calendar/CalendarSyncDialog.tsx`
+  - [x] 7.1: Create `apps/web/src/components/calendar/CalendarSyncDialog.tsx`
     - Uses shadcn `Dialog` component
     - On open: calls `getFeedToken` query; if null, calls `generateFeedToken` mutation
     - Displays the full feed URL in a read-only `Input` field
@@ -199,7 +199,7 @@ so that **my club events appear alongside my personal calendar and stay in sync 
 ```
 packages/backend/convex/calendar/ics.ts                     # ICS generation utility
 packages/backend/convex/calendar/__tests__/ics.test.ts      # ICS utility tests
-apps/admin/src/components/calendar/CalendarSyncDialog.tsx    # Sync dialog component
+apps/web/src/components/calendar/CalendarSyncDialog.tsx    # Sync dialog component
 ```
 
 **Files to modify:**
@@ -208,7 +208,7 @@ packages/backend/convex/schema.ts                           # Add calendarFeedTo
 packages/backend/convex/http.ts                             # Register GET /api/calendar/:token route
 packages/backend/convex/calendar/queries.ts                 # Add getFeedToken query
 packages/backend/convex/calendar/mutations.ts               # Add generateFeedToken, regenerateFeedToken
-apps/admin/src/app/(app)/calendar/page.tsx                  # Add "Sync Calendar" button
+apps/web/src/app/(app)/calendar/page.tsx                  # Add "Sync Calendar" button
 ```
 
 **Alignment with architecture:**
@@ -256,14 +256,14 @@ Claude Opus 4.6
 - `packages/backend/convex/calendar/internalQueries.ts` — Internal queries for httpAction (getUserByFeedToken, getFeedEvents)
 - `packages/backend/convex/calendar/__tests__/ics.test.ts` — 24 ICS unit tests
 - `packages/backend/convex/calendar/__tests__/feedToken.test.ts` — 14 feed token integration tests
-- `apps/admin/src/components/calendar/CalendarSyncDialog.tsx` — Sync dialog UI component
-- `apps/admin/src/components/calendar/__tests__/CalendarSyncDialog.test.tsx` — 3 frontend smoke tests
-- `apps/admin/vitest.config.ts` — Vitest config for admin app
-- `apps/admin/vitest.setup.ts` — Vitest setup file
+- `apps/web/src/components/calendar/CalendarSyncDialog.tsx` — Sync dialog UI component
+- `apps/web/src/components/calendar/__tests__/CalendarSyncDialog.test.tsx` — 3 frontend smoke tests
+- `apps/web/vitest.config.ts` — Vitest config for admin app
+- `apps/web/vitest.setup.ts` — Vitest setup file
 
 **Modified:**
 - `packages/backend/convex/table/users.ts` — Added `calendarFeedToken` field + `by_calendarFeedToken` index
 - `packages/backend/convex/http.ts` — Registered `GET /api/calendar/{token}` HTTP endpoint
 - `packages/backend/convex/calendar/queries.ts` — Added `getFeedToken` query
 - `packages/backend/convex/calendar/mutations.ts` — Added `generateFeedToken`, `regenerateFeedToken` mutations
-- `apps/admin/src/app/(app)/calendar/page.tsx` — Added "Sync Calendar" button + CalendarSyncDialog
+- `apps/web/src/app/(app)/calendar/page.tsx` — Added "Sync Calendar" button + CalendarSyncDialog

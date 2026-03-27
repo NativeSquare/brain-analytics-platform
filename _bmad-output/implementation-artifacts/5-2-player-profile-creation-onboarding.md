@@ -5,6 +5,8 @@ Story Type: fullstack
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
 
+> **IMPORTANT:** In this story, "admin" refers to a user with the admin ROLE in the client web app (apps/web), NOT the apps/admin application. All admin-facing UI (invite dialog, members table, user management) lives in apps/web.
+
 ## Story
 
 As an admin,
@@ -63,7 +65,7 @@ so that new signings are onboarded with all their information in one place.
 - [x] **Task 3: Create player invitation mutations** (AC: #8, #11, #13, #14)
   - [x]3.1: Implement `invitePlayer` mutation in `packages/backend/convex/players/mutations.ts`: accepts `{ playerId: v.id("players") }`, calls `requireRole(ctx, ["admin"])` (or `requireAdmin`). Fetches player by ID, validates `teamId` match and that `personalEmail` is set (throws `VALIDATION_ERROR` if not). Invalidates any existing `"pending"` invites for this player (query `playerInvites` by `playerId` with status `"pending"`, patch each to `status: "expired"`). Generates a UUID token (use `crypto.randomUUID()` or equivalent). Inserts a new `playerInvites` record with `status: "pending"`, `createdAt: Date.now()`, `expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000` (7 days). Schedules `ctx.scheduler.runAfter(0, internal.emails.sendPlayerInviteEmail, { to: player.personalEmail, firstName: player.firstName, token })`. Returns the invite `_id`.
   - [x]3.2: Implement `validatePlayerInvite` query in `packages/backend/convex/players/queries.ts`: accepts `{ token: v.string() }` (no auth required — public query for the accept-invite page). Queries `playerInvites` by `token` index. If not found, returns `{ valid: false, reason: "not_found" }`. If status is not `"pending"`, returns `{ valid: false, reason: "already_used" }`. If `expiresAt < Date.now()`, patches status to `"expired"` (via a scheduled mutation or just returns the error), returns `{ valid: false, reason: "expired" }`. If valid, fetches the associated player and returns `{ valid: true, firstName: player.firstName, lastName: player.lastName, email: invite.email }`.
-  - [x]3.3: Implement `acceptPlayerInvite` mutation in `packages/backend/convex/players/mutations.ts`: accepts `{ token: v.string(), password: v.string() }`. Queries `playerInvites` by `token` index. Validates the invite is `"pending"` and not expired (throws `ConvexError` otherwise). Fetches the associated player to get `teamId`. Creates a new user account: inserts into the `users` table with `email: invite.email`, `name: player.firstName + " " + player.lastName`, `role: "player"`, `teamId: player.teamId`, `hasCompletedOnboarding: true`. Hashes the password using the existing password hashing approach (oslo or @convex-dev/auth's createAccount pattern). Links the user to the player profile by patching the `players` document: `userId: newUserId`, `updatedAt: Date.now()`. Updates the invite: `status: "accepted"`. Returns `{ success: true, userId }`. **Note:** The exact user creation pattern depends on how `@convex-dev/auth` handles programmatic account creation — study the existing admin invite acceptance flow in `apps/admin/src/app/(auth)/accept-invite/page.tsx` and replicate or adapt the pattern.
+  - [x]3.3: Implement `acceptPlayerInvite` mutation in `packages/backend/convex/players/mutations.ts`: accepts `{ token: v.string(), password: v.string() }`. Queries `playerInvites` by `token` index. Validates the invite is `"pending"` and not expired (throws `ConvexError` otherwise). Fetches the associated player to get `teamId`. Creates a new user account: inserts into the `users` table with `email: invite.email`, `name: player.firstName + " " + player.lastName`, `role: "player"`, `teamId: player.teamId`, `hasCompletedOnboarding: true`. Hashes the password using the existing password hashing approach (oslo or @convex-dev/auth's createAccount pattern). Links the user to the player profile by patching the `players` document: `userId: newUserId`, `updatedAt: Date.now()`. Updates the invite: `status: "accepted"`. Returns `{ success: true, userId }`. **Note:** The exact user creation pattern depends on how `@convex-dev/auth` handles programmatic account creation — study the existing admin invite acceptance flow in `apps/web/src/app/(auth)/accept-invite/page.tsx` and replicate or adapt the pattern.
   - [x]3.4: Implement `getPlayerInviteStatus` query in `packages/backend/convex/players/queries.ts`: accepts `{ playerId: v.id("players") }`, calls `requireAuth(ctx)`. Queries `playerInvites` by `playerId` index, returns the most recent invite's status (`"pending"`, `"accepted"`, `"expired"`) or `null` if no invite exists. Used by the profile page to show the invite indicator and re-invite button.
 
 - [x] **Task 4: Create player invitation email template** (AC: #10)
@@ -76,7 +78,7 @@ so that new signings are onboarded with all their information in one place.
   - [x]5.1: Create a shared Zod schema for the player profile creation form (either in `packages/shared/` or co-located with the form component). Schema fields: `firstName: z.string().min(1, "First name is required")`, `lastName: z.string().min(1, "Last name is required")`, `photo: z.optional(z.string())` (storage ID), `dateOfBirth: z.optional(z.number()).refine(val => !val || val < Date.now(), "Date of birth must be in the past")`, `nationality: z.optional(z.string())`, `position: z.enum(["Goalkeeper", "Defender", "Midfielder", "Forward"])`, `squadNumber: z.optional(z.number().int().positive("Squad number must be a positive integer"))`, `preferredFoot: z.optional(z.enum(["Left", "Right", "Both"]))`, `heightCm: z.optional(z.number().positive("Height must be positive"))`, `weightKg: z.optional(z.number().positive("Weight must be positive"))`, `phone: z.optional(z.string())`, `personalEmail: z.optional(z.string().email("Invalid email format"))`, `address: z.optional(z.string())`, `emergencyContactName: z.optional(z.string())`, `emergencyContactRelationship: z.optional(z.string())`, `emergencyContactPhone: z.optional(z.string())`.
 
 - [x] **Task 6: Build ProfileForm component** (AC: #2, #3, #5)
-  - [x]6.1: Create `apps/admin/src/components/players/ProfileForm.tsx`. Uses `react-hook-form` with `zodResolver` and the Zod schema from Task 5.
+  - [x]6.1: Create `apps/web/src/components/players/ProfileForm.tsx`. Uses `react-hook-form` with `zodResolver` and the Zod schema from Task 5.
   - [x]6.2: Render the form in sections using shadcn `Card` components or visual separators:
     - **Basic Info section:** `Input` for first name (required indicator), `Input` for last name (required indicator), photo upload area (drag-and-drop or file picker with image preview), `DatePicker` for date of birth (using `react-day-picker`), `Input` for nationality.
     - **Football Details section:** `Select` for position (Goalkeeper, Defender, Midfielder, Forward), `Input` (type=number) for squad number, `Select` for preferred foot (Left, Right, Both).
@@ -89,36 +91,36 @@ so that new signings are onboarded with all their information in one place.
   - [x]6.6: Handle `VALIDATION_ERROR` from the mutation (e.g., duplicate squad number) — catch `ConvexError`, display the error message as a toast or inline on the squad number field.
 
 - [x] **Task 7: Build InvitePlayerDialog component** (AC: #7, #13)
-  - [x]7.1: Create `apps/admin/src/components/players/InvitePlayerDialog.tsx`. Accepts props: `playerId: Id<"players">`, `firstName: string`, `lastName: string`, `personalEmail: string | undefined`, `open: boolean`, `onClose: () => void`.
+  - [x]7.1: Create `apps/web/src/components/players/InvitePlayerDialog.tsx`. Accepts props: `playerId: Id<"players">`, `firstName: string`, `lastName: string`, `personalEmail: string | undefined`, `open: boolean`, `onClose: () => void`.
   - [x]7.2: When `personalEmail` is set: render a dialog with the message "Would you like to invite {firstName} {lastName} to create their account? An invitation email will be sent to {personalEmail}." with "Send Invite" and "Skip" buttons.
   - [x]7.3: When `personalEmail` is not set: render a dialog with the message "No email address was provided for {firstName} {lastName}. You can add their email later and invite them from their profile page." with a "Got it" dismiss button.
   - [x]7.4: "Send Invite" calls the `invitePlayer` mutation with `{ playerId }`. On success, show toast "Invitation sent to {personalEmail}". On error, show error toast. Close the dialog.
   - [x]7.5: "Skip" and "Got it" buttons simply close the dialog.
 
 - [x] **Task 8: Build the Add Player page or route** (AC: #1, #2, #6, #7)
-  - [x]8.1: Create `apps/admin/src/app/(app)/players/new/page.tsx` (full-page form approach) OR implement as a large sheet/dialog triggered from the player list page. **Recommended: full-page approach** for the number of fields involved.
+  - [x]8.1: Create `apps/web/src/app/(app)/players/new/page.tsx` (full-page form approach) OR implement as a large sheet/dialog triggered from the player list page. **Recommended: full-page approach** for the number of fields involved.
   - [x]8.2: The page calls `requireAuth` (via checking current user role from `useQuery(api.users.queries.currentUser)`). If the user is not an admin, redirect to `/players` or show an unauthorized message.
   - [x]8.3: Render `ProfileForm` component. Wire the form submission to the `createPlayer` mutation.
   - [x]8.4: After successful creation, show the `InvitePlayerDialog` with the newly created player's details. When the dialog is dismissed (invite sent or skipped), navigate to `/players/[newPlayerId]`.
 
 - [x] **Task 9: Update the Players list page** (AC: #1, #12)
-  - [x]9.1: In `apps/admin/src/app/(app)/players/page.tsx`, activate the "Add Player" button (currently a placeholder from Story 5.1). Wire it to navigate to `/players/new` (or open the creation dialog). Ensure the button is only rendered for admin users (check `user.role === "admin"` from the current user query).
+  - [x]9.1: In `apps/web/src/app/(app)/players/page.tsx`, activate the "Add Player" button (currently a placeholder from Story 5.1). Wire it to navigate to `/players/new` (or open the creation dialog). Ensure the button is only rendered for admin users (check `user.role === "admin"` from the current user query).
   - [x]9.2: Update the `PlayerTable` component (or the data passed to it) to include the invite status for each player. Add a query call to `getPlayerInviteStatus` or include invite status in the `getPlayers` query response. Display a subtle "Invited" badge/indicator next to the player name for players with a `"pending"` invite and no linked `userId`.
 
 - [x] **Task 10: Add invite/re-invite button to the Player Profile page** (AC: #13)
-  - [x]10.1: In `apps/admin/src/app/(app)/players/[playerId]/page.tsx`, add logic: if the current user is an admin, the player has no `userId` (no linked account), and the player has a `personalEmail`, render an "Invite to Platform" button in the profile header area. If a pending invite exists, label the button "Resend Invite".
+  - [x]10.1: In `apps/web/src/app/(app)/players/[playerId]/page.tsx`, add logic: if the current user is an admin, the player has no `userId` (no linked account), and the player has a `personalEmail`, render an "Invite to Platform" button in the profile header area. If a pending invite exists, label the button "Resend Invite".
   - [x]10.2: Clicking the button opens the `InvitePlayerDialog` for the current player.
   - [x]10.3: Add an invite status indicator near the player's name in the profile header: "Invited — awaiting response" if a pending invite exists, nothing if an account is linked or no invite exists.
 
 - [x] **Task 11: Build the player accept-invite page** (AC: #11)
-  - [x]11.1: Update `apps/admin/src/app/(auth)/accept-invite/page.tsx` (or create a separate route) to handle the `type=player` query parameter. When `type=player` is present in the URL, use the `validatePlayerInvite` query instead of the admin invite validation.
+  - [x]11.1: Update `apps/web/src/app/(auth)/accept-invite/page.tsx` (or create a separate route) to handle the `type=player` query parameter. When `type=player` is present in the URL, use the `validatePlayerInvite` query instead of the admin invite validation.
   - [x]11.2: If the token is valid, render a registration form pre-filled with the player's name and email (read-only). Include a password field (with confirmation) and a "Create Account" submit button.
   - [x]11.3: On submit, call `acceptPlayerInvite` mutation with `{ token, password }`. On success, the player is logged in and redirected to the homepage or their profile. On error, display the error message.
   - [x]11.4: If the token is invalid or expired, display an appropriate error message ("This invitation has expired. Please ask your club admin to send a new one." or "This invitation link is not valid.").
-  - [x]11.5: **Important:** Study the existing admin accept-invite flow in `apps/admin/src/app/(auth)/accept-invite/page.tsx` carefully. The player accept flow should reuse as much of the existing auth infrastructure (`@convex-dev/auth` account creation, password hashing with oslo) as possible. The key difference is that player acceptance also links the user to a player profile and assigns the `"player"` role.
+  - [x]11.5: **Important:** Study the existing admin accept-invite flow in `apps/web/src/app/(auth)/accept-invite/page.tsx` carefully. The player accept flow should reuse as much of the existing auth infrastructure (`@convex-dev/auth` account creation, password hashing with oslo) as possible. The key difference is that player acceptance also links the user to a player profile and assigns the `"player"` role.
 
 - [x] **Task 12: Update breadcrumbs** (AC: #1)
-  - [x]12.1: In `apps/admin/src/components/site-header.tsx`, add a breadcrumb case for `/players/new` — renders "Players > Add Player" with "Players" linking to `/players`.
+  - [x]12.1: In `apps/web/src/components/site-header.tsx`, add a breadcrumb case for `/players/new` — renders "Players > Add Player" with "Players" linking to `/players`.
 
 - [x] **Task 13: Write backend unit tests** (AC: #4, #8, #9, #11, #14)
   - [x]13.1: Create `packages/backend/convex/players/__tests__/mutations.test.ts` using `@convex-dev/test` + `vitest`.
@@ -216,10 +218,10 @@ The original epic acceptance criteria (epics.md, Story 5.2) state:
 |------------|-------|-------------|
 | `players` table defined in schema | Story 5.1 | `packages/backend/convex/table/players.ts` must exist with all fields and indexes |
 | `getPlayers` and `getPlayerById` queries | Story 5.1 | `packages/backend/convex/players/queries.ts` must export these queries |
-| Player list page at `/players` | Story 5.1 | `apps/admin/src/app/(app)/players/page.tsx` must exist with "Add Player" button placeholder |
-| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/admin/src/app/(app)/players/[playerId]/page.tsx` must exist |
+| Player list page at `/players` | Story 5.1 | `apps/web/src/app/(app)/players/page.tsx` must exist with "Add Player" button placeholder |
+| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/web/src/app/(app)/players/[playerId]/page.tsx` must exist |
 | `requireAuth`, `requireRole` helpers (or `requireAdmin` fallback) | Story 2.1 | `packages/backend/convex/lib/auth.ts` or `packages/backend/convex/table/admin.ts` must export auth guards |
-| Accept-invite page pattern | Story 2.2 | `apps/admin/src/app/(auth)/accept-invite/page.tsx` must exist (admin invite acceptance flow to study and extend) |
+| Accept-invite page pattern | Story 2.2 | `apps/web/src/app/(auth)/accept-invite/page.tsx` must exist (admin invite acceptance flow to study and extend) |
 | Email sending infrastructure (Resend) | Story 2.2 | `packages/backend/convex/emails.ts` must export email action pattern, Resend must be configured |
 | shadcn/ui form components | Story 1.2 | `Input`, `Select`, `Textarea`, `Dialog`, `Card`, `Button`, `Form` components must be available in `components/ui/` |
 | Player status badge | Story 5.1 / 1.4 | `PlayerStatusBadge` or `StatusBadge` component for the player list |
@@ -233,19 +235,19 @@ The original epic acceptance criteria (epics.md, Story 5.2) state:
 
 **`convex/schema.ts`:** Contains the `players` table (from Story 5.1), `playerStats`, `playerFitness`, `playerInjuries`. **No `playerInvites` table.**
 
-**`apps/admin/src/app/(app)/players/page.tsx`:** Exists from Story 5.1 with an "Add Player" button placeholder (disabled or non-functional). This story activates it.
+**`apps/web/src/app/(app)/players/page.tsx`:** Exists from Story 5.1 with an "Add Player" button placeholder (disabled or non-functional). This story activates it.
 
-**`apps/admin/src/app/(app)/players/new/page.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/app/(app)/players/new/page.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/ProfileForm.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/ProfileForm.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/InvitePlayerDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/InvitePlayerDialog.tsx`:** **Does not exist.** Must be created.
 
 **`packages/transactional/emails/player-invite.tsx`:** **Does not exist.** Must be created following the `admin-invite.tsx` pattern.
 
 **`packages/backend/convex/emails.ts`:** Exists with `sendAdminInviteEmail` internal action. `sendPlayerInviteEmail` must be added.
 
-**`apps/admin/src/app/(auth)/accept-invite/page.tsx`:** Exists for admin invites. Must be extended to handle `type=player` tokens.
+**`apps/web/src/app/(auth)/accept-invite/page.tsx`:** Exists for admin invites. Must be extended to handle `type=player` tokens.
 
 ### Existing Patterns to Follow
 
@@ -365,13 +367,13 @@ The player accept-invite flow integrates with `@convex-dev/auth`. Two approaches
 | `packages/transactional/emails/html-templates.ts` | Modified | Add `renderPlayerInviteHtml` function |
 | `packages/transactional/index.ts` | Modified | Export player invite email |
 | `packages/backend/convex/emails.ts` | Modified | Add `sendPlayerInviteEmail` internal action |
-| `apps/admin/src/components/players/ProfileForm.tsx` | Created | Player profile creation form |
-| `apps/admin/src/components/players/InvitePlayerDialog.tsx` | Created | Post-creation invite prompt dialog |
-| `apps/admin/src/app/(app)/players/new/page.tsx` | Created | Add Player page with form |
-| `apps/admin/src/app/(app)/players/page.tsx` | Modified | Activate "Add Player" button, add invite status indicator |
-| `apps/admin/src/app/(app)/players/[playerId]/page.tsx` | Modified | Add invite/re-invite button and status indicator |
-| `apps/admin/src/app/(auth)/accept-invite/page.tsx` | Modified | Handle `type=player` token validation and account creation |
-| `apps/admin/src/components/site-header.tsx` | Modified | Add `/players/new` breadcrumb |
+| `apps/web/src/components/players/ProfileForm.tsx` | Created | Player profile creation form |
+| `apps/web/src/components/players/InvitePlayerDialog.tsx` | Created | Post-creation invite prompt dialog |
+| `apps/web/src/app/(app)/players/new/page.tsx` | Created | Add Player page with form |
+| `apps/web/src/app/(app)/players/page.tsx` | Modified | Activate "Add Player" button, add invite status indicator |
+| `apps/web/src/app/(app)/players/[playerId]/page.tsx` | Modified | Add invite/re-invite button and status indicator |
+| `apps/web/src/app/(auth)/accept-invite/page.tsx` | Modified | Handle `type=player` token validation and account creation |
+| `apps/web/src/components/site-header.tsx` | Modified | Add `/players/new` breadcrumb |
 | `packages/backend/convex/players/__tests__/mutations.test.ts` | Created | Unit tests for player mutations |
 
 ### What This Story Does NOT Include
@@ -477,13 +479,13 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 | `packages/transactional/emails/html-templates.ts` | Modified — added renderPlayerInviteHtml |
 | `packages/transactional/index.ts` | Modified — exported PlayerInviteEmail, renderPlayerInviteHtml |
 | `packages/backend/convex/emails.ts` | Modified — added sendPlayerInviteEmail, imported renderPlayerInviteHtml |
-| `apps/admin/src/components/players/playerFormSchema.ts` | Created |
-| `apps/admin/src/components/players/ProfileForm.tsx` | Created |
-| `apps/admin/src/components/players/InvitePlayerDialog.tsx` | Created |
-| `apps/admin/src/app/(app)/players/new/page.tsx` | Created |
-| `apps/admin/src/app/(app)/players/page.tsx` | Modified — activated Add Player button, admin-only link |
-| `apps/admin/src/app/(app)/players/[playerId]/page.tsx` | Modified — invite button, status indicator |
-| `apps/admin/src/components/players/PlayerProfileHeader.tsx` | Modified — invite button, "Invited" badge |
-| `apps/admin/src/components/app/auth/accept-invite-form.tsx` | Modified — split into router + AcceptPlayerInviteForm + AcceptStaffInviteForm |
-| `apps/admin/src/components/site-header.tsx` | Modified — added players/new breadcrumb |
+| `apps/web/src/components/players/playerFormSchema.ts` | Created |
+| `apps/web/src/components/players/ProfileForm.tsx` | Created |
+| `apps/web/src/components/players/InvitePlayerDialog.tsx` | Created |
+| `apps/web/src/app/(app)/players/new/page.tsx` | Created |
+| `apps/web/src/app/(app)/players/page.tsx` | Modified — activated Add Player button, admin-only link |
+| `apps/web/src/app/(app)/players/[playerId]/page.tsx` | Modified — invite button, status indicator |
+| `apps/web/src/components/players/PlayerProfileHeader.tsx` | Modified — invite button, "Invited" badge |
+| `apps/web/src/components/app/auth/accept-invite-form.tsx` | Modified — split into router + AcceptPlayerInviteForm + AcceptStaffInviteForm |
+| `apps/web/src/components/site-header.tsx` | Modified — added players/new breadcrumb |
 | `packages/backend/convex/players/__tests__/mutations.test.ts` | Created — 25 tests across 4 describe blocks |

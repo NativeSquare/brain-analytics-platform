@@ -5,6 +5,8 @@ Story Type: fullstack
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
 
+> **IMPORTANT:** In this story, "admin" refers to a user with the admin ROLE in the client web app (apps/web), NOT the apps/admin application. All admin-facing UI (invite dialog, members table, user management) lives in apps/web.
+
 ## Story
 
 As an admin,
@@ -62,25 +64,25 @@ so that I can onboard staff and players to the platform with the correct access 
   - [x] 4.3: Ensure the email sending action is called from both `createInvite` and `resendInvite` mutations via `ctx.scheduler.runAfter(0, ...)`.
 
 - [x] **Task 5: Update accept-invite page and form** (AC: #5, #6)
-  - [x] 5.1: Update `apps/admin/src/app/(auth)/accept-invite/page.tsx` (if needed) and `apps/admin/src/components/app/auth/accept-invite-form.tsx` — the form should: extract token from URL params, query `getInviteByToken(token)` to display invite details, show the inviter name, assigned role (human-friendly label), and team name in the welcome message. On submit: sign up the user with email + password, call `acceptInvite(token)` mutation, redirect to `/` (homepage).
+  - [x] 5.1: Update `apps/web/src/app/(auth)/accept-invite/page.tsx` (if needed) and `apps/web/src/components/app/auth/accept-invite-form.tsx` — the form should: extract token from URL params, query `getInviteByToken(token)` to display invite details, show the inviter name, assigned role (human-friendly label), and team name in the welcome message. On submit: sign up the user with email + password, call `acceptInvite(token)` mutation, redirect to `/` (homepage).
   - [x] 5.2: Handle error states: invalid token (show "Invalid invitation link"), expired token (show "This invitation has expired — contact your admin"), already accepted (show "This invitation has already been used"), generic error (show error message).
   - [x] 5.3: Ensure the accept flow works correctly with the existing `@convex-dev/auth` Password provider — the user signs up via `signIn("password", { email, password, flow: "signUp" })`, then the `acceptInvite` mutation patches their user record.
 
 - [x] **Task 6: Update team management page — invite dialog** (AC: #1, #10)
-  - [x] 6.1: Update `apps/admin/src/components/app/dashboard/invite-dialog.tsx` — add a **role selector** to the form. The selector shows all 6 roles with human-friendly labels: "Admin", "Coach", "Analyst", "Physio / Medical", "Player", "Staff". Use the shadcn `Select` component. The role field is required.
+  - [x] 6.1: Update `apps/web/src/components/app/dashboard/invite-dialog.tsx` — add a **role selector** to the form. The selector shows all 6 roles with human-friendly labels: "Admin", "Coach", "Analyst", "Physio / Medical", "Player", "Staff". Use the shadcn `Select` component. The role field is required.
   - [x] 6.2: Update the form validation schema to include `role: z.enum(USER_ROLES)` as a required field.
   - [x] 6.3: Update the mutation call to pass the selected role to `createInvite` (instead of `inviteAdmin`).
   - [x] 6.4: Update the success toast to mention the assigned role: e.g., "Invitation sent to user@example.com as Coach".
 
 - [x] **Task 7: Update team management page — members table** (AC: #3, #11)
-  - [x] 7.1: Update `apps/admin/src/components/app/dashboard/admin-table.tsx` (rename to `MembersTable.tsx` or update in-place) — the table should display ALL team members (not just admins) with columns: Avatar, Name, Email, Role (badge), Status (Active/Invited), Join Date, Actions.
+  - [x] 7.1: Update `apps/web/src/components/app/dashboard/admin-table.tsx` (rename to `MembersTable.tsx` or update in-place) — the table should display ALL team members (not just admins) with columns: Avatar, Name, Email, Role (badge), Status (Active/Invited), Join Date, Actions.
   - [x] 7.2: Add a **role badge** column showing the user's role with distinct styling (use existing Badge component with color variants).
   - [x] 7.3: Add **status badge** column: "Active" (green) for active users, "Invited" (yellow/amber) for pending invitations, "Deactivated" (gray) for deactivated users.
   - [x] 7.4: Add role filter dropdown above the table to filter by role.
   - [x] 7.5: Ensure the actions dropdown includes: Edit (navigate to user detail), Remove (delete confirmation). For pending invites, the actions should be: Resend and Cancel.
 
 - [x] **Task 8: Update team management page — pending invites section** (AC: #7, #8)
-  - [x] 8.1: Update `apps/admin/src/components/app/dashboard/pending-invites.tsx` — add a "Resend" action button alongside the existing "Cancel" button for each pending invite.
+  - [x] 8.1: Update `apps/web/src/components/app/dashboard/pending-invites.tsx` — add a "Resend" action button alongside the existing "Cancel" button for each pending invite.
   - [x] 8.2: Wire the "Resend" button to call the `resendInvite` mutation with the invitation ID. Show success toast: "Invitation resent to user@example.com".
   - [x] 8.3: Display the assigned role for each pending invite in the invite card/row.
   - [x] 8.4: Update the query from `listInvites` (old) to `listPendingInvites` (new).
@@ -146,11 +148,11 @@ The template provides a fully functional admin-only invitation system:
 - `packages/backend/convex/emails.ts` — Email sending via `@convex-dev/resend`. Has `sendAdminInviteEmail` internal action.
 - `packages/transactional/emails/admin-invite.tsx` — React Email template for admin invitations.
 - `packages/transactional/emails/html-templates.ts` — Plain HTML email templates including `renderAdminInviteHtml()`.
-- `apps/admin/src/components/app/auth/accept-invite-form.tsx` — Accept invitation page: extracts token from URL, validates invite, shows password form, calls `signIn` + `acceptInvite`.
-- `apps/admin/src/components/app/dashboard/invite-dialog.tsx` — Dialog with name + email fields (no role selector), calls `inviteAdmin`.
-- `apps/admin/src/components/app/dashboard/pending-invites.tsx` — Lists pending invites with cancel button.
-- `apps/admin/src/components/app/dashboard/admin-table.tsx` — Lists admin users only.
-- `apps/admin/src/app/(app)/team/page.tsx` — Team management page composing InviteDialog, PendingInvites, AdminTable.
+- `apps/web/src/components/app/auth/accept-invite-form.tsx` — Accept invitation page: extracts token from URL, validates invite, shows password form, calls `signIn` + `acceptInvite`.
+- `apps/web/src/components/app/dashboard/invite-dialog.tsx` — Dialog with name + email fields (no role selector), calls `inviteAdmin`.
+- `apps/web/src/components/app/dashboard/pending-invites.tsx` — Lists pending invites with cancel button.
+- `apps/web/src/components/app/dashboard/admin-table.tsx` — Lists admin users only.
+- `apps/web/src/app/(app)/team/page.tsx` — Team management page composing InviteDialog, PendingInvites, AdminTable.
 
 **What needs to change:**
 1. Invitation system must support all 6 roles (not just admin)
@@ -266,11 +268,11 @@ function generateToken(): string {
 | `packages/backend/convex/emails.ts` | Modified | Add/update sendInviteEmail action for role-aware invitations |
 | `packages/transactional/emails/admin-invite.tsx` | Modified | Update template to show assigned role and team name |
 | `packages/transactional/emails/html-templates.ts` | Modified | Update renderAdminInviteHtml to include role |
-| `apps/admin/src/components/app/auth/accept-invite-form.tsx` | Modified | Query new getInviteByToken, display role, call new acceptInvite |
-| `apps/admin/src/components/app/dashboard/invite-dialog.tsx` | Modified | Add role selector (Select component) |
-| `apps/admin/src/components/app/dashboard/pending-invites.tsx` | Modified | Add role display, resend action |
-| `apps/admin/src/components/app/dashboard/admin-table.tsx` | Modified | Show all team members, add role + status columns |
-| `apps/admin/src/app/(app)/team/page.tsx` | Modified | Update to use new queries and components |
+| `apps/web/src/components/app/auth/accept-invite-form.tsx` | Modified | Query new getInviteByToken, display role, call new acceptInvite |
+| `apps/web/src/components/app/dashboard/invite-dialog.tsx` | Modified | Add role selector (Select component) |
+| `apps/web/src/components/app/dashboard/pending-invites.tsx` | Modified | Add role display, resend action |
+| `apps/web/src/components/app/dashboard/admin-table.tsx` | Modified | Show all team members, add role + status columns |
+| `apps/web/src/app/(app)/team/page.tsx` | Modified | Update to use new queries and components |
 | `packages/backend/convex/invitations/__tests__/mutations.test.ts` | Created | Unit tests for invitation mutations |
 
 ### Potential Risks & Mitigations
@@ -323,7 +325,7 @@ Claude Opus 4 (via Claude Code)
 
 - **Migration approach:** Created new `invitations` table alongside `adminInvites` (deprecated). No data migration needed — legacy table preserved for backward compat with any outstanding admin invites.
 - **Accept-invite backward compat:** `accept-invite-form.tsx` queries new `getInviteByToken` first, falls back to legacy `api.table.admin.getInvite` for old tokens.
-- **Role labels:** Added `ROLE_LABELS` map to `packages/shared/roles.ts`. Duplicated in `apps/admin/src/utils/roles.ts` because admin app doesn't have `@packages/shared` as a dependency.
+- **Role labels:** Added `ROLE_LABELS` map to `packages/shared/roles.ts`. Duplicated in `apps/web/src/utils/roles.ts` because admin app doesn't have `@packages/shared` as a dependency.
 - **Zod v4:** Admin app uses Zod 4 which uses `{ message }` instead of `{ required_error }` for `z.enum()`.
 - **Test pattern:** Used inline logic replication (matching `convex-test` pattern from existing tests) rather than direct mutation handler calls, since `convex-test` doesn't expose `.handler` on registered mutations.
 - **Email action:** Uses internal query `getInvitationById` to fetch invitation data from action context (Convex actions can't access DB directly).
@@ -340,9 +342,9 @@ Claude Opus 4 (via Claude Code)
 - `packages/transactional/emails/html-templates.ts` — **Modified** — Added renderInviteHtml template with role/team/inviter
 - `packages/transactional/index.ts` — **Modified** — Exported renderInviteHtml
 - `packages/shared/roles.ts` — **Modified** — Added ROLE_LABELS map
-- `apps/admin/src/utils/roles.ts` — **Created** — Local role constants for admin app
-- `apps/admin/src/components/app/auth/accept-invite-form.tsx` — **Modified** — Uses new getInviteByToken + acceptInvite, shows role/team, error states, legacy fallback
-- `apps/admin/src/components/app/dashboard/invite-dialog.tsx` — **Modified** — Added role selector (Select), uses createInvite, role in toast
-- `apps/admin/src/components/app/dashboard/admin-table.tsx` — **Modified** — Shows all team members via getTeamMembersWithInvites, role badges, status badges, role filter
-- `apps/admin/src/components/app/dashboard/pending-invites.tsx` — **Modified** — Uses listPendingInvites, shows role, resend button, cancelInvite/resendInvite mutations
-- `apps/admin/src/app/(app)/team/page.tsx` — **Modified** — Updated description text
+- `apps/web/src/utils/roles.ts` — **Created** — Local role constants
+- `apps/web/src/components/app/auth/accept-invite-form.tsx` — **Modified** — Uses new getInviteByToken + acceptInvite, shows role/team, error states, legacy fallback
+- `apps/web/src/components/app/dashboard/invite-dialog.tsx` — **Modified** — Added role selector (Select), uses createInvite, role in toast
+- `apps/web/src/components/app/dashboard/admin-table.tsx` — **Modified** — Shows all team members via getTeamMembersWithInvites, role badges, status badges, role filter
+- `apps/web/src/components/app/dashboard/pending-invites.tsx` — **Modified** — Uses listPendingInvites, shows role, resend button, cancelInvite/resendInvite mutations
+- `apps/web/src/app/(app)/team/page.tsx` — **Modified** — Updated description text

@@ -80,30 +80,30 @@ so that club documents are organized and easy to find.
   - [x] 4.4: Implement `deleteFolder` mutation: accepts `{ folderId: v.id("folders") }`, calls `requireRole(ctx, ["admin"])`. Fetch the folder, validate `teamId` match. Count subfolders: query `folders` where `parentId === folderId` and `isDeleted !== true` — if count > 0, throw `VALIDATION_ERROR: "Cannot delete folder that contains subfolders. Remove subfolders first."`. Count documents: query `documents` where `folderId === folderId` — if count > 0, throw `VALIDATION_ERROR: "Cannot delete folder that contains documents. Remove documents first."`. If empty, delete the folder (hard delete via `ctx.db.delete(folderId)`).
 
 - [x] **Task 5: Build FolderCard component** (AC: #12, #14)
-  - [x] 5.1: Create `apps/admin/src/components/documents/FolderCard.tsx`. Renders a card (using shadcn `Card` or custom styled div) for a single folder. Displays: folder icon (`Folder` from `lucide-react`), folder name, item count label (e.g. "3 items"). The entire card is clickable.
+  - [x] 5.1: Create `apps/web/src/components/documents/FolderCard.tsx`. Renders a card (using shadcn `Card` or custom styled div) for a single folder. Displays: folder icon (`Folder` from `lucide-react`), folder name, item count label (e.g. "3 items"). The entire card is clickable.
   - [x] 5.2: For admin users, add a dropdown menu (shadcn `DropdownMenu`) triggered by a three-dot icon button in the top-right corner of the card. Menu items: "Rename" (pencil icon) and "Delete" (trash icon). The dropdown is hidden for non-admin users.
   - [x] 5.3: Style the card with hover state, consistent padding, and appropriate sizing for grid layout.
 
 - [x] **Task 6: Build FolderCreateDialog component** (AC: #13, #15)
-  - [x] 6.1: Create `apps/admin/src/components/documents/FolderCreateDialog.tsx`. A shadcn `Dialog` component with a form containing: a text input for folder name, and submit/cancel buttons.
+  - [x] 6.1: Create `apps/web/src/components/documents/FolderCreateDialog.tsx`. A shadcn `Dialog` component with a form containing: a text input for folder name, and submit/cancel buttons.
   - [x] 6.2: Use `react-hook-form` + Zod for validation: name is required, must be at least 1 character after trimming. On submit, call `useMutation(api.documents.mutations.createFolder)` with the name and optional `parentId` prop. Show `toast.success("Folder created")` on success.
   - [x] 6.3: Accept a `parentId` prop (optional) — when provided, the dialog title says "New Subfolder" instead of "New Category".
 
 - [x] **Task 7: Build FolderRenameDialog component** (AC: #14)
-  - [x] 7.1: Create `apps/admin/src/components/documents/FolderRenameDialog.tsx`. A shadcn `Dialog` with a text input pre-filled with the current folder name, and save/cancel buttons.
+  - [x] 7.1: Create `apps/web/src/components/documents/FolderRenameDialog.tsx`. A shadcn `Dialog` with a text input pre-filled with the current folder name, and save/cancel buttons.
   - [x] 7.2: Use `react-hook-form` + Zod for validation. On submit, call `useMutation(api.documents.mutations.renameFolder)`. Show `toast.success("Folder renamed")`.
 
 - [x] **Task 8: Build FolderDeleteDialog component** (AC: #14)
-  - [x] 8.1: Create `apps/admin/src/components/documents/FolderDeleteDialog.tsx`. A shadcn `AlertDialog` with a confirmation message: "Are you sure you want to delete '[folder name]'? This action cannot be undone."
+  - [x] 8.1: Create `apps/web/src/components/documents/FolderDeleteDialog.tsx`. A shadcn `AlertDialog` with a confirmation message: "Are you sure you want to delete '[folder name]'? This action cannot be undone."
   - [x] 8.2: On confirm, call `useMutation(api.documents.mutations.deleteFolder)`. Show `toast.success("Folder deleted")` on success. Catch `ConvexError` and display the error message via `toast.error()` (e.g. "Cannot delete folder that contains documents").
 
 - [x] **Task 9: Build DocumentFolderBreadcrumb component** (AC: #16)
-  - [x] 9.1: Create `apps/admin/src/components/documents/DocumentFolderBreadcrumb.tsx`. Uses the existing shadcn `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbSeparator`, `BreadcrumbPage` components.
+  - [x] 9.1: Create `apps/web/src/components/documents/DocumentFolderBreadcrumb.tsx`. Uses the existing shadcn `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbSeparator`, `BreadcrumbPage` components.
   - [x] 9.2: Accepts `folderId` prop (optional). When `folderId` is provided, calls `useQuery(api.documents.queries.getFolderBreadcrumb, { folderId })` to get the ancestry path. Renders: "Documents" (link to `/documents`) > [Category Name] (link if not current) > [Subfolder Name] (current page, no link). When `folderId` is not provided (top-level view), renders only "Documents" as current page.
   - [x] 9.3: Handle loading state — show a skeleton breadcrumb while the query is pending.
 
 - [x] **Task 10: Build the Documents page** (AC: #12, #13, #15, #16, #17, #18)
-  - [x] 10.1: Create `apps/admin/src/app/(app)/documents/page.tsx`.
+  - [x] 10.1: Create `apps/web/src/app/(app)/documents/page.tsx`.
   - [x] 10.2: Manage state: `currentFolderId` (optional folder ID, `undefined` for top-level view). Use URL search params (`?folder=<id>`) for shareable navigation — read and write `currentFolderId` from/to `searchParams`.
   - [x] 10.3: When `currentFolderId` is undefined: call `useQuery(api.documents.queries.getFolders, {})` (no parentId = top-level). Display the `DocumentFolderBreadcrumb` (no folderId). Render a grid of `FolderCard` components for each category. Show the "New Category" button for admin users.
   - [x] 10.4: When `currentFolderId` is set: call `useQuery(api.documents.queries.getFolderContents, { folderId: currentFolderId })`. Display the `DocumentFolderBreadcrumb` with the current `folderId`. Render subfolders as `FolderCard` components, then documents below (as simple list items showing name, extension icon, date — full document card styling is refined in Story 4.2). Show the "New Subfolder" button for admin users (only if current folder is a top-level category — check that folder's `parentId` is undefined). Do NOT show "New Subfolder" if the current folder is already a subfolder (would exceed depth limit).
@@ -113,11 +113,11 @@ so that club documents are organized and easy to find.
   - [x] 10.8: Call `useQuery(api.documents.queries.getFolderItemCounts, { folderIds })` to fetch item counts for all visible folders in one batch query. Pass counts to `FolderCard` components.
 
 - [x] **Task 11: Add Documents to sidebar navigation** (AC: #12)
-  - [x] 11.1: In `apps/admin/src/components/application-shell2.tsx`, add a new `NavItem` to the `navGroups` array: `{ label: "Documents", icon: IconFileText, href: "/documents" }`. Import `IconFileText` (or `IconFiles`) from `@tabler/icons-react`.
+  - [x] 11.1: In `apps/web/src/components/application-shell2.tsx`, add a new `NavItem` to the `navGroups` array: `{ label: "Documents", icon: IconFileText, href: "/documents" }`. Import `IconFileText` (or `IconFiles`) from `@tabler/icons-react`.
   - [x] 11.2: Verify the sidebar link renders and navigates correctly.
 
 - [x] **Task 12: Update site header breadcrumbs** (AC: #16)
-  - [x] 12.1: In `apps/admin/src/components/site-header.tsx`, update the `getBreadcrumbs()` function to handle the `/documents` path segment. Add a case: when path starts with `/documents`, include "Documents" as a breadcrumb segment linking to `/documents`. Note: the in-page `DocumentFolderBreadcrumb` component handles folder-level breadcrumbs within the page content area. The site header breadcrumb only needs the top-level route segment.
+  - [x] 12.1: In `apps/web/src/components/site-header.tsx`, update the `getBreadcrumbs()` function to handle the `/documents` path segment. Add a case: when path starts with `/documents`, include "Documents" as a breadcrumb segment linking to `/documents`. Note: the in-page `DocumentFolderBreadcrumb` component handles folder-level breadcrumbs within the page content area. The site header breadcrumb only needs the top-level route segment.
 
 - [x] **Task 13: Write backend unit tests** (AC: #5, #6, #7, #8, #9, #10, #11, #19)
   - [x] 13.1: Create `packages/backend/convex/documents/__tests__/queries.test.ts` using `@convex-dev/test` + `vitest`.
@@ -195,9 +195,9 @@ The original epic acceptance criteria (epics.md, Story 4.1) reference the docume
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireAuth(ctx)` returning `{ user, teamId }` and `requireRole(ctx, roles)` |
 | `teams` table in schema | Story 2.1 | `packages/backend/convex/table/teams.ts` must exist and be registered in `schema.ts` |
 | Users table with `teamId` and 6-role `role` field | Story 2.1 | User schema must have `teamId` and expanded role union (`admin`, `coach`, `analyst`, `physio`, `player`, `staff`) |
-| Sidebar navigation component | Story 1.3 | `apps/admin/src/components/application-shell2.tsx` must have the `navGroups` array to extend |
+| Sidebar navigation component | Story 1.3 | `apps/web/src/components/application-shell2.tsx` must have the `navGroups` array to extend |
 | shadcn/ui theme configured | Story 1.2 | shadcn preset applied, CSS variables active |
-| Breadcrumb UI component | Story 1.2 | `apps/admin/src/components/ui/breadcrumb.tsx` must exist (already present in codebase) |
+| Breadcrumb UI component | Story 1.2 | `apps/web/src/components/ui/breadcrumb.tsx` must exist (already present in codebase) |
 
 ### Current State (Baseline)
 
@@ -207,9 +207,9 @@ The original epic acceptance criteria (epics.md, Story 4.1) reference the docume
 
 **`convex/lib/` directory:** Contains only `auth/ResendOTP.ts` and `auth/ResendOTPPasswordReset.ts`. **No `auth.ts` helpers or `permissions.ts` utilities exist yet** — these should be created by Story 2.1. If Story 2.1 is not yet complete, the auth helpers in this story's mutations will be blocked. As a fallback, `requireAdmin` exists in `table/admin.ts` and could be used temporarily.
 
-**`apps/admin/src/app/(app)/`:** Contains routes for `/team`, `/users`. **No `/documents` route exists.**
+**`apps/web/src/app/(app)/`:** Contains routes for `/team`, `/users`. **No `/documents` route exists.**
 
-**`apps/admin/src/components/`:** Contains `app/`, `custom/`, `ui/` directories. **No `documents/` or `shared/` directory exists.** The `ui/breadcrumb.tsx` component is already available.
+**`apps/web/src/components/`:** Contains `app/`, `custom/`, `ui/` directories. **No `documents/` or `shared/` directory exists.** The `ui/breadcrumb.tsx` component is already available.
 
 **Sidebar navigation (`application-shell2.tsx`):** The `navGroups` array currently contains only "Users" and "Team" items under a "General" group. Documents must be added.
 
@@ -314,14 +314,14 @@ This allows users to bookmark and share folder locations. The `?folder=<id>` pat
 | `packages/shared/constants.js` (or new `documents.ts`) | Modified/Created | Document constants: file types, max size, max depth, roles |
 | `packages/backend/convex/documents/queries.ts` | Created | getFolders, getFolderContents, getFolderBreadcrumb, getFolderItemCounts |
 | `packages/backend/convex/documents/mutations.ts` | Created | createFolder, renameFolder, deleteFolder |
-| `apps/admin/src/components/documents/FolderCard.tsx` | Created | Folder card component with admin actions |
-| `apps/admin/src/components/documents/FolderCreateDialog.tsx` | Created | Create folder/subfolder dialog |
-| `apps/admin/src/components/documents/FolderRenameDialog.tsx` | Created | Rename folder dialog |
-| `apps/admin/src/components/documents/FolderDeleteDialog.tsx` | Created | Delete folder confirmation dialog |
-| `apps/admin/src/components/documents/DocumentFolderBreadcrumb.tsx` | Created | Folder path breadcrumb component |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Created | Documents page with folder browser |
-| `apps/admin/src/components/application-shell2.tsx` | Modified | Add Documents nav item to sidebar |
-| `apps/admin/src/components/site-header.tsx` | Modified | Add /documents breadcrumb segment |
+| `apps/web/src/components/documents/FolderCard.tsx` | Created | Folder card component with admin actions |
+| `apps/web/src/components/documents/FolderCreateDialog.tsx` | Created | Create folder/subfolder dialog |
+| `apps/web/src/components/documents/FolderRenameDialog.tsx` | Created | Rename folder dialog |
+| `apps/web/src/components/documents/FolderDeleteDialog.tsx` | Created | Delete folder confirmation dialog |
+| `apps/web/src/components/documents/DocumentFolderBreadcrumb.tsx` | Created | Folder path breadcrumb component |
+| `apps/web/src/app/(app)/documents/page.tsx` | Created | Documents page with folder browser |
+| `apps/web/src/components/application-shell2.tsx` | Modified | Add Documents nav item to sidebar |
+| `apps/web/src/components/site-header.tsx` | Modified | Add /documents breadcrumb segment |
 | `packages/backend/convex/documents/__tests__/queries.test.ts` | Created | Unit tests for document queries |
 | `packages/backend/convex/documents/__tests__/mutations.test.ts` | Created | Unit tests for folder mutations |
 
@@ -393,8 +393,8 @@ Claude Opus 4.6 (via Claude Code)
 - **Task 2 (Constants):** Created `packages/shared/documents.ts` with SUPPORTED_EXTENSIONS, SUPPORTED_FILE_TYPES, MAX_FILE_SIZE_BYTES, MAX_FOLDER_DEPTH, DOCUMENT_TYPES. Registered export in package.json. Roles already existed in `packages/shared/roles.ts`.
 - **Task 3 (Queries):** Implemented getFolders, getFolderContents, getFolderBreadcrumb, getFolderItemCounts in `convex/documents/queries.ts`. All use requireAuth, filter by teamId, role-based access filtering for non-admin users.
 - **Task 4 (Mutations):** Implemented createFolder, renameFolder, deleteFolder in `convex/documents/mutations.ts`. All use requireRole(["admin"]), enforce depth limit, validate emptiness on delete.
-- **Tasks 5-9 (UI Components):** Created FolderCard, FolderCreateDialog, FolderRenameDialog, FolderDeleteDialog, DocumentFolderBreadcrumb in `apps/admin/src/components/documents/`.
-- **Task 10 (Page):** Rewrote `apps/admin/src/app/(app)/documents/page.tsx` with full folder browser: URL-based navigation, loading skeletons, empty states, admin controls, batch item counts.
+- **Tasks 5-9 (UI Components):** Created FolderCard, FolderCreateDialog, FolderRenameDialog, FolderDeleteDialog, DocumentFolderBreadcrumb in `apps/web/src/components/documents/`.
+- **Task 10 (Page):** Rewrote `apps/web/src/app/(app)/documents/page.tsx` with full folder browser: URL-based navigation, loading skeletons, empty states, admin controls, batch item counts.
 - **Task 11 (Sidebar):** Documents nav item already existed in `application-shell2.tsx` (IconFolders, /documents).
 - **Task 12 (Header Breadcrumbs):** Documents already in `routeLabelMap` in `site-header.tsx`.
 - **Task 13 (Tests):** 27 tests across queries.test.ts (13 tests) and mutations.test.ts (14 tests). All pass. Full suite: 146/146 pass.
@@ -411,11 +411,11 @@ Claude Opus 4.6 (via Claude Code)
 - `packages/shared/package.json` — Modified (added documents export)
 - `packages/backend/convex/documents/queries.ts` — Created
 - `packages/backend/convex/documents/mutations.ts` — Created
-- `apps/admin/src/components/documents/FolderCard.tsx` — Created
-- `apps/admin/src/components/documents/FolderCreateDialog.tsx` — Created
-- `apps/admin/src/components/documents/FolderRenameDialog.tsx` — Created
-- `apps/admin/src/components/documents/FolderDeleteDialog.tsx` — Created
-- `apps/admin/src/components/documents/DocumentFolderBreadcrumb.tsx` — Created
-- `apps/admin/src/app/(app)/documents/page.tsx` — Modified (rewrote from placeholder)
+- `apps/web/src/components/documents/FolderCard.tsx` — Created
+- `apps/web/src/components/documents/FolderCreateDialog.tsx` — Created
+- `apps/web/src/components/documents/FolderRenameDialog.tsx` — Created
+- `apps/web/src/components/documents/FolderDeleteDialog.tsx` — Created
+- `apps/web/src/components/documents/DocumentFolderBreadcrumb.tsx` — Created
+- `apps/web/src/app/(app)/documents/page.tsx` — Modified (rewrote from placeholder)
 - `packages/backend/convex/documents/__tests__/queries.test.ts` — Created
 - `packages/backend/convex/documents/__tests__/mutations.test.ts` — Created

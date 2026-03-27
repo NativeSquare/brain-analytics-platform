@@ -5,6 +5,8 @@ Story Type: backend
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
 
+> **IMPORTANT:** In this story, "admin" refers to a user with the admin ROLE in the client web app (apps/web), NOT the apps/admin application. All admin-facing UI (invite dialog, members table, user management) lives in apps/web.
+
 > **Testing philosophy: Write tests where they matter — critical business logic, security rules, data integrity, and complex state management. Do NOT write tests for trivial getters, simple UI rendering, or obvious CRUD. Quality over quantity.**
 
 > **IMPORTANT: Backend and integration tests MUST use @convex-dev/test (Convex test framework). Do not use mock-based testing for Convex mutations/queries — use the real Convex test environment.**
@@ -309,7 +311,7 @@ Claude Opus 4.6
 - `packages/backend/vitest.config.ts` — Created: vitest config for edge-runtime
 - `packages/backend/convex/lib/__tests__/auth.test.ts` — Created: 18 auth helper tests
 - `packages/backend/convex/users/__tests__/queries.test.ts` — Created: 9 query/seed tests
-- `apps/admin/src/components/app/dashboard/admin-table.tsx` — Modified: updated role type
-- `apps/admin/src/components/app/dashboard/user-table.tsx` — Modified: updated role type + filter
-- `apps/admin/src/components/app/dashboard/user-detail.tsx` — Modified: updated role enum + form schema
-- `apps/admin/src/app/(app)/users/page.tsx` — Modified: removed stale roleFilter="user"
+- `apps/web/src/components/app/dashboard/admin-table.tsx` — Modified: updated role type
+- `apps/web/src/components/app/dashboard/user-table.tsx` — Modified: updated role type + filter
+- `apps/web/src/components/app/dashboard/user-detail.tsx` — Modified: updated role enum + form schema
+- `apps/web/src/app/(app)/users/page.tsx` — Modified: removed stale roleFilter="user"

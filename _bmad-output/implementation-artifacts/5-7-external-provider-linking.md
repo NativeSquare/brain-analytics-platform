@@ -52,7 +52,7 @@ so that future integrations with GPS trackers and performance platforms can link
   - [ ] 2.8: Return `{ success: true }`.
 
 - [ ] **Task 3: Build `ExternalProviders` component** (AC: #1, #2, #3, #4, #5, #8, #9)
-  - [ ] 3.1: Create `apps/admin/src/components/players/ExternalProviders.tsx`. Accept props: `{ playerId: Id<"players"> }`.
+  - [ ] 3.1: Create `apps/web/src/components/players/ExternalProviders.tsx`. Accept props: `{ playerId: Id<"players"> }`.
   - [ ] 3.2: Call `useQuery(api.players.queries.getExternalProviders, { playerId })` to get `{ providers, canEdit }`. Handle loading state (return `Skeleton` components when query returns `undefined`).
   - [ ] 3.3: Render the info banner at the top using a shadcn `Alert` or `Callout` component with an info icon: "External provider links are saved for future integrations. No data is imported automatically at this time."
   - [ ] 3.4: Render the provider list section with a heading "Linked Providers" and, if `canEdit` is true, an "Add Provider" button (shadcn `Button` with a `+` or link icon).
@@ -65,7 +65,7 @@ so that future integrations with GPS trackers and performance platforms can link
   - [ ] 3.11: **Error handling:** Wrap mutation calls in try/catch. On `ConvexError`, display `error.data.message` via `toast.error()`. On unknown errors, display a generic "Something went wrong" toast.
 
 - [ ] **Task 4: Wire `ExternalProviders` into the player profile "Integrations" tab** (AC: #1)
-  - [ ] 4.1: In `apps/admin/src/components/players/PlayerProfileTabs.tsx`, locate the "Integrations" tab content rendering.
+  - [ ] 4.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, locate the "Integrations" tab content rendering.
   - [ ] 4.2: Replace the placeholder content (icon + "Coming soon" text) with: `<ExternalProviders playerId={player._id} />`.
   - [ ] 4.3: Import `ExternalProviders` from `./ExternalProviders`.
 
@@ -163,11 +163,11 @@ The original epic acceptance criteria (epics.md, Story 5.7) state:
 |------------|-------|-------------|
 | `players` table with `externalProviderLinks` field in schema | Story 5.1 | `packages/backend/convex/table/players.ts` must define `externalProviderLinks: v.optional(v.array(v.object({ provider: v.string(), accountId: v.string() })))` |
 | `getPlayerById` query | Story 5.1 | `packages/backend/convex/players/queries.ts` must export `getPlayerById` |
-| `PlayerProfileTabs` component with "Integrations" tab | Story 5.1 | `apps/admin/src/components/players/PlayerProfileTabs.tsx` must render an "Integrations" tab (currently placeholder) |
-| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/admin/src/app/(app)/players/[playerId]/page.tsx` must exist and render `PlayerProfileTabs` |
+| `PlayerProfileTabs` component with "Integrations" tab | Story 5.1 | `apps/web/src/components/players/PlayerProfileTabs.tsx` must render an "Integrations" tab (currently placeholder) |
+| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/web/src/app/(app)/players/[playerId]/page.tsx` must exist and render `PlayerProfileTabs` |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireAuth(ctx)` returning `{ user, teamId }` and `requireRole(ctx, roles)` |
 | `createPlayer` mutation (so test players exist) | Story 5.2 | `packages/backend/convex/players/mutations.ts` must export `createPlayer` |
-| shadcn/ui Dialog, AlertDialog, Input, Button, Alert, Table, DropdownMenu components | Story 1.2 | All present in `apps/admin/src/components/ui/` |
+| shadcn/ui Dialog, AlertDialog, Input, Button, Alert, Table, DropdownMenu components | Story 1.2 | All present in `apps/web/src/components/ui/` |
 | react-hook-form + Zod installed | Template | Already in monorepo dependencies |
 | sonner toast | Template | Already configured in root layout |
 
@@ -250,8 +250,8 @@ const [deleteIndex, setDeleteIndex] = useState<number | null>(null) // controls 
 |------|-------------|-------------|
 | `packages/backend/convex/players/queries.ts` | Modified | Add `getExternalProviders` query |
 | `packages/backend/convex/players/mutations.ts` | Modified | Add `updateExternalProviders` mutation |
-| `apps/admin/src/components/players/ExternalProviders.tsx` | Created | Full CRUD component for external provider links |
-| `apps/admin/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Integrations" tab placeholder with `ExternalProviders` component |
+| `apps/web/src/components/players/ExternalProviders.tsx` | Created | Full CRUD component for external provider links |
+| `apps/web/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Integrations" tab placeholder with `ExternalProviders` component |
 | `packages/backend/convex/players/__tests__/queries.test.ts` | Modified | Add `getExternalProviders` tests |
 | `packages/backend/convex/players/__tests__/mutations.test.ts` | Modified | Add `updateExternalProviders` tests |
 

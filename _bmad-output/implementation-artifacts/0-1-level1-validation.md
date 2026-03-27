@@ -87,7 +87,7 @@ So that the dev->review gate never crashes on toolchain problems during real epi
 
 ### What was done
 - **AC1**: Created root `tsconfig.json` with project references to all workspace packages. Added `composite: true` to each workspace tsconfig (apps/web, apps/admin, apps/native, packages/backend/convex, packages/transactional). Fixed 4 pre-existing TS errors:
-  - `apps/admin/src/components/ui/button.tsx`: Added missing `"icon-xs"` size variant to Button component (used by combobox.tsx)
+  - `apps/web/src/components/ui/button.tsx`: Added missing `"icon-xs"` size variant to Button component (used by combobox.tsx)
   - `apps/native/src/app/(app)/(tabs)/_layout.tsx`: Fixed import — `Label`/`Icon` are sub-components of `NativeTabs.Trigger`, not top-level exports from `expo-router/unstable-native-tabs`
   - `packages/backend/convex/convex.config.ts`: Added `ReturnType<typeof defineApp>` annotation to fix TS2742 (non-portable inferred type)
 - **AC2**: Installed vitest 4.1.2 as root devDependency. Created `src/__tests__/smoke.test.ts`.
@@ -101,7 +101,7 @@ So that the dev->review gate never crashes on toolchain problems during real epi
 - `pnpm-lock.yaml` (updated)
 - `apps/web/tsconfig.json` (added composite: true)
 - `apps/admin/tsconfig.json` (added composite: true)
-- `apps/admin/src/components/ui/button.tsx` (added icon-xs size variant)
+- `apps/web/src/components/ui/button.tsx` (added icon-xs size variant)
 - `apps/native/tsconfig.json` (added composite: true)
 - `apps/native/src/app/(app)/(tabs)/_layout.tsx` (fixed NativeTabs.Trigger sub-component usage)
 - `packages/backend/convex/tsconfig.json` (added composite: true)

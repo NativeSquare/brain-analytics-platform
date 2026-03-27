@@ -165,7 +165,7 @@ so that I can set up the regular training and meeting schedule once.
   - [x]7.2: Run `npx convex dev` to verify schema deploys without errors.
 
 - [x] **Task 8: Build RecurrenceOptions component** (AC: #1, #2)
-  - [x]8.1: Create `apps/admin/src/components/calendar/RecurrenceOptions.tsx`. This is a controlled component that renders:
+  - [x]8.1: Create `apps/web/src/components/calendar/RecurrenceOptions.tsx`. This is a controlled component that renders:
     - A `Switch` (shadcn/ui) labeled "Recurring event" — controls visibility of the recurrence fields
     - When ON: a frequency `Select` dropdown with options: Daily, Weekly, Bi-Weekly, Monthly
     - When ON: a series end date picker (shadcn `Calendar` in a `Popover`, same pattern as the event date picker from Story 3.2)
@@ -175,7 +175,7 @@ so that I can set up the regular training and meeting schedule once.
   - [x]8.4: The occurrence count preview should handle edge cases gracefully: show nothing if startsAt or endDate is not set, show "Invalid: end date must be after start date" if endDate <= startsAt.
 
 - [x] **Task 9: Integrate RecurrenceOptions into EventForm** (AC: #1, #2, #3)
-  - [x]9.1: Modify `apps/admin/src/components/calendar/EventForm.tsx` (created in Story 3.2):
+  - [x]9.1: Modify `apps/web/src/components/calendar/EventForm.tsx` (created in Story 3.2):
     - Add `isRecurring`, `frequency`, and `endDate` fields to the form's react-hook-form configuration
     - Update the Zod resolver to use the extended/discriminated schema from Task 1
     - Insert the `RecurrenceOptions` component below the RSVP Switch and above the InvitationSelector
@@ -187,13 +187,13 @@ so that I can set up the regular training and meeting schedule once.
   - [x]9.3: Ensure form reset clears recurrence fields when dialog is closed or after successful submission.
 
 - [x] **Task 10: Add recurring event indicator to EventCard** (AC: #4, #10)
-  - [x]10.1: Modify `apps/admin/src/components/calendar/EventCard.tsx` (created in Story 3.1):
+  - [x]10.1: Modify `apps/web/src/components/calendar/EventCard.tsx` (created in Story 3.1):
     - Check if the event has `isRecurring: true`
     - If recurring, render a small `Repeat` icon (from `lucide-react`) next to the event name or badge
     - Keep the icon subtle (small size, muted color) so it doesn't compete with the EventTypeBadge
 
 - [x] **Task 11: Add series info and actions to EventDetail** (AC: #5, #6, #7, #10, #11)
-  - [x]11.1: Modify `apps/admin/src/components/calendar/EventDetail.tsx` (created in Story 3.1):
+  - [x]11.1: Modify `apps/web/src/components/calendar/EventDetail.tsx` (created in Story 3.1):
     - If the event is recurring (`isRecurring: true` and `seriesId` is present):
       - Display a "Recurring" badge with `Repeat` icon
       - Call `useQuery(api.calendar.queries.getSeriesInfo, { seriesId })` to get series metadata
@@ -297,14 +297,14 @@ This is the **recurring events story for Epic 3 (Calendar & Scheduling)**. It ex
 | `calendarEventSeries` table | Story 3.1 | `packages/backend/convex/table/calendarEventSeries.ts` must exist |
 | `calendarEventUsers` junction table | Story 3.1 | `packages/backend/convex/table/calendarEventUsers.ts` must exist |
 | `createEvent` mutation | Story 3.2 | `packages/backend/convex/calendar/mutations.ts` must export `createEvent` |
-| `EventForm` component | Story 3.2 | `apps/admin/src/components/calendar/EventForm.tsx` must exist |
-| `CreateEventDialog` component | Story 3.2 | `apps/admin/src/components/calendar/CreateEventDialog.tsx` must exist |
-| `EventDetail` panel | Story 3.1 | `apps/admin/src/components/calendar/EventDetail.tsx` must exist |
-| `EventCard` component | Story 3.1 | `apps/admin/src/components/calendar/EventCard.tsx` must exist |
+| `EventForm` component | Story 3.2 | `apps/web/src/components/calendar/EventForm.tsx` must exist |
+| `CreateEventDialog` component | Story 3.2 | `apps/web/src/components/calendar/CreateEventDialog.tsx` must exist |
+| `EventDetail` panel | Story 3.1 | `apps/web/src/components/calendar/EventDetail.tsx` must exist |
+| `EventCard` component | Story 3.1 | `apps/web/src/components/calendar/EventCard.tsx` must exist |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export both |
 | `createNotification` utility | Story 3.2 (Task 8) or 3.7 | `packages/backend/convex/lib/notifications.ts` must export `createNotification` |
 | `createEventSchema` Zod schema | Story 3.2 | Shared calendar validation schema must exist |
-| Calendar page with month view | Story 3.1 | `apps/admin/src/app/(app)/calendar/page.tsx` must exist |
+| Calendar page with month view | Story 3.1 | `apps/web/src/app/(app)/calendar/page.tsx` must exist |
 | Schedule-X installed and configured | Story 3.1 | `@schedule-x/react` and related packages installed in admin app |
 | `date-fns` installed | Story 3.1 (template) | `date-fns` 4.1.0 available in admin app |
 
@@ -427,10 +427,10 @@ Admin clicks a recurring occurrence in calendar
 | `packages/backend/convex/calendar/queries.ts` | Modified | Add `getSeriesInfo` query |
 | `packages/backend/convex/calendar/utils.ts` | Created | `computeOccurrenceDates` utility function (or place in shared package) |
 | `packages/backend/convex/table/calendarEvents.ts` | Modified (conditional) | Add `isModified: v.optional(v.boolean())` field if not present |
-| `apps/admin/src/components/calendar/RecurrenceOptions.tsx` | Created | Recurring event toggle, frequency select, end date picker, occurrence preview |
-| `apps/admin/src/components/calendar/EventForm.tsx` | Modified | Integrate RecurrenceOptions, conditional mutation dispatch (createEvent vs createRecurringEvent) |
-| `apps/admin/src/components/calendar/EventCard.tsx` | Modified | Add recurring icon indicator for events with `isRecurring: true` |
-| `apps/admin/src/components/calendar/EventDetail.tsx` | Modified | Add series info display, Edit button, Cancel Occurrence button, Delete Series button with confirmation dialogs |
+| `apps/web/src/components/calendar/RecurrenceOptions.tsx` | Created | Recurring event toggle, frequency select, end date picker, occurrence preview |
+| `apps/web/src/components/calendar/EventForm.tsx` | Modified | Integrate RecurrenceOptions, conditional mutation dispatch (createEvent vs createRecurringEvent) |
+| `apps/web/src/components/calendar/EventCard.tsx` | Modified | Add recurring icon indicator for events with `isRecurring: true` |
+| `apps/web/src/components/calendar/EventDetail.tsx` | Modified | Add series info display, Edit button, Cancel Occurrence button, Delete Series button with confirmation dialogs |
 | `packages/backend/convex/calendar/__tests__/mutations.test.ts` | Modified | Add tests for createRecurringEvent, updateEvent, cancelEvent, deleteEventSeries |
 | `packages/backend/convex/calendar/__tests__/utils.test.ts` | Created | Unit tests for computeOccurrenceDates |
 
@@ -522,11 +522,11 @@ Claude Opus 4.6
 - `packages/backend/convex/calendar/__tests__/utils.test.ts` — NEW: 9 tests for computeOccurrenceDates
 - `packages/backend/convex/calendar/__tests__/mutations.test.ts` — Added 14 tests for new mutations/queries
 - `packages/backend/package.json` — Added date-fns dependency
-- `apps/admin/src/components/calendar/RecurrenceOptions.tsx` — NEW: Recurring event toggle, frequency, end date, preview
-- `apps/admin/src/components/calendar/EventForm.tsx` — Extended for create/edit modes, recurrence integration
-- `apps/admin/src/components/calendar/CreateEventDialog.tsx` — Updated success handler for recurring events
-- `apps/admin/src/components/calendar/EventCard.tsx` — Added isRecurring prop, Repeat icon
-- `apps/admin/src/components/calendar/EventDetail.tsx` — Added series info, edit, cancel, delete series UI
-- `apps/admin/src/components/calendar/CalendarView.tsx` — Added isRecurring to event mapping, Repeat icon
-- `apps/admin/src/components/calendar/DayEventsPanel.tsx` — Passes isRecurring to EventCard
-- `apps/admin/src/app/(app)/calendar/page.tsx` — Passes isAdmin to EventDetail
+- `apps/web/src/components/calendar/RecurrenceOptions.tsx` — NEW: Recurring event toggle, frequency, end date, preview
+- `apps/web/src/components/calendar/EventForm.tsx` — Extended for create/edit modes, recurrence integration
+- `apps/web/src/components/calendar/CreateEventDialog.tsx` — Updated success handler for recurring events
+- `apps/web/src/components/calendar/EventCard.tsx` — Added isRecurring prop, Repeat icon
+- `apps/web/src/components/calendar/EventDetail.tsx` — Added series info, edit, cancel, delete series UI
+- `apps/web/src/components/calendar/CalendarView.tsx` — Added isRecurring to event mapping, Repeat icon
+- `apps/web/src/components/calendar/DayEventsPanel.tsx` — Passes isRecurring to EventCard
+- `apps/web/src/app/(app)/calendar/page.tsx` — Passes isAdmin to EventDetail

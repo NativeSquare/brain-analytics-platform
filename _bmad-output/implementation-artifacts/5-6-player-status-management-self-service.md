@@ -78,7 +78,7 @@ so that I can keep my details up to date without relying on admin staff.
   - [ ] 4.2: Create a Zod schema for the player contact info edit form: `contactInfoSchema = z.object({ phone: z.string().max(500, "Phone number is too long").optional().or(z.literal("")), personalEmail: z.string().email("Invalid email format").max(500, "Email is too long").optional().or(z.literal("")), address: z.string().max(500, "Address is too long").optional().or(z.literal("")), emergencyContactName: z.string().max(500, "Name is too long").optional().or(z.literal("")), emergencyContactRelationship: z.string().max(500, "Relationship is too long").optional().or(z.literal("")), emergencyContactPhone: z.string().max(500, "Phone number is too long").optional().or(z.literal("")) })`.
 
 - [ ] **Task 5: Build StatusChangeDialog component** (AC: #1, #3)
-  - [ ] 5.1: Create `apps/admin/src/components/players/StatusChangeDialog.tsx`. Accepts props: `playerId: Id<"players">`, `currentStatus: string`, `playerName: string`, `open: boolean`, `onClose: () => void`.
+  - [ ] 5.1: Create `apps/web/src/components/players/StatusChangeDialog.tsx`. Accepts props: `playerId: Id<"players">`, `currentStatus: string`, `playerName: string`, `open: boolean`, `onClose: () => void`.
   - [ ] 5.2: Render a shadcn `AlertDialog` with title "Change Player Status".
   - [ ] 5.3: Display the current status (with `PlayerStatusBadge`) and a `Select` component for choosing the new status. The select options are the three statuses from `PLAYER_STATUSES` / `PLAYER_STATUS_LABELS`, excluding the current status.
   - [ ] 5.4: Display a contextual warning message based on the selected new status:
@@ -89,7 +89,7 @@ so that I can keep my details up to date without relying on admin staff.
   - [ ] 5.6: "Cancel" button closes the dialog.
 
 - [ ] **Task 6: Build ContactInfoEditDialog component** (AC: #9, #11)
-  - [ ] 6.1: Create `apps/admin/src/components/players/ContactInfoEditDialog.tsx`. Accepts props: `player: PlayerDoc` (the current player object with existing contact fields), `open: boolean`, `onClose: () => void`.
+  - [ ] 6.1: Create `apps/web/src/components/players/ContactInfoEditDialog.tsx`. Accepts props: `player: PlayerDoc` (the current player object with existing contact fields), `open: boolean`, `onClose: () => void`.
   - [ ] 6.2: Use `react-hook-form` with `zodResolver` and `contactInfoSchema`. Pre-populate `defaultValues` from the existing player object: `phone`, `personalEmail`, `address`, `emergencyContactName`, `emergencyContactRelationship`, `emergencyContactPhone`.
   - [ ] 6.3: Render the form inside a shadcn `Dialog` (or `Sheet`) with title "Edit Contact Information".
   - [ ] 6.4: Form fields (all optional): `Input` for phone, `Input` for personal email (type="email"), `Textarea` for address, a section header "Emergency Contact" followed by `Input` for emergency contact name, `Input` for emergency contact relationship, `Input` for emergency contact phone. Display inline validation errors.
@@ -97,19 +97,19 @@ so that I can keep my details up to date without relying on admin staff.
   - [ ] 6.6: "Cancel" button closes the dialog without saving.
 
 - [ ] **Task 7: Integrate StatusChangeDialog into PlayerProfileHeader** (AC: #1, #12)
-  - [ ] 7.1: In `apps/admin/src/components/players/PlayerProfileHeader.tsx`, add a "Change Status" button (or a dropdown menu action) visible ONLY when the current user has the `admin` role. Use the `getPlayerTabAccess` result or a separate role check (e.g., check `currentUser.role === "admin"`).
+  - [ ] 7.1: In `apps/web/src/components/players/PlayerProfileHeader.tsx`, add a "Change Status" button (or a dropdown menu action) visible ONLY when the current user has the `admin` role. Use the `getPlayerTabAccess` result or a separate role check (e.g., check `currentUser.role === "admin"`).
   - [ ] 7.2: Wire the button to open the `StatusChangeDialog` component with the current player's `_id`, `status`, and name.
   - [ ] 7.3: Ensure the admin also sees a full "Edit Profile" button that opens the full profile edit form (from Story 5.2's `ProfileForm`).
 
 - [ ] **Task 8: Integrate ContactInfoEditDialog into PlayerProfileTabs (Bio tab)** (AC: #8, #9, #12)
-  - [ ] 8.1: In `apps/admin/src/components/players/PlayerProfileTabs.tsx`, within the "Bio" tab content section, add an "Edit Contact Info" button visible ONLY when `tabAccess.isSelf === true` (i.e., the player is viewing their own profile). Position it near the contact information fields.
+  - [ ] 8.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, within the "Bio" tab content section, add an "Edit Contact Info" button visible ONLY when `tabAccess.isSelf === true` (i.e., the player is viewing their own profile). Position it near the contact information fields.
   - [ ] 8.2: Wire the button to open the `ContactInfoEditDialog` component with the current player object.
   - [ ] 8.3: For admin users viewing any player's Bio tab, show the full "Edit Profile" button instead (which opens Story 5.2's full profile edit form allowing all fields to be changed). Admin users should NOT see the limited "Edit Contact Info" button — they see the full edit instead.
   - [ ] 8.4: Ensure fields updated via self-service edit are reflected immediately in the Bio tab display (Convex subscription handles this).
 
 - [ ] **Task 9: Add "My Profile" navigation shortcut for player users** (AC: #13)
-  - [ ] 9.1: Create a hook `apps/admin/src/hooks/useOwnPlayerProfile.ts` that calls `useQuery(api.players.queries.getOwnPlayerProfile, {})` and returns the player profile (or `null`).
-  - [ ] 9.2: In the sidebar navigation component (`apps/admin/src/components/application-shell2.tsx`), conditionally render a "My Profile" nav item for users with `role === "player"` (or any user with a linked player profile). The link targets `/players/[ownPlayerId]` using the `_id` from the `getOwnPlayerProfile` query result. Use a Lucide/Tabler icon like `UserCircle` or `User`.
+  - [ ] 9.1: Create a hook `apps/web/src/hooks/useOwnPlayerProfile.ts` that calls `useQuery(api.players.queries.getOwnPlayerProfile, {})` and returns the player profile (or `null`).
+  - [ ] 9.2: In the sidebar navigation component (`apps/web/src/components/application-shell2.tsx`), conditionally render a "My Profile" nav item for users with `role === "player"` (or any user with a linked player profile). The link targets `/players/[ownPlayerId]` using the `_id` from the `getOwnPlayerProfile` query result. Use a Lucide/Tabler icon like `UserCircle` or `User`.
   - [ ] 9.3: Handle the loading state — while the query is loading (returns `undefined`), show the "My Profile" link with a disabled state or skeleton. If `null` (no linked profile), hide the link.
 
 - [ ] **Task 10: Write backend unit tests** (AC: #2, #7, #10, #14)
@@ -430,15 +430,15 @@ The original epic acceptance criteria (epics.md, Story 5.6) state:
 
 **`convex/players/mutations.ts`:** Exists from Story 5.2+ with `createPlayer`, `updatePlayer`, and CRUD mutations for stats/fitness/injuries. **No `updatePlayerStatus` or `updateOwnContactInfo` mutations** — must be added.
 
-**`apps/admin/src/components/players/StatusChangeDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/StatusChangeDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/ContactInfoEditDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/ContactInfoEditDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/PlayerProfileHeader.tsx`:** Exists from Story 5.1. Currently shows player photo, name, status badge. **No "Change Status" button** — must be added for admin users.
+**`apps/web/src/components/players/PlayerProfileHeader.tsx`:** Exists from Story 5.1. Currently shows player photo, name, status badge. **No "Change Status" button** — must be added for admin users.
 
-**`apps/admin/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. Bio tab shows player fields read-only. **No "Edit Contact Info" button** — must be added for self-service.
+**`apps/web/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. Bio tab shows player fields read-only. **No "Edit Contact Info" button** — must be added for self-service.
 
-**`apps/admin/src/hooks/useOwnPlayerProfile.ts`:** **Does not exist.** Must be created.
+**`apps/web/src/hooks/useOwnPlayerProfile.ts`:** **Does not exist.** Must be created.
 
 **Sidebar navigation (`application-shell2.tsx`):** Contains "Players" link (from Story 5.1). **No "My Profile" link** for player users — must be added conditionally.
 
@@ -458,12 +458,12 @@ The original epic acceptance criteria (epics.md, Story 5.6) state:
 |------|-------------|-------------|
 | `packages/backend/convex/players/queries.ts` | Modified | Add `getOwnPlayerProfile` query |
 | `packages/backend/convex/players/mutations.ts` | Modified | Add `updatePlayerStatus` and `updateOwnContactInfo` mutations |
-| `apps/admin/src/components/players/StatusChangeDialog.tsx` | Created | Status change confirmation dialog with contextual warnings |
-| `apps/admin/src/components/players/ContactInfoEditDialog.tsx` | Created | Self-service contact info edit form in a dialog |
-| `apps/admin/src/components/players/PlayerProfileHeader.tsx` | Modified | Add "Change Status" button for admin users |
-| `apps/admin/src/components/players/PlayerProfileTabs.tsx` | Modified | Add "Edit Contact Info" button for players on Bio tab |
-| `apps/admin/src/hooks/useOwnPlayerProfile.ts` | Created | Hook wrapping `getOwnPlayerProfile` query |
-| `apps/admin/src/components/application-shell2.tsx` | Modified | Add conditional "My Profile" nav item for player users |
+| `apps/web/src/components/players/StatusChangeDialog.tsx` | Created | Status change confirmation dialog with contextual warnings |
+| `apps/web/src/components/players/ContactInfoEditDialog.tsx` | Created | Self-service contact info edit form in a dialog |
+| `apps/web/src/components/players/PlayerProfileHeader.tsx` | Modified | Add "Change Status" button for admin users |
+| `apps/web/src/components/players/PlayerProfileTabs.tsx` | Modified | Add "Edit Contact Info" button for players on Bio tab |
+| `apps/web/src/hooks/useOwnPlayerProfile.ts` | Created | Hook wrapping `getOwnPlayerProfile` query |
+| `apps/web/src/components/application-shell2.tsx` | Modified | Add conditional "My Profile" nav item for player users |
 | `packages/backend/convex/players/__tests__/status-and-self-service.test.ts` | Created | Unit tests for status and self-service mutations/queries |
 
 ### What This Story Does NOT Include
@@ -515,10 +515,10 @@ The original epic acceptance criteria (epics.md, Story 5.6) state:
 ### Project Structure Notes
 
 - All files align with the unified project structure from architecture.md
-- New components are placed in `apps/admin/src/components/players/` (feature-grouped)
+- New components are placed in `apps/web/src/components/players/` (feature-grouped)
 - New Convex functions are placed in `packages/backend/convex/players/` (module-grouped)
 - Tests are co-located in `packages/backend/convex/players/__tests__/`
-- Hook created in `apps/admin/src/hooks/` following existing pattern
+- Hook created in `apps/web/src/hooks/` following existing pattern
 - Shared constants consumed from `packages/shared/`
 - No new directories are created — all files fit into existing structure
 

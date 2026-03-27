@@ -45,7 +45,7 @@ so that I have a working codebase with authentication, routing, and Convex backe
   - [ ] 3.5: Verify the `users` table schema includes: `name`, `email`, `image`, `emailVerificationTime`, `phone`, `phoneVerificationTime`, `isAnonymous`, `bio`, `birthDate`, `hasCompletedOnboarding`, `role` (user | admin), `banned`, `banReason`, `banExpires`
 
 - [ ] **Task 4: Verify admin app routing and layout** (AC: #5)
-  - [ ] 4.1: Verify `apps/admin/src/app/layout.tsx` wraps the app with `ConvexProvider` and `ThemeProvider`
+  - [ ] 4.1: Verify `apps/web/src/app/layout.tsx` wraps the app with `ConvexProvider` and `ThemeProvider`
   - [ ] 4.2: Verify `(auth)` route group contains: `/login`, `/otp`, `/forgot-password`, `/reset-password`, `/verify-email`, `/accept-invite`
   - [ ] 4.3: Verify `(app)` route group has a `layout.tsx` with sidebar/app-shell and auth guard (redirects unauthenticated users to `/login`)
   - [ ] 4.4: Verify existing protected routes render after login: `/team`, `/team/[userId]`, `/users`, `/users/[userId]`
@@ -115,7 +115,7 @@ brain-analytics-platform/
 - `convex/auth.config.ts` — Convex site URL provider config
 - `convex/lib/auth/ResendOTP.ts` — Email verification OTP
 - `convex/lib/auth/ResendOTPPasswordReset.ts` — Password reset OTP
-- `apps/admin/src/app/(auth)/` — All auth pages (login, otp, forgot-password, reset-password, verify-email, accept-invite)
+- `apps/web/src/app/(auth)/` — All auth pages (login, otp, forgot-password, reset-password, verify-email, accept-invite)
 
 ### Alignment with Architecture Document
 

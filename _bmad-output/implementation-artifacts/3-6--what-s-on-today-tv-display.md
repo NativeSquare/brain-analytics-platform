@@ -108,7 +108,7 @@ so that **I can display it on club TVs and screens in the dressing room or lobby
 ### Frontend Tasks
 
 - [ ] **Task 3: Create no-sidebar layout for TV display** (AC: #1, #5)
-  - [ ] 3.1: Create `apps/admin/src/app/(app)/calendar/today/layout.tsx`
+  - [ ] 3.1: Create `apps/web/src/app/(app)/calendar/today/layout.tsx`
     - This layout must override the parent `(app)/layout.tsx` which includes the sidebar and top bar
     - The layout should render only its `children` wrapped in a minimal container (no `Sidebar`, no `TopBar`, no `NotificationCenter`)
     - Preserve the `ConvexProvider` and `ThemeProvider` from the root layout (these are at the root level and don't need re-wrapping)
@@ -117,7 +117,7 @@ so that **I can display it on club TVs and screens in the dressing room or lobby
   - [ ] 3.2: Verify the route nesting: `(app)/calendar/today/page.tsx` is nested inside `(app)/layout.tsx` by default. The `today/layout.tsx` intercepts and provides a clean full-screen wrapper while still being a child of the auth-protected `(app)` route group.
 
 - [ ] **Task 4: Build TodayDisplay component** (AC: #2, #3, #6, #7, #8)
-  - [ ] 4.1: Create `apps/admin/src/components/calendar/TodayDisplay.tsx`
+  - [ ] 4.1: Create `apps/web/src/components/calendar/TodayDisplay.tsx`
   - [ ] 4.2: **Date header section:**
     - Display the current date formatted with `date-fns` using `format(new Date(), "EEEE, d MMMM yyyy")` (e.g., "Thursday, 26 March 2026")
     - Display a live clock that updates every minute (or every second) using a `useEffect` + `setInterval` with `format(new Date(), "HH:mm")`
@@ -149,13 +149,13 @@ so that **I can display it on club TVs and screens in the dressing room or lobby
     - For Sprint 1, `overflow-y: auto` is acceptable; auto-scrolling is a nice-to-have
 
 - [ ] **Task 5: Build the TV Display page** (AC: #1, #2, #4, #5, #7)
-  - [ ] 5.1: Create `apps/admin/src/app/(app)/calendar/today/page.tsx`
+  - [ ] 5.1: Create `apps/web/src/app/(app)/calendar/today/page.tsx`
   - [ ] 5.2: Subscribe to events: `const events = useQuery(api.calendar.queries.getTodayEvents)` (or `getDayEvents` with today's timestamp if reusing the existing query)
   - [ ] 5.3: Render the `TodayDisplay` component, passing the events data
   - [ ] 5.4: The page component should be minimal — just the data subscription and the `TodayDisplay` render. All presentation logic lives in the component.
 
 - [ ] **Task 6: Add link/navigation entry point to TV display** (AC: implicit — discoverability)
-  - [ ] 6.1: Add a "TV Display" or "What's on Today" button/link on the main calendar page (`apps/admin/src/app/(app)/calendar/page.tsx`)
+  - [ ] 6.1: Add a "TV Display" or "What's on Today" button/link on the main calendar page (`apps/web/src/app/(app)/calendar/page.tsx`)
     - Use a `Monitor` or `Tv` icon from `lucide-react`
     - Link opens `/calendar/today` (ideally in a new tab via `target="_blank"` since the TV display is meant to run full-screen)
   - [ ] 6.2: Optionally add the link to the settings page for easy access
@@ -279,22 +279,22 @@ If using `getTodayEvents` (no date param, server computes today), the Convex sub
 
 **Files to create:**
 ```
-apps/admin/src/app/(app)/calendar/today/layout.tsx     # No-sidebar layout for TV display
-apps/admin/src/app/(app)/calendar/today/page.tsx       # TV display page
-apps/admin/src/components/calendar/TodayDisplay.tsx     # Full-screen TV display component
+apps/web/src/app/(app)/calendar/today/layout.tsx     # No-sidebar layout for TV display
+apps/web/src/app/(app)/calendar/today/page.tsx       # TV display page
+apps/web/src/components/calendar/TodayDisplay.tsx     # Full-screen TV display component
 ```
 
 **Files to modify:**
 ```
 packages/backend/convex/calendar/queries.ts            # Add getTodayEvents query (if not reusing getDayEvents)
 packages/backend/convex/calendar/__tests__/queries.test.ts  # Add tests for getTodayEvents
-apps/admin/src/app/(app)/calendar/page.tsx             # Add "TV Display" link/button
+apps/web/src/app/(app)/calendar/page.tsx             # Add "TV Display" link/button
 ```
 
 **Note on route group:** If the developer determines that a separate route group is needed to escape the sidebar layout (see Layout Override Strategy above), the file paths may change to:
 ```
-apps/admin/src/app/(fullscreen)/calendar/today/layout.tsx
-apps/admin/src/app/(fullscreen)/calendar/today/page.tsx
+apps/web/src/app/(fullscreen)/calendar/today/layout.tsx
+apps/web/src/app/(fullscreen)/calendar/today/page.tsx
 ```
 
 ### What This Story Does NOT Include

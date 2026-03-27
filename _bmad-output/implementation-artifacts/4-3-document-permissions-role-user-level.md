@@ -98,7 +98,7 @@ so that sensitive documents (like contracts) are only visible to authorized peop
   - [x] 6.4: Limit results to 20. Return `Array<{ _id, fullName, email, role }>`. Exclude the current user from results (they're already admin with automatic access).
 
 - [x] **Task 7: Build PermissionsPanel component** (AC: #6, #7, #8, #9, #10)
-  - [x] 7.1: Create `apps/admin/src/components/documents/PermissionsPanel.tsx`. Uses shadcn `Sheet` (side panel). Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `targetType: "folder" | "document"`, `targetId: string`, `targetName: string`, `folderId?: string` (for documents, to show inheritance context).
+  - [x] 7.1: Create `apps/web/src/components/documents/PermissionsPanel.tsx`. Uses shadcn `Sheet` (side panel). Accepts props: `open: boolean`, `onOpenChange: (open: boolean) => void`, `targetType: "folder" | "document"`, `targetId: string`, `targetName: string`, `folderId?: string` (for documents, to show inheritance context).
   - [x] 7.2: When open, call `useQuery(api.documents.queries.getPermissions, { targetType, targetId })` to load current permissions. Show skeleton while loading.
   - [x] 7.3: **Inheritance toggle** (documents only): render a `Switch` labeled "Inherit from folder". Default ON when `permittedRoles` from the query is `undefined`. When toggled ON → set local state to inherit mode (disable role/user editing). When toggled OFF → enable role/user editing with current folder permissions pre-populated as starting point.
   - [x] 7.4: **Role checkboxes section**: render 6 checkboxes, one per role. "Admin" checkbox is always checked and disabled (admins always have access). Other checkboxes are interactive. When permissions are unrestricted (`permittedRoles === undefined` or null), all checkboxes show as checked. Use local state to track selected roles.
@@ -108,12 +108,12 @@ so that sensitive documents (like contracts) are only visible to authorized peop
   - [x] 7.8: **"Unrestricted" shortcut**: add a button or link "Make unrestricted (all roles)" that checks all role checkboxes and clears the user list — effectively removing restrictions.
 
 - [x] **Task 8: Add "Permissions" action to folder context menu** (AC: #6)
-  - [x] 8.1: Modify `apps/admin/src/components/documents/FolderCard.tsx` (from Story 4.1). Add a "Permissions" item (lock/shield icon) to the admin dropdown menu, between "Rename" and "Delete".
+  - [x] 8.1: Modify `apps/web/src/components/documents/FolderCard.tsx` (from Story 4.1). Add a "Permissions" item (lock/shield icon) to the admin dropdown menu, between "Rename" and "Delete".
   - [x] 8.2: Add state management in the documents page for `permissionsTarget: { type: "folder" | "document", id: string, name: string } | null` and `isPermissionsPanelOpen: boolean`.
   - [x] 8.3: Wire the "Permissions" menu item to open the `PermissionsPanel` with the folder's data.
 
 - [x] **Task 9: Add "Permissions" button to DocumentDetail** (AC: #6)
-  - [x] 9.1: Modify `apps/admin/src/components/documents/DocumentDetail.tsx` (from Story 4.2). Add a "Permissions" button (lock/shield icon) visible only to admin users, positioned near the "Replace File" and "Delete" buttons.
+  - [x] 9.1: Modify `apps/web/src/components/documents/DocumentDetail.tsx` (from Story 4.2). Add a "Permissions" button (lock/shield icon) visible only to admin users, positioned near the "Replace File" and "Delete" buttons.
   - [x] 9.2: Wire the button to open the `PermissionsPanel` with the document's data and its `folderId` for inheritance context.
 
 - [x] **Task 10: Add folder permission indicator to FolderCard** (AC: #7)
@@ -218,9 +218,9 @@ Individual user permissions:
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export both |
 | `getFolders`, `getFolderContents` queries | Story 4.1 | `packages/backend/convex/documents/queries.ts` must exist |
 | `getDocument`, `getDocumentUrl` queries | Story 4.2 | Must exist in `packages/backend/convex/documents/queries.ts` |
-| `FolderCard` component | Story 4.1 | `apps/admin/src/components/documents/FolderCard.tsx` must exist |
-| `DocumentDetail` component | Story 4.2 | `apps/admin/src/components/documents/DocumentDetail.tsx` must exist |
-| Documents page | Story 4.1 | `apps/admin/src/app/(app)/documents/page.tsx` must exist |
+| `FolderCard` component | Story 4.1 | `apps/web/src/components/documents/FolderCard.tsx` must exist |
+| `DocumentDetail` component | Story 4.2 | `apps/web/src/components/documents/DocumentDetail.tsx` must exist |
+| Documents page | Story 4.1 | `apps/web/src/app/(app)/documents/page.tsx` must exist |
 | shadcn/ui Sheet, Switch, Checkbox, Command, Badge, Avatar, Button | Story 1.2 | Components installed in admin app |
 
 ### Current State (Baseline)
@@ -332,10 +332,10 @@ Documents Page (page.tsx) [MODIFIED]
 | `packages/backend/convex/documents/queries.ts` | Modified | Add `getPermissions`, update `getFolders`/`getFolderContents`/`getDocument`/`getDocumentUrl` with `checkAccess` |
 | `packages/backend/convex/documents/mutations.ts` | Modified | Add `setFolderPermissions`, `setDocumentPermissions` |
 | `packages/backend/convex/users/queries.ts` | Modified/Created | Add `getTeamMembers` query |
-| `apps/admin/src/components/documents/PermissionsPanel.tsx` | **Created** | Permission editor sheet with roles + user search |
-| `apps/admin/src/components/documents/FolderCard.tsx` | Modified | Add "Permissions" context menu item, lock indicator |
-| `apps/admin/src/components/documents/DocumentDetail.tsx` | Modified | Add "Permissions" button for admin |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Modified | Add permissions panel state and rendering |
+| `apps/web/src/components/documents/PermissionsPanel.tsx` | **Created** | Permission editor sheet with roles + user search |
+| `apps/web/src/components/documents/FolderCard.tsx` | Modified | Add "Permissions" context menu item, lock indicator |
+| `apps/web/src/components/documents/DocumentDetail.tsx` | Modified | Add "Permissions" button for admin |
+| `apps/web/src/app/(app)/documents/page.tsx` | Modified | Add permissions panel state and rendering |
 | `packages/backend/convex/documents/__tests__/permissions.test.ts` | **Created** | Tests for checkAccess, filterByAccess, checkDocumentAccess |
 | `packages/backend/convex/documents/__tests__/mutations.test.ts` | Modified | Add tests for setFolderPermissions, setDocumentPermissions |
 | `packages/backend/convex/documents/__tests__/queries.test.ts` | Modified | Add tests for getPermissions, update tests for access filtering |
@@ -419,8 +419,8 @@ None — clean implementation with zero test failures.
 - `packages/backend/convex/documents/queries.ts` — **Modified** — Added getPermissions, replaced basic role filtering with comprehensive permission checks in getFolders/getFolderContents/getDocument/getDocumentUrl
 - `packages/backend/convex/documents/mutations.ts` — **Modified** — Added setFolderPermissions, setDocumentPermissions
 - `packages/backend/convex/users/queries.ts` — **Modified** — Added searchTeamMembersForPermissions
-- `apps/admin/src/components/documents/PermissionsPanel.tsx` — **Created** — Permission editor sheet
-- `apps/admin/src/components/documents/FolderCard.tsx` — **Modified** — Added Permissions menu item, lock indicator, onFolderPermissions callback
-- `apps/admin/src/components/documents/DocumentDetail.tsx` — **Modified** — Added Permissions button, onPermissions callback
-- `apps/admin/src/app/(app)/documents/page.tsx` — **Modified** — Added permissions panel state and wiring
+- `apps/web/src/components/documents/PermissionsPanel.tsx` — **Created** — Permission editor sheet
+- `apps/web/src/components/documents/FolderCard.tsx` — **Modified** — Added Permissions menu item, lock indicator, onFolderPermissions callback
+- `apps/web/src/components/documents/DocumentDetail.tsx` — **Modified** — Added Permissions button, onPermissions callback
+- `apps/web/src/app/(app)/documents/page.tsx` — **Modified** — Added permissions panel state and wiring
 - `packages/backend/convex/documents/__tests__/permissions.test.ts` — **Created** — 29 unit tests for permission logic

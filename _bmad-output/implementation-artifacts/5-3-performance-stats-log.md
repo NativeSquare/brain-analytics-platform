@@ -62,7 +62,7 @@ so that the club has a record of individual player performance over the season.
   - [ ] 5.1: Create a shared Zod schema for the match stats form (co-located with the `StatsLog` component or in a shared location). Schema: `matchDate: z.number({ required_error: "Match date is required" })`, `opponent: z.string().min(1, "Opponent is required")`, `minutesPlayed: z.number().int().min(0, "Minutes must be 0 or more").max(120, "Minutes cannot exceed 120")`, `goals: z.number().int().min(0, "Goals must be 0 or more").default(0)`, `assists: z.number().int().min(0, "Assists must be 0 or more").default(0)`, `yellowCards: z.number().int().min(0).max(2, "Maximum 2 yellow cards").default(0)`, `redCards: z.number().int().min(0).max(1, "Maximum 1 red card").default(0)`.
 
 - [ ] **Task 6: Build StatsLog component** (AC: #1, #3, #4, #12, #13)
-  - [ ] 6.1: Create `apps/admin/src/components/players/StatsLog.tsx`. Accepts `playerId: Id<"players">` and `isAdmin: boolean` props.
+  - [ ] 6.1: Create `apps/web/src/components/players/StatsLog.tsx`. Accepts `playerId: Id<"players">` and `isAdmin: boolean` props.
   - [ ] 6.2: Call `useQuery(api.players.queries.getPlayerStats, { playerId })`. Handle loading state with `Skeleton` components. Handle empty state with a centered message ("No match stats recorded yet") and an icon (e.g., chart/activity icon).
   - [ ] 6.3: Render the stats summary section above the table: a row of stat cards or inline metrics showing: "Matches: {count}", "Goals: {total}", "Assists: {total}", "Yellow Cards: {total}", "Red Cards: {total}", "Avg Minutes: {average}". Compute these from the query results using `useMemo`.
   - [ ] 6.4: Render the data table with columns: Date (formatted via `date-fns` `format(new Date(matchDate), "dd MMM yyyy")`), Opponent, Minutes, Goals, Assists, Yellow Cards, Red Cards. If `isAdmin` is true, add an Actions column.
@@ -70,7 +70,7 @@ so that the club has a record of individual player performance over the season.
   - [ ] 6.6: If `isAdmin`, render an "Add Match Stats" button above the table (aligned right, next to or above the summary section).
 
 - [ ] **Task 7: Build StatsFormDialog component** (AC: #5, #7, #8)
-  - [ ] 7.1: Create `apps/admin/src/components/players/StatsFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingStats?: PlayerStats` (for edit mode), `open: boolean`, `onClose: () => void`.
+  - [ ] 7.1: Create `apps/web/src/components/players/StatsFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingStats?: PlayerStats` (for edit mode), `open: boolean`, `onClose: () => void`.
   - [ ] 7.2: Use `react-hook-form` with `zodResolver` and the Zod schema from Task 5. In edit mode, pre-populate `defaultValues` from `existingStats`. In create mode, default `matchDate` to today's timestamp, and numeric fields to 0.
   - [ ] 7.3: Render the form inside a shadcn `Dialog` (or `Sheet`) with title "Add Match Stats" (create mode) or "Edit Match Stats" (edit mode).
   - [ ] 7.4: Form fields: Date picker for `matchDate` (using `react-day-picker` calendar inside a `Popover`, matching existing date picker patterns in the codebase), `Input` for opponent (text), `Input` (type=number) for minutes played, `Input` (type=number) for goals, `Input` (type=number) for assists, `Input` (type=number) for yellow cards, `Input` (type=number) for red cards. Display inline validation errors below each field.
@@ -78,13 +78,13 @@ so that the club has a record of individual player performance over the season.
   - [ ] 7.6: "Cancel" button closes the dialog without saving.
 
 - [ ] **Task 8: Build DeleteStatsDialog component** (AC: #10)
-  - [ ] 8.1: Create `apps/admin/src/components/players/DeleteStatsDialog.tsx`. Accepts props: `statsId: Id<"playerStats">`, `opponent: string`, `matchDate: number`, `open: boolean`, `onClose: () => void`.
+  - [ ] 8.1: Create `apps/web/src/components/players/DeleteStatsDialog.tsx`. Accepts props: `statsId: Id<"playerStats">`, `opponent: string`, `matchDate: number`, `open: boolean`, `onClose: () => void`.
   - [ ] 8.2: Render a shadcn `AlertDialog` with title "Delete Match Stats" and description "Delete match stats vs {opponent} on {formatted date}? This action cannot be undone."
   - [ ] 8.3: "Delete" button (destructive variant) calls `deletePlayerStats` mutation. On success: show toast ("Match stats deleted"), close the dialog. On error: catch `ConvexError` and display via toast.
   - [ ] 8.4: "Cancel" button closes the dialog.
 
 - [ ] **Task 9: Integrate StatsLog into the Player Profile page** (AC: #1)
-  - [ ] 9.1: In `apps/admin/src/components/players/PlayerProfileTabs.tsx` (or wherever the "Performance" tab content is rendered), replace the placeholder content with the `StatsLog` component. Pass `playerId` from the profile context and `isAdmin` derived from the current user's role (check `user.role === "admin"` from the current user query or from `tabAccess` data).
+  - [ ] 9.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx` (or wherever the "Performance" tab content is rendered), replace the placeholder content with the `StatsLog` component. Pass `playerId` from the profile context and `isAdmin` derived from the current user's role (check `user.role === "admin"` from the current user query or from `tabAccess` data).
   - [ ] 9.2: Ensure the Performance tab correctly receives the player ID from the parent page component and passes it down.
 
 - [ ] **Task 10: Write backend unit tests** (AC: #2, #6, #9, #11, #14)
@@ -177,7 +177,7 @@ The original epic acceptance criteria (epics.md, Story 5.3) state:
 | `players` table defined in schema | Story 5.1 | `packages/backend/convex/table/players.ts` must exist |
 | `getPlayerById` query | Story 5.1 | `packages/backend/convex/players/queries.ts` must export `getPlayerById` |
 | `getPlayerTabAccess` query | Story 5.1 | Must exist to determine if user is admin for conditional UI rendering |
-| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/admin/src/app/(app)/players/[playerId]/page.tsx` must exist with tabbed layout |
+| Player profile page at `/players/[playerId]` | Story 5.1 | `apps/web/src/app/(app)/players/[playerId]/page.tsx` must exist with tabbed layout |
 | `PlayerProfileTabs` component with "Performance" tab placeholder | Story 5.1 | Must exist and render tab shell |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export these |
 | shadcn/ui components: Dialog, AlertDialog, Table, Button, Input, Form, Popover, DropdownMenu, Badge, Card | Story 1.2 | All must be available in `components/ui/` |
@@ -192,13 +192,13 @@ The original epic acceptance criteria (epics.md, Story 5.3) state:
 
 **`convex/players/mutations.ts`:** May exist from Story 5.2 with `createPlayer`, `invitePlayer`, `acceptPlayerInvite` mutations. **No stats-related mutations** — must be added.
 
-**`apps/admin/src/components/players/StatsLog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/StatsLog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/StatsFormDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/StatsFormDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/DeleteStatsDialog.tsx`:** **Does not exist.** Must be created.
+**`apps/web/src/components/players/DeleteStatsDialog.tsx`:** **Does not exist.** Must be created.
 
-**`apps/admin/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. The "Performance" tab currently renders a placeholder ("Coming soon"). Must be updated to render `StatsLog`.
+**`apps/web/src/components/players/PlayerProfileTabs.tsx`:** Exists from Story 5.1. The "Performance" tab currently renders a placeholder ("Coming soon"). Must be updated to render `StatsLog`.
 
 **Auth utilities:** `requireAuth(ctx)` and `requireRole(ctx, roles)` exist in `packages/backend/convex/lib/auth.ts` from Story 2.1. `requireRole(ctx, ["admin"])` is used in Story 5.2 mutations.
 
@@ -364,10 +364,10 @@ const summaryStats = useMemo(() => {
 |------|-------------|-------------|
 | `packages/backend/convex/players/queries.ts` | Modified | Add `getPlayerStats` query |
 | `packages/backend/convex/players/mutations.ts` | Modified | Add `addPlayerStats`, `updatePlayerStats`, `deletePlayerStats` mutations |
-| `apps/admin/src/components/players/StatsLog.tsx` | Created | Performance stats table + summary section |
-| `apps/admin/src/components/players/StatsFormDialog.tsx` | Created | Add/edit stats form in a dialog |
-| `apps/admin/src/components/players/DeleteStatsDialog.tsx` | Created | Confirmation dialog for stats deletion |
-| `apps/admin/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Performance" tab placeholder with `StatsLog` component |
+| `apps/web/src/components/players/StatsLog.tsx` | Created | Performance stats table + summary section |
+| `apps/web/src/components/players/StatsFormDialog.tsx` | Created | Add/edit stats form in a dialog |
+| `apps/web/src/components/players/DeleteStatsDialog.tsx` | Created | Confirmation dialog for stats deletion |
+| `apps/web/src/components/players/PlayerProfileTabs.tsx` | Modified | Replace "Performance" tab placeholder with `StatsLog` component |
 | `packages/backend/convex/players/__tests__/stats.test.ts` | Created | Unit tests for stats queries and mutations |
 
 ### What This Story Does NOT Include

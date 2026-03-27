@@ -121,7 +121,7 @@ so that I stay informed about schedule changes without leaving the platform.
 ### Frontend Tasks
 
 - [x] **Task 7: Build NotificationCenter component** (AC: #3, #4, #7)
-  - [x] 7.1: Create `apps/admin/src/components/shared/NotificationCenter.tsx`
+  - [x] 7.1: Create `apps/web/src/components/shared/NotificationCenter.tsx`
   - [x] 7.2: Render a bell icon (`IconBell` from `@tabler/icons-react`) as a `Button` variant="ghost" size="icon"
   - [x] 7.3: Subscribe to `getUnreadCount` via `useQuery` — display count as a `Badge` overlaid on the bell icon (absolute positioned, destructive variant for visibility)
   - [x] 7.4: If count is 0, hide the badge; if count > 9, display "9+"
@@ -136,7 +136,7 @@ so that I stay informed about schedule changes without leaving the platform.
   - [x] 8.6: On notification click: call `markRead` mutation, then `router.push('/calendar')` (or to specific event if event routing is available)
 
 - [x] **Task 9: Integrate NotificationCenter into SiteHeader** (AC: #3, #7)
-  - [x] 9.1: Import `NotificationCenter` in `apps/admin/src/components/site-header.tsx`
+  - [x] 9.1: Import `NotificationCenter` in `apps/web/src/components/site-header.tsx`
   - [x] 9.2: Add `NotificationCenter` to the right side of the header bar (after breadcrumbs, before any user actions)
   - [x] 9.3: Ensure proper spacing and alignment with existing header elements using `ml-auto` or flex utilities
 
@@ -242,7 +242,7 @@ packages/backend/convex/
       queries.test.ts           # (NEW)
       mutations.test.ts         # (NEW)
 
-apps/admin/src/components/
+apps/web/src/components/
   shared/
     NotificationCenter.tsx      # Bell icon + badge + dropdown (NEW)
 ```
@@ -250,7 +250,7 @@ apps/admin/src/components/
 Files to modify:
 ```
 packages/backend/convex/schema.ts                    # Add notifications table
-apps/admin/src/components/site-header.tsx             # Integrate NotificationCenter
+apps/web/src/components/site-header.tsx             # Integrate NotificationCenter
 packages/backend/convex/calendar/mutations.ts         # Wire createNotification calls (if exists)
 ```
 
@@ -271,8 +271,8 @@ Alignment check:
 - [Source: _bmad-output/planning-artifacts/epics.md#Story 3.7] — Original acceptance criteria and user story
 - [Source: _bmad-output/planning-artifacts/epics.md#FR10] — "The system sends in-app notifications when events are created, updated, or cancelled"
 - [Source: _bmad-output/planning-artifacts/epics.md#UX-DR3] — "Build notification center component (bell icon in nav bar with dropdown list of notifications)"
-- [Source: apps/admin/src/components/site-header.tsx] — Existing header structure; NotificationCenter must be integrated here
-- [Source: apps/admin/src/components/application-shell2.tsx] — App shell uses `<SiteHeader />` in `SidebarInset`
+- [Source: apps/web/src/components/site-header.tsx] — Existing header structure; NotificationCenter must be integrated here
+- [Source: apps/web/src/components/application-shell2.tsx] — App shell uses `<SiteHeader />` in `SidebarInset`
 - [Source: packages/backend/convex/schema.ts] — Current schema to extend with notifications table
 
 ## Dev Agent Record
@@ -312,7 +312,7 @@ Claude Opus 4.6 (via Claude Code)
 - `packages/backend/convex/table/notifications.ts` — replaced `by_userId` index with `by_userId_teamId`
 - `packages/backend/convex/lib/notifications.ts` — added empty-array guard, NOTIFICATION_TYPES constant
 - `packages/backend/convex/_generated/api.d.ts` — registered notifications module types
-- `apps/admin/src/components/shared/NotificationCenter.tsx` — rewrote from presentational to Convex-connected
-- `apps/admin/src/components/shared/index.ts` — removed old type exports
-- `apps/admin/src/components/site-header.tsx` — replaced static bell with NotificationCenter
+- `apps/web/src/components/shared/NotificationCenter.tsx` — rewrote from presentational to Convex-connected
+- `apps/web/src/components/shared/index.ts` — removed old type exports
+- `apps/web/src/components/site-header.tsx` — replaced static bell with NotificationCenter
 - `packages/backend/convex/calendar/__tests__/mutations.test.ts` — updated 2 tests using old by_userId index

@@ -88,7 +88,7 @@ so that I can schedule club activities and communicate them to the team.
   - [x] 3.2: If a `searchTeamUsers` or similar query already exists from Story 2.x, verify it returns the needed fields and reuse it. Do not duplicate.
 
 - [x] **Task 4: Build InvitationSelector component** (AC: #4, #5)
-  - [x] 4.1: Create `apps/admin/src/components/calendar/InvitationSelector.tsx`. This component renders:
+  - [x] 4.1: Create `apps/web/src/components/calendar/InvitationSelector.tsx`. This component renders:
     - A "Roles" section with checkboxes for each of the 6 roles: Admin, Coach, Analyst, Physio/Medical, Player, Staff. Uses shadcn `Checkbox` components.
     - A "Specific Users" section with a shadcn `Combobox` (or `Command` + `Popover`) for searching users. The combobox calls `useQuery(api.users.queries.searchTeamUsers, { search: debouncedInputValue })`.
     - Selected individual users display as `Badge` components with an X remove button.
@@ -96,7 +96,7 @@ so that I can schedule club activities and communicate them to the team.
   - [x] 4.3: Debounce the user search input (300ms) to avoid excessive queries.
 
 - [x] **Task 5: Build EventForm component** (AC: #2, #3, #4, #5, #6, #11)
-  - [x] 5.1: Create `apps/admin/src/components/calendar/EventForm.tsx`. Uses `react-hook-form` with `zodResolver(createEventSchema)`.
+  - [x] 5.1: Create `apps/web/src/components/calendar/EventForm.tsx`. Uses `react-hook-form` with `zodResolver(createEventSchema)`.
   - [x] 5.2: Form fields layout (all using shadcn/ui form components):
     - **Event Name**: `Input` with `FormField` wrapper, placeholder "Event name"
     - **Event Type**: `Select` with options: Match, Training, Meeting, Rehab. Each option displays with its color-coded `EventTypeBadge` for visual clarity.
@@ -116,13 +116,13 @@ so that I can schedule club activities and communicate them to the team.
   - [x] 5.5: Add a "Create Event" submit button. Disable it while the mutation is in-flight (use mutation's loading state or local `isPending` state).
 
 - [x] **Task 6: Build CreateEventDialog component** (AC: #1, #2, #10, #11)
-  - [x] 6.1: Create `apps/admin/src/components/calendar/CreateEventDialog.tsx`. Uses shadcn `Dialog` component. Accepts `open: boolean` and `onOpenChange: (open: boolean) => void` props.
+  - [x] 6.1: Create `apps/web/src/components/calendar/CreateEventDialog.tsx`. Uses shadcn `Dialog` component. Accepts `open: boolean` and `onOpenChange: (open: boolean) => void` props.
   - [x] 6.2: Dialog content: title "Create Event", scrollable body containing `EventForm`, no footer (buttons are inside the form).
   - [x] 6.3: On successful event creation (form's `onSuccess`): close dialog, show `toast.success("Event created")`, reset form state.
   - [x] 6.4: Dialog width should accommodate the form comfortably (e.g. `max-w-2xl`).
 
 - [x] **Task 7: Integrate CreateEventDialog into Calendar page** (AC: #1, #10)
-  - [x] 7.1: Modify `apps/admin/src/app/(app)/calendar/page.tsx` to:
+  - [x] 7.1: Modify `apps/web/src/app/(app)/calendar/page.tsx` to:
     - Add a "Create Event" button in the page header area (e.g., top-right, using shadcn `Button` with a `Plus` icon from `lucide-react`).
     - Conditionally render the button: only visible when the current user's role is `"admin"`. Use `useQuery(api.users.queries.currentUser)` or equivalent to check role.
     - Manage `isCreateDialogOpen` state. Button click sets it to `true`.
@@ -192,8 +192,8 @@ This story does NOT handle recurring events (FR2/FR3 — Story 3.3), RSVP respon
 | `calendarEvents` table schema | Story 3.1 | `packages/backend/convex/table/calendarEvents.ts` must exist |
 | `calendarEventUsers` junction table | Story 3.1 | `packages/backend/convex/table/calendarEventUsers.ts` must exist |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export both |
-| Calendar page (`/calendar`) | Story 3.1 | `apps/admin/src/app/(app)/calendar/page.tsx` must exist |
-| `EventTypeBadge` component | Story 1.4 or 3.1 | `apps/admin/src/components/shared/EventTypeBadge.tsx` should exist |
+| Calendar page (`/calendar`) | Story 3.1 | `apps/web/src/app/(app)/calendar/page.tsx` must exist |
+| `EventTypeBadge` component | Story 1.4 or 3.1 | `apps/web/src/components/shared/EventTypeBadge.tsx` should exist |
 | Users table with `role` field | Story 2.1 | Users must have the 6-role enum field |
 | shadcn/ui Dialog, Switch, Select, Checkbox, Badge, Command/Combobox | Story 1.2 | Components must be installed in the admin app |
 
@@ -269,10 +269,10 @@ Admin clicks "Create Event"
 | `packages/backend/convex/lib/notifications.ts` | Created (conditional) | `createNotification` utility (only if not already created by Story 3.7) |
 | `packages/backend/convex/table/notifications.ts` | Created (conditional) | Notifications table definition (only if not already created) |
 | `packages/backend/convex/schema.ts` | Modified (conditional) | Register notifications table (only if newly created) |
-| `apps/admin/src/components/calendar/InvitationSelector.tsx` | Created | Role checkboxes + user search combobox component |
-| `apps/admin/src/components/calendar/EventForm.tsx` | Created | Full event creation form with react-hook-form + zod |
-| `apps/admin/src/components/calendar/CreateEventDialog.tsx` | Created | Dialog wrapper around EventForm |
-| `apps/admin/src/app/(app)/calendar/page.tsx` | Modified | Add "Create Event" button (admin-only) + dialog integration |
+| `apps/web/src/components/calendar/InvitationSelector.tsx` | Created | Role checkboxes + user search combobox component |
+| `apps/web/src/components/calendar/EventForm.tsx` | Created | Full event creation form with react-hook-form + zod |
+| `apps/web/src/components/calendar/CreateEventDialog.tsx` | Created | Dialog wrapper around EventForm |
+| `apps/web/src/app/(app)/calendar/page.tsx` | Modified | Add "Create Event" button (admin-only) + dialog integration |
 | `packages/backend/convex/calendar/__tests__/mutations.test.ts` | Created | Unit tests for createEvent mutation |
 
 ### What This Story Does NOT Include
@@ -310,7 +310,7 @@ Admin clicks "Create Event"
 
 ### Project Structure Notes
 
-- All new frontend components go in `apps/admin/src/components/calendar/` — consistent with the feature-based organization
+- All new frontend components go in `apps/web/src/components/calendar/` — consistent with the feature-based organization
 - The `InvitationSelector` could arguably go in `components/shared/` since documents also use role+user permissions. For now, keep it in `calendar/` for simplicity. If Story 4.3 (Document Permissions) needs the same pattern, refactor to shared at that point.
 - Mutation file `convex/calendar/mutations.ts` follows the one-file-per-type pattern established in architecture.md
 
@@ -365,8 +365,8 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 - `packages/backend/convex/table/notifications.ts` — Created: notifications table definition
 - `packages/backend/convex/schema.ts` — Modified: registered notifications table
 - `packages/backend/convex/calendar/__tests__/mutations.test.ts` — Created: 8 unit tests for createEvent
-- `apps/admin/src/components/calendar/InvitationSelector.tsx` — Created: role + user invitation selector
-- `apps/admin/src/components/calendar/EventForm.tsx` — Created: event creation form
-- `apps/admin/src/components/calendar/CreateEventDialog.tsx` — Created: dialog wrapper
-- `apps/admin/src/app/(app)/calendar/page.tsx` — Modified: added Create Event button + dialog
+- `apps/web/src/components/calendar/InvitationSelector.tsx` — Created: role + user invitation selector
+- `apps/web/src/components/calendar/EventForm.tsx` — Created: event creation form
+- `apps/web/src/components/calendar/CreateEventDialog.tsx` — Created: dialog wrapper
+- `apps/web/src/app/(app)/calendar/page.tsx` — Modified: added Create Event button + dialog
 - `apps/admin/package.json` — Modified: added @packages/shared dependency

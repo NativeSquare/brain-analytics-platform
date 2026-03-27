@@ -128,7 +128,7 @@ so that organizers know who will be present.
       - Do NOT return individual user names or response details
 
 - [x] **Task 5: Build RSVPPanel component** (AC: #1, #2, #3, #4, #5, #6, #11)
-  - [x]5.1: Create `apps/admin/src/components/calendar/RSVPPanel.tsx`. This component renders the user-facing RSVP interaction and admin overview. Props: `eventId: Id<"calendarEvents">`, `rsvpEnabled: boolean`.
+  - [x]5.1: Create `apps/web/src/components/calendar/RSVPPanel.tsx`. This component renders the user-facing RSVP interaction and admin overview. Props: `eventId: Id<"calendarEvents">`, `rsvpEnabled: boolean`.
   - [x]5.2: If `rsvpEnabled` is `false`, render nothing (return `null`).
   - [x]5.3: Subscribe to the current user's RSVP status: `useQuery(api.calendar.queries.getUserEventRsvp, { eventId })`. While loading (`=== undefined`), show a `Skeleton`.
   - [x]5.4: Render two buttons side by side:
@@ -150,7 +150,7 @@ so that organizers know who will be present.
   - [x]5.9: When changing from "Not Attending" to "Attending": directly call `submitRsvp` with `status: "attending"` (no reason prompt needed, reason is cleared server-side).
 
 - [x] **Task 6: Build RSVPOverview component (admin-only)** (AC: #6, #8, #11)
-  - [x]6.1: Create `apps/admin/src/components/calendar/RSVPOverview.tsx`. Props: `eventId: Id<"calendarEvents">`.
+  - [x]6.1: Create `apps/web/src/components/calendar/RSVPOverview.tsx`. Props: `eventId: Id<"calendarEvents">`.
   - [x]6.2: Subscribe to `useQuery(api.calendar.queries.getEventRsvps, { eventId })`. While loading, show `Skeleton`.
   - [x]6.3: Render summary counts as badges or chips: "X Attending" (green badge), "Y Not Attending" (red badge), "Z Pending" (gray badge).
   - [x]6.4: Below the summary, render a collapsible section (shadcn `Collapsible` or `Accordion`) with three groups:
@@ -161,7 +161,7 @@ so that organizers know who will be present.
   - [x]6.6: If the query returns no `responses` array (non-admin fallback), render only the summary counts without the detailed user list.
 
 - [x] **Task 7: Integrate RSVPPanel and RSVPOverview into EventDetail** (AC: #1, #5, #6)
-  - [x]7.1: Modify `apps/admin/src/components/calendar/EventDetail.tsx` (created in Story 3.1, extended in Story 3.3):
+  - [x]7.1: Modify `apps/web/src/components/calendar/EventDetail.tsx` (created in Story 3.1, extended in Story 3.3):
     - Below the existing event information (name, type, date, location, description), add a new section:
     - If `event.rsvpEnabled === true`: render `<RSVPPanel eventId={event._id} rsvpEnabled={event.rsvpEnabled} />`
     - Below RSVPPanel (if admin): render `<RSVPOverview eventId={event._id} />`
@@ -169,7 +169,7 @@ so that organizers know who will be present.
   - [x]7.2: Ensure the EventDetail panel has enough vertical space for the RSVP sections. If using a Sheet, ensure `ScrollArea` wraps the content to handle overflow.
 
 - [x] **Task 8: Add RSVP summary indicator to EventCard (optional enhancement)** (AC: #1, #11)
-  - [x]8.1: Modify `apps/admin/src/components/calendar/EventCard.tsx` (created in Story 3.1):
+  - [x]8.1: Modify `apps/web/src/components/calendar/EventCard.tsx` (created in Story 3.1):
     - If the event has `rsvpEnabled: true`, display a small RSVP indicator showing the user's current status: a small check icon (green) if attending, X icon (red) if not attending, or no icon if not yet responded.
     - This requires calling `useQuery(api.calendar.queries.getUserEventRsvp, { eventId })` — however, this would be one query per event on the calendar view, which may be expensive. **Alternative approach**: Create a batch query `getUserRsvpsForMonth` that returns all of the current user's RSVPs for events in the displayed month, and pass the status down to EventCard via props.
   - [x]8.2: If the batch approach is used, add a query `getUserRsvpsByEventIds` to `packages/backend/convex/calendar/queries.ts`:
@@ -255,13 +255,13 @@ This is the **RSVP tracking story for Epic 3 (Calendar & Scheduling)**. It build
 |------------|-------|-------------|
 | `calendarEvents` table with `rsvpEnabled`, `invitedRoles`, `isCancelled` fields | Story 3.1 | `packages/backend/convex/schema.ts` must define `calendarEvents` with these fields |
 | `calendarEventUsers` junction table | Story 3.1 | Table must exist for individual invitation lookups |
-| `EventDetail` panel component | Story 3.1 | `apps/admin/src/components/calendar/EventDetail.tsx` must exist |
-| `EventCard` component | Story 3.1 | `apps/admin/src/components/calendar/EventCard.tsx` must exist |
+| `EventDetail` panel component | Story 3.1 | `apps/web/src/components/calendar/EventDetail.tsx` must exist |
+| `EventCard` component | Story 3.1 | `apps/web/src/components/calendar/EventCard.tsx` must exist |
 | `createEvent` mutation with `rsvpEnabled` field | Story 3.2 | `packages/backend/convex/calendar/mutations.ts` must export `createEvent` |
 | `requireAuth` helper | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireAuth` |
 | `requireRole` helper (for admin check in queries) | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export `requireRole` |
 | Users table with `role` field | Story 2.1 | Users must have the 6-role enum field |
-| Calendar page with month view | Story 3.1 | `apps/admin/src/app/(app)/calendar/page.tsx` must exist |
+| Calendar page with month view | Story 3.1 | `apps/web/src/app/(app)/calendar/page.tsx` must exist |
 | shadcn/ui Button, Textarea, Skeleton, Avatar, Badge, Collapsible | Story 1.2 | Components must be installed in the admin app |
 
 ### Current State (Baseline)
@@ -343,10 +343,10 @@ User changes response to "Not Attending"
 | `packages/backend/convex/schema.ts` | Modified | Register `eventRsvps` table |
 | `packages/backend/convex/calendar/mutations.ts` | Modified | Add `submitRsvp` mutation |
 | `packages/backend/convex/calendar/queries.ts` | Modified | Add `getUserEventRsvp`, `getEventRsvps`, optionally `getUserRsvpsByEventIds` queries |
-| `apps/admin/src/components/calendar/RSVPPanel.tsx` | Created | User-facing RSVP interaction component (buttons, reason field) |
-| `apps/admin/src/components/calendar/RSVPOverview.tsx` | Created | Admin-only RSVP responses list with summary counts |
-| `apps/admin/src/components/calendar/EventDetail.tsx` | Modified | Integrate RSVPPanel and RSVPOverview sections |
-| `apps/admin/src/components/calendar/EventCard.tsx` | Modified (optional) | Small RSVP status indicator for calendar grid |
+| `apps/web/src/components/calendar/RSVPPanel.tsx` | Created | User-facing RSVP interaction component (buttons, reason field) |
+| `apps/web/src/components/calendar/RSVPOverview.tsx` | Created | Admin-only RSVP responses list with summary counts |
+| `apps/web/src/components/calendar/EventDetail.tsx` | Modified | Integrate RSVPPanel and RSVPOverview sections |
+| `apps/web/src/components/calendar/EventCard.tsx` | Modified (optional) | Small RSVP status indicator for calendar grid |
 | `packages/backend/convex/calendar/__tests__/mutations.test.ts` | Modified | Add tests for `submitRsvp` mutation |
 | `packages/backend/convex/calendar/__tests__/queries.test.ts` | Modified | Add tests for `getUserEventRsvp` and `getEventRsvps` queries |
 
@@ -438,10 +438,10 @@ Claude Opus 4.6
 - `packages/backend/convex/schema.ts` (modified — added eventRsvps import + registration)
 - `packages/backend/convex/calendar/mutations.ts` (modified — added submitRsvp mutation, added requireAuth import)
 - `packages/backend/convex/calendar/queries.ts` (modified — added getUserEventRsvp, getEventRsvps, getUserRsvpsByEventIds queries, added ConvexError import)
-- `apps/admin/src/components/calendar/RSVPPanel.tsx` (created)
-- `apps/admin/src/components/calendar/RSVPOverview.tsx` (created)
-- `apps/admin/src/components/calendar/EventDetail.tsx` (modified — integrated RSVPPanel + RSVPOverview)
-- `apps/admin/src/components/calendar/EventCard.tsx` (modified — added rsvpStatus prop + indicator icons)
-- `apps/admin/src/components/calendar/DayEventsPanel.tsx` (modified — batch RSVP query + pass to EventCard)
+- `apps/web/src/components/calendar/RSVPPanel.tsx` (created)
+- `apps/web/src/components/calendar/RSVPOverview.tsx` (created)
+- `apps/web/src/components/calendar/EventDetail.tsx` (modified — integrated RSVPPanel + RSVPOverview)
+- `apps/web/src/components/calendar/EventCard.tsx` (modified — added rsvpStatus prop + indicator icons)
+- `apps/web/src/components/calendar/DayEventsPanel.tsx` (modified — batch RSVP query + pass to EventCard)
 - `packages/backend/convex/calendar/__tests__/mutations.test.ts` (modified — added submitRsvp tests)
 - `packages/backend/convex/calendar/__tests__/queries.test.ts` (modified — added getUserEventRsvp + getEventRsvps tests, updated seedEvent helper)

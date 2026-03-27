@@ -77,7 +77,7 @@ so that I know whether the team is engaging with shared materials.
   - [x] 5.7: Return `{ readers: Array<{ userId, fullName, role, readAt }>, nonReaders: Array<{ userId, fullName, role }> }`.
 
 - [x] **Task 6: Wire `trackRead` to document open/download actions** (AC: #2)
-  - [x] 6.1: Modify `apps/admin/src/components/documents/DocumentDetail.tsx` (from Story 4.2). In the "Open" / view action handler, add a call to `trackRead({ documentId })` using `useMutation`. Wrap in a try-catch — the tracking must not block or break the open action.
+  - [x] 6.1: Modify `apps/web/src/components/documents/DocumentDetail.tsx` (from Story 4.2). In the "Open" / view action handler, add a call to `trackRead({ documentId })` using `useMutation`. Wrap in a try-catch — the tracking must not block or break the open action.
   - [x] 6.2: In the "Download" action handler, add the same `trackRead({ documentId })` call. The download proceeds regardless of whether tracking succeeds.
   - [x] 6.3: For video links (videoUrl documents), call `trackRead` when the user clicks the video link (before opening in new tab).
   - [x] 6.4: Ensure the `trackRead` call is non-blocking: use `void trackRead({ documentId })` pattern (fire-and-forget, no `await` blocking the open/download action). Example:
@@ -91,7 +91,7 @@ so that I know whether the team is engaging with shared materials.
     ```
 
 - [x] **Task 7: Build `ReadTrackerDetail` component (reader list popover)** (AC: #7)
-  - [x] 7.1: Create `apps/admin/src/components/documents/ReadTrackerDetail.tsx`. This is a `Popover` (shadcn) that shows the detailed reader list. Accepts props: `documentId: Id<"documents">`, `trigger: ReactNode` (the clickable element).
+  - [x] 7.1: Create `apps/web/src/components/documents/ReadTrackerDetail.tsx`. This is a `Popover` (shadcn) that shows the detailed reader list. Accepts props: `documentId: Id<"documents">`, `trigger: ReactNode` (the clickable element).
   - [x] 7.2: Inside the popover content, call `useQuery(api.documents.queries.getReadersDetail, { documentId })`. Show skeleton while loading (`undefined`).
   - [x] 7.3: Render two sections:
     - **"Opened" section**: List of users who have opened the document. Each row: user name, role `Badge` (from `components/shared/StatusBadge` or inline), and formatted date/time (e.g., "Mar 25, 2026 at 14:30" using `date-fns format`).
@@ -100,7 +100,7 @@ so that I know whether the team is engaging with shared materials.
   - [x] 7.5: Add a header showing the document name and summary (e.g., "3 of 12 users have opened this document").
 
 - [x] **Task 8: Integrate read tracking indicators into document list** (AC: #5, #8)
-  - [x] 8.1: Modify `apps/admin/src/components/documents/DocumentCard.tsx` (from Story 4.1). Add read tracking data display for admin users.
+  - [x] 8.1: Modify `apps/web/src/components/documents/DocumentCard.tsx` (from Story 4.1). Add read tracking data display for admin users.
   - [x] 8.2: In the parent folder contents view (the page or component that renders the document list), call `useQuery(api.documents.queries.getReadStats, { documentIds })` where `documentIds` is the array of document IDs currently displayed. Only call this query if the user is an admin; skip for non-admin users (use `"skip"` sentinel or conditional query). Also call `getUsersWithAccessCount` for each document (or batch this — see Dev Notes).
   - [x] 8.3: Pass the read stats data to each `DocumentCard` as props: `readCount: number` (unique readers) and `totalAccess: number` (total with access).
   - [x] 8.4: In `DocumentCard`, render the `ReadTracker` component (from Story 1.4 — `components/shared/` or inline) showing "Opened by X/Y" with a progress visual. Only render for admin users.
@@ -182,10 +182,10 @@ This story directly implements:
 | `documents` table with CRUD | Story 4.1, 4.2 | `packages/backend/convex/documents/queries.ts` and `mutations.ts` must exist |
 | `checkDocumentAccess` permission utility | Story 4.3 | `packages/backend/convex/lib/permissions.ts` must export `checkDocumentAccess` |
 | `requireAuth`, `requireRole` helpers | Story 2.1 | `packages/backend/convex/lib/auth.ts` must export both |
-| `DocumentCard` component | Story 4.1 | `apps/admin/src/components/documents/DocumentCard.tsx` must exist |
-| `DocumentDetail` component | Story 4.2 | `apps/admin/src/components/documents/DocumentDetail.tsx` must exist |
-| `ReadTracker` indicator component | Story 1.4 | `apps/admin/src/components/shared/` — "Opened by X/Y" progress indicator. If not built yet, create inline in this story. |
-| Documents page with folder contents view | Story 4.1 | `apps/admin/src/app/(app)/documents/page.tsx` must exist |
+| `DocumentCard` component | Story 4.1 | `apps/web/src/components/documents/DocumentCard.tsx` must exist |
+| `DocumentDetail` component | Story 4.2 | `apps/web/src/components/documents/DocumentDetail.tsx` must exist |
+| `ReadTracker` indicator component | Story 1.4 | `apps/web/src/components/shared/` — "Opened by X/Y" progress indicator. If not built yet, create inline in this story. |
+| Documents page with folder contents view | Story 4.1 | `apps/web/src/app/(app)/documents/page.tsx` must exist |
 | shadcn/ui Popover, Badge, Skeleton, ScrollArea | Story 1.2 | Components installed in admin app |
 | `documentUserPermissions` table and logic | Story 4.3 | Required for computing "Y" (total users with access) |
 
@@ -280,10 +280,10 @@ Documents Page (page.tsx) [MODIFIED]
 | `packages/backend/convex/schema.ts` | Modified | Add/verify `documentReads` table definition with indexes |
 | `packages/backend/convex/documents/mutations.ts` | Modified | Add `trackRead` mutation |
 | `packages/backend/convex/documents/queries.ts` | Modified | Add `getReadStats`, `getUsersWithAccessCount`, `getReadersDetail` queries |
-| `apps/admin/src/components/documents/ReadTrackerDetail.tsx` | **Created** | Detail popover showing who opened and who hasn't |
-| `apps/admin/src/components/documents/DocumentCard.tsx` | Modified | Add read tracking indicator for admin users |
-| `apps/admin/src/components/documents/DocumentDetail.tsx` | Modified | Call `trackRead` on open/download actions |
-| `apps/admin/src/app/(app)/documents/page.tsx` | Modified | Add `getReadStats` query call, pass data to DocumentCards |
+| `apps/web/src/components/documents/ReadTrackerDetail.tsx` | **Created** | Detail popover showing who opened and who hasn't |
+| `apps/web/src/components/documents/DocumentCard.tsx` | Modified | Add read tracking indicator for admin users |
+| `apps/web/src/components/documents/DocumentDetail.tsx` | Modified | Call `trackRead` on open/download actions |
+| `apps/web/src/app/(app)/documents/page.tsx` | Modified | Add `getReadStats` query call, pass data to DocumentCards |
 | `packages/backend/convex/documents/__tests__/readTracking.test.ts` | **Created** | Tests for trackRead, getReadStats, getUsersWithAccessCount, getReadersDetail |
 
 ### What This Story Does NOT Include
@@ -356,7 +356,7 @@ None — clean implementation, no debugging required.
 - **Task 7:** `ReadTrackerDetail` uses shadcn Popover with ScrollArea. Shows "Opened" and "Not yet opened" sections with role badges and `date-fns` formatted timestamps.
 - **Task 8:** ReadTracker indicator built inline in DocumentCard using shadcn Progress + "Opened by X/Y" text. Wrapped with ReadTrackerDetail popover. Documents page fetches batched `getReadStats` for all visible documents (admin-only via `"skip"` sentinel).
 - **Task 9:** 18 tests covering all 4 functions: `trackRead` (6 tests), `getReadStats` (4 tests), `getUsersWithAccessCount` (5 tests), `getReadersDetail` (3 tests). All pass.
-- **Task 10:** Typecheck passes (0 errors). Pre-existing lint errors in `apps/native/` and `apps/admin/src/components/ui/sidebar.tsx` unrelated to this story — all changed files lint clean. All 218 backend tests pass (12 test files).
+- **Task 10:** Typecheck passes (0 errors). Pre-existing lint errors in `apps/native/` and `apps/web/src/components/ui/sidebar.tsx` unrelated to this story — all changed files lint clean. All 218 backend tests pass (12 test files).
 - **Decision:** ReadTracker component from Story 1.4 did not exist. Built inline in DocumentCard using shadcn Progress bar per the risk mitigation strategy in the story.
 - **Decision:** Per dev notes recommendation, `getReadStats` was extended with `totalWithAccess` field to avoid N+1 `getUsersWithAccessCount` calls. The standalone `getUsersWithAccessCount` query still exists for individual document use cases.
 
@@ -365,9 +365,9 @@ None — clean implementation, no debugging required.
 - `packages/backend/convex/table/documentReads.ts` — Modified (added `by_teamId` index)
 - `packages/backend/convex/documents/mutations.ts` — Modified (added `trackRead` mutation)
 - `packages/backend/convex/documents/queries.ts` — Modified (added `getReadStats`, `getUsersWithAccessCount`, `getReadersDetail` queries + `_getUsersWithAccess` helper)
-- `apps/admin/src/components/documents/DocumentDetail.tsx` — Modified (wired `trackRead` to open/download/video handlers)
-- `apps/admin/src/components/documents/ReadTrackerDetail.tsx` — **Created** (reader detail popover)
-- `apps/admin/src/components/documents/DocumentCard.tsx` — Modified (added read tracking indicator with progress bar + popover)
-- `apps/admin/src/app/(app)/documents/page.tsx` — Modified (added `getReadStats` query, passes data to DocumentCard)
+- `apps/web/src/components/documents/DocumentDetail.tsx` — Modified (wired `trackRead` to open/download/video handlers)
+- `apps/web/src/components/documents/ReadTrackerDetail.tsx` — **Created** (reader detail popover)
+- `apps/web/src/components/documents/DocumentCard.tsx` — Modified (added read tracking indicator with progress bar + popover)
+- `apps/web/src/app/(app)/documents/page.tsx` — Modified (added `getReadStats` query, passes data to DocumentCard)
 - `packages/backend/convex/documents/__tests__/readTracking.test.ts` — **Created** (18 tests)
 - `_bmad-output/implementation-artifacts/4-4-read-tracking.md` — Updated (tasks marked complete, dev record filled)

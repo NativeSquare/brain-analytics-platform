@@ -8,5 +8,9 @@ export default defineConfig({
       "**/.next/**",
       "apps/*/tests/**", // Playwright E2E tests
     ],
+    projects: [
+      "packages/backend/vitest.config.ts",
+      "apps/admin/vitest.config.ts",
+    ],
   },
 });

@@ -370,3 +370,4 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 - `apps/web/src/components/calendar/CreateEventDialog.tsx` — Created: dialog wrapper
 - `apps/web/src/app/(app)/calendar/page.tsx` — Modified: added Create Event button + dialog
 - `apps/admin/package.json` — Modified: added @packages/shared dependency
+- `apps/web/tests/3-2-event-creation-one-off.spec.ts` — Created: Playwright E2E tests for event creation (route integrity, auth gate, component wiring)

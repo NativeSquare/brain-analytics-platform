@@ -69,6 +69,44 @@ export const getTeamRoles = query({
 });
 
 /**
+ * Search team members for the permissions panel user search.
+ * Admin-only. Excludes the current user. Returns up to 20 results.
+ * Filters by name or email (case-insensitive).
+ */
+export const searchTeamMembersForPermissions = query({
+  args: {
+    search: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    const allUsers = await ctx.db
+      .query("users")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    // Exclude the current user (they're admin with automatic access)
+    let filtered = allUsers.filter((u) => u._id !== user._id);
+
+    if (args.search && args.search.trim().length > 0) {
+      const term = args.search.trim().toLowerCase();
+      filtered = filtered.filter((u) => {
+        const name = (u.fullName ?? u.name ?? "").toLowerCase();
+        const email = (u.email ?? "").toLowerCase();
+        return name.includes(term) || email.includes(term);
+      });
+    }
+
+    return filtered.slice(0, 20).map((u) => ({
+      _id: u._id,
+      fullName: u.fullName ?? u.name ?? u.email ?? "Unknown",
+      email: u.email ?? "",
+      role: u.role ?? "",
+    }));
+  },
+});
+
+/**
  * Search team users by name for invitation selectors.
  * Returns up to 50 results, filtered by optional search string (case-insensitive).
  * Accessible to any authenticated team member (AC #13: team-scoped).

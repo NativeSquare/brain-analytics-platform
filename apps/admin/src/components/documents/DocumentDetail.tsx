@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { format } from "date-fns";
-import { ExternalLink, Download, Replace, Trash2 } from "lucide-react";
+import { ExternalLink, Download, Lock, Replace, Trash2 } from "lucide-react";
 
 import { formatFileSize } from "@packages/shared/documents";
 
@@ -27,6 +27,7 @@ interface DocumentDetailProps {
   isAdmin: boolean;
   onReplace?: (docId: Id<"documents">, docName: string) => void;
   onDelete?: (docId: Id<"documents">, docName: string) => void;
+  onPermissions?: (docId: Id<"documents">, docName: string, folderId: string) => void;
 }
 
 export function DocumentDetail({
@@ -36,6 +37,7 @@ export function DocumentDetail({
   isAdmin,
   onReplace,
   onDelete,
+  onPermissions,
 }: DocumentDetailProps) {
   const document = useQuery(
     api.documents.queries.getDocument,
@@ -162,6 +164,19 @@ export function DocumentDetail({
                 <Button onClick={handleWatchVideo} className="w-full">
                   <ExternalLink className="mr-2 size-4" />
                   Watch Video
+                </Button>
+              )}
+
+              {isAdmin && onPermissions && (
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    onPermissions(document._id, document.name, document.folderId as string)
+                  }
+                  className="w-full"
+                >
+                  <Lock className="mr-2 size-4" />
+                  Permissions
                 </Button>
               )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { IconDots, IconFolder, IconPencil, IconTrash } from "@tabler/icons-react";
+import { IconDots, IconFolder, IconLock, IconPencil, IconShield, IconTrash } from "@tabler/icons-react";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,11 @@ interface FolderCardProps {
   name: string;
   itemCount: number;
   isAdmin: boolean;
+  isRestricted?: boolean;
   onFolderClick: (folderId: Id<"folders">) => void;
   onFolderRename: (folderId: Id<"folders">, name: string) => void;
   onFolderDelete: (folderId: Id<"folders">, name: string) => void;
+  onFolderPermissions?: (folderId: Id<"folders">, name: string) => void;
 }
 
 export const FolderCard = React.memo(function FolderCard({
@@ -31,9 +33,11 @@ export const FolderCard = React.memo(function FolderCard({
   name,
   itemCount,
   isAdmin,
+  isRestricted,
   onFolderClick,
   onFolderRename,
   onFolderDelete,
+  onFolderPermissions,
 }: FolderCardProps) {
   const handleClick = React.useCallback(() => {
     onFolderClick(folderId);
@@ -45,6 +49,14 @@ export const FolderCard = React.memo(function FolderCard({
       onFolderRename(folderId, name);
     },
     [onFolderRename, folderId, name],
+  );
+
+  const handlePermissions = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onFolderPermissions?.(folderId, name);
+    },
+    [onFolderPermissions, folderId, name],
   );
 
   const handleDelete = React.useCallback(
@@ -65,7 +77,12 @@ export const FolderCard = React.memo(function FolderCard({
           <IconFolder className="size-5 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-sm">{name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate font-medium text-sm">{name}</p>
+            {isRestricted && (
+              <IconLock className="size-3.5 shrink-0 text-muted-foreground" />
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {itemCount} {itemCount === 1 ? "item" : "items"}
           </p>
@@ -87,6 +104,10 @@ export const FolderCard = React.memo(function FolderCard({
               <DropdownMenuItem onClick={handleRename}>
                 <IconPencil className="mr-2 size-4" />
                 Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePermissions}>
+                <IconShield className="mr-2 size-4" />
+                Permissions
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"

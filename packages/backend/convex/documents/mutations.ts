@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { requireRole } from "../lib/auth";
+import { VALID_PERMISSION_ROLES } from "../lib/permissions";
 
 /**
  * Creates a new folder. Admin-only.
@@ -330,6 +331,165 @@ export const deleteDocument = mutation({
 
     // Delete the document record
     await ctx.db.delete(args.documentId);
+
+    return { success: true };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Permission mutations (Story 4.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Set role and individual-user permissions on a folder. Admin-only.
+ * Replaces any existing `documentUserPermissions` records for this folder.
+ */
+export const setFolderPermissions = mutation({
+  args: {
+    folderId: v.id("folders"),
+    permittedRoles: v.array(v.string()),
+    userIds: v.array(v.id("users")),
+  },
+  handler: async (ctx, { folderId, permittedRoles, userIds }) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    // Validate folder exists & belongs to team
+    const folder = await ctx.db.get(folderId);
+    if (!folder || folder.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Folder not found.",
+      });
+    }
+
+    // Validate role values
+    for (const role of permittedRoles) {
+      if (!(VALID_PERMISSION_ROLES as readonly string[]).includes(role)) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `Invalid role: "${role}". Must be one of: ${VALID_PERMISSION_ROLES.join(", ")}.`,
+        });
+      }
+    }
+
+    // Validate userIds — each must exist and belong to the same team
+    for (const uid of userIds) {
+      const targetUser = await ctx.db.get(uid);
+      if (!targetUser || targetUser.teamId !== teamId) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `User ${uid} not found or belongs to a different team.`,
+        });
+      }
+    }
+
+    // Patch folder permittedRoles
+    await ctx.db.patch(folderId, { permittedRoles });
+
+    // Sync documentUserPermissions — delete existing, insert new
+    const existingPerms = await ctx.db
+      .query("documentUserPermissions")
+      .withIndex("by_targetId", (q) => q.eq("targetId", folderId as string))
+      .collect();
+
+    for (const perm of existingPerms) {
+      if (perm.targetType === "folder") {
+        await ctx.db.delete(perm._id);
+      }
+    }
+
+    for (const uid of userIds) {
+      await ctx.db.insert("documentUserPermissions", {
+        teamId,
+        targetType: "folder",
+        targetId: folderId as string,
+        userId: uid,
+        grantedBy: user._id,
+        createdAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+/**
+ * Set role and individual-user permissions on a document. Admin-only.
+ * When `permittedRoles` is `undefined`, the document inherits from its folder.
+ */
+export const setDocumentPermissions = mutation({
+  args: {
+    documentId: v.id("documents"),
+    permittedRoles: v.optional(v.array(v.string())),
+    userIds: v.array(v.id("users")),
+  },
+  handler: async (ctx, { documentId, permittedRoles, userIds }) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    // Validate document exists & belongs to team
+    const document = await ctx.db.get(documentId);
+    if (!document || document.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Document not found.",
+      });
+    }
+
+    // Validate role values if provided
+    if (permittedRoles !== undefined) {
+      for (const role of permittedRoles) {
+        if (!(VALID_PERMISSION_ROLES as readonly string[]).includes(role)) {
+          throw new ConvexError({
+            code: "VALIDATION_ERROR" as const,
+            message: `Invalid role: "${role}". Must be one of: ${VALID_PERMISSION_ROLES.join(", ")}.`,
+          });
+        }
+      }
+    }
+
+    // Validate userIds
+    for (const uid of userIds) {
+      const targetUser = await ctx.db.get(uid);
+      if (!targetUser || targetUser.teamId !== teamId) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `User ${uid} not found or belongs to a different team.`,
+        });
+      }
+    }
+
+    // Patch document permittedRoles
+    await ctx.db.patch(documentId, { permittedRoles });
+
+    // Sync documentUserPermissions — delete existing, insert new
+    const existingPerms = await ctx.db
+      .query("documentUserPermissions")
+      .withIndex("by_targetId", (q) =>
+        q.eq("targetId", documentId as string),
+      )
+      .collect();
+
+    for (const perm of existingPerms) {
+      if (perm.targetType === "document") {
+        await ctx.db.delete(perm._id);
+      }
+    }
+
+    // When inheriting (permittedRoles === undefined), clear user permissions too
+    if (permittedRoles === undefined) {
+      return { success: true };
+    }
+
+    for (const uid of userIds) {
+      await ctx.db.insert("documentUserPermissions", {
+        teamId,
+        targetType: "document",
+        targetId: documentId as string,
+        userId: uid,
+        grantedBy: user._id,
+        createdAt: Date.now(),
+      });
+    }
 
     return { success: true };
   },

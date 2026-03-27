@@ -1,7 +1,12 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requireRole } from "../lib/auth";
+import {
+  filterByAccess,
+  filterDocumentsByAccess,
+  checkDocumentAccess,
+} from "../lib/permissions";
 
 /**
  * Returns folders at a given level (top-level if no parentId, or children of parentId).
@@ -12,7 +17,6 @@ export const getFolders = query({
   args: { parentId: v.optional(v.id("folders")) },
   handler: async (ctx, { parentId }) => {
     const { user, teamId } = await requireAuth(ctx);
-    const isAdmin = user.role === "admin";
 
     let folders;
     if (parentId) {
@@ -33,16 +37,10 @@ export const getFolders = query({
     }
 
     // Filter out soft-deleted
-    let result = folders.filter((f) => f.isDeleted !== true);
+    const nonDeleted = folders.filter((f) => f.isDeleted !== true);
 
-    // Non-admin: filter by permittedRoles
-    if (!isAdmin) {
-      result = result.filter((f) => {
-        // null/undefined/empty = unrestricted
-        if (!f.permittedRoles || f.permittedRoles.length === 0) return true;
-        return user.role ? f.permittedRoles.includes(user.role) : false;
-      });
-    }
+    // Apply comprehensive access filtering (role + individual user permissions)
+    const result = await filterByAccess(ctx, user, nonDeleted, teamId);
 
     // Sort alphabetically by name
     result.sort((a, b) => a.name.localeCompare(b.name));
@@ -59,7 +57,6 @@ export const getFolderContents = query({
   args: { folderId: v.id("folders") },
   handler: async (ctx, { folderId }) => {
     const { user, teamId } = await requireAuth(ctx);
-    const isAdmin = user.role === "admin";
 
     const folder = await ctx.db.get(folderId);
     if (!folder || folder.teamId !== teamId) {
@@ -75,41 +72,37 @@ export const getFolderContents = query({
       .collect();
 
     // Filter out soft-deleted subfolders
-    subfolders = subfolders.filter((f) => f.isDeleted !== true);
+    const nonDeletedSubs = subfolders.filter((f) => f.isDeleted !== true);
 
-    // Non-admin: filter subfolders by permittedRoles
-    if (!isAdmin) {
-      subfolders = subfolders.filter((f) => {
-        if (!f.permittedRoles || f.permittedRoles.length === 0) return true;
-        return user.role ? f.permittedRoles.includes(user.role) : false;
-      });
-    }
+    // Apply comprehensive access filtering to subfolders
+    const filteredSubfolders = await filterByAccess(ctx, user, nonDeletedSubs, teamId);
 
     // Sort subfolders by name
-    subfolders.sort((a, b) => a.name.localeCompare(b.name));
+    filteredSubfolders.sort((a, b) => a.name.localeCompare(b.name));
 
     // Get documents in this folder
-    let documents = await ctx.db
+    const allDocuments = await ctx.db
       .query("documents")
       .withIndex("by_teamId_folderId", (q) =>
         q.eq("teamId", teamId).eq("folderId", folderId),
       )
       .collect();
 
-    // Non-admin: filter documents by permittedRoles (null inherits folder permissions)
-    if (!isAdmin) {
-      documents = documents.filter((doc) => {
-        if (!doc.permittedRoles || doc.permittedRoles.length === 0) return true;
-        return user.role ? doc.permittedRoles.includes(user.role) : false;
-      });
-    }
+    // Apply comprehensive access filtering to documents (with inheritance)
+    const documents = await filterDocumentsByAccess(
+      ctx,
+      user,
+      allDocuments,
+      teamId,
+      folder,
+    );
 
     // Sort documents by createdAt descending
     documents.sort((a, b) => b.createdAt - a.createdAt);
 
     return {
       folder: { _id: folder._id, name: folder.name, parentId: folder.parentId },
-      subfolders,
+      subfolders: filteredSubfolders,
       documents,
     };
   },
@@ -194,13 +187,22 @@ export const getFolderItemCounts = query({
 export const getDocumentUrl = query({
   args: { documentId: v.id("documents") },
   handler: async (ctx, { documentId }) => {
-    const { teamId } = await requireAuth(ctx);
+    const { user, teamId } = await requireAuth(ctx);
 
     const document = await ctx.db.get(documentId);
     if (!document || document.teamId !== teamId) {
       throw new ConvexError({
         code: "NOT_FOUND" as const,
         message: "Document not found.",
+      });
+    }
+
+    // Access check — deny if user lacks permission
+    const hasAccess = await checkDocumentAccess(ctx, user, document);
+    if (!hasAccess) {
+      throw new ConvexError({
+        code: "NOT_AUTHORIZED" as const,
+        message: "You do not have permission to access this document.",
       });
     }
 
@@ -219,13 +221,22 @@ export const getDocumentUrl = query({
 export const getDocument = query({
   args: { documentId: v.id("documents") },
   handler: async (ctx, { documentId }) => {
-    const { teamId } = await requireAuth(ctx);
+    const { user, teamId } = await requireAuth(ctx);
 
     const document = await ctx.db.get(documentId);
     if (!document || document.teamId !== teamId) {
       throw new ConvexError({
         code: "NOT_FOUND" as const,
         message: "Document not found.",
+      });
+    }
+
+    // Access check — deny if user lacks permission
+    const hasAccess = await checkDocumentAccess(ctx, user, document);
+    if (!hasAccess) {
+      throw new ConvexError({
+        code: "NOT_AUTHORIZED" as const,
+        message: "You do not have permission to access this document.",
       });
     }
 
@@ -250,5 +261,76 @@ export const getDocument = query({
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
     };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Permission queries (Story 4.3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the current permissions for a folder or document. Admin-only.
+ */
+export const getPermissions = query({
+  args: {
+    targetType: v.union(v.literal("folder"), v.literal("document")),
+    targetId: v.string(),
+  },
+  handler: async (ctx, { targetType, targetId }) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    // Fetch the target
+    let permittedRoles: string[] | undefined;
+
+    if (targetType === "folder") {
+      const folder = await ctx.db.get(targetId as Id<"folders">);
+      if (!folder || folder.teamId !== teamId) {
+        throw new ConvexError({
+          code: "NOT_FOUND" as const,
+          message: "Folder not found.",
+        });
+      }
+      permittedRoles = folder.permittedRoles;
+    } else {
+      const document = await ctx.db.get(targetId as Id<"documents">);
+      if (!document || document.teamId !== teamId) {
+        throw new ConvexError({
+          code: "NOT_FOUND" as const,
+          message: "Document not found.",
+        });
+      }
+      permittedRoles = document.permittedRoles;
+    }
+
+    // Fetch user permissions for this target
+    const userPerms = await ctx.db
+      .query("documentUserPermissions")
+      .withIndex("by_targetId", (q) => q.eq("targetId", targetId))
+      .collect();
+
+    // Filter to only matching targetType
+    const matchingPerms = userPerms.filter((p) => p.targetType === targetType);
+
+    // Join with user table
+    const users: Array<{
+      userId: Id<"users">;
+      fullName: string;
+      email: string;
+      role: string;
+    }> = [];
+
+    for (const perm of matchingPerms) {
+      const u = await ctx.db.get(perm.userId);
+      if (u) {
+        users.push({
+          userId: u._id,
+          fullName: u.fullName ?? u.name ?? u.email ?? "Unknown",
+          email: u.email ?? "",
+          role: u.role ?? "",
+        });
+      }
+    }
+
+    return { permittedRoles, users };
   },
 });

@@ -20,6 +20,7 @@ import { UploadDialog } from "@/components/documents/UploadDialog";
 import { DocumentDetail } from "@/components/documents/DocumentDetail";
 import { ReplaceFileDialog } from "@/components/documents/ReplaceFileDialog";
 import { DocumentDeleteDialog } from "@/components/documents/DocumentDeleteDialog";
+import { PermissionsPanel } from "@/components/documents/PermissionsPanel";
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
@@ -53,6 +54,14 @@ export default function DocumentsPage() {
   const [docDeleteTarget, setDocDeleteTarget] = React.useState<{
     id: Id<"documents">;
     name: string;
+  } | null>(null);
+
+  // --- Permissions panel state ---
+  const [permissionsTarget, setPermissionsTarget] = React.useState<{
+    type: "folder" | "document";
+    id: string;
+    name: string;
+    folderId?: string;
   } | null>(null);
 
   // --- Data queries ---
@@ -104,10 +113,22 @@ export default function DocumentsPage() {
     [],
   );
 
+  const handleFolderPermissions = React.useCallback(
+    (folderId: Id<"folders">, name: string) => {
+      setPermissionsTarget({ type: "folder", id: folderId as string, name });
+    },
+    [],
+  );
+
   function getItemCount(folderId: Id<"folders">): number {
     if (!itemCounts) return 0;
     const counts = itemCounts[folderId];
     return counts ? counts.subfolders + counts.documents : 0;
+  }
+
+  /** Check if a folder has restricted permissions (non-null, non-undefined permittedRoles). */
+  function isFolderRestricted(folder: { permittedRoles?: string[] }): boolean {
+    return folder.permittedRoles !== undefined && folder.permittedRoles !== null;
   }
 
   // --- Document action handlers (stable refs for React.memo) ---
@@ -143,6 +164,18 @@ export default function DocumentsPage() {
   const handleDeleteFromDetail = React.useCallback(
     (docId: Id<"documents">, docName: string) => {
       setDocDeleteTarget({ id: docId, name: docName });
+    },
+    [],
+  );
+
+  const handlePermissionsFromDetail = React.useCallback(
+    (docId: Id<"documents">, docName: string, folderId: string) => {
+      setPermissionsTarget({
+        type: "document",
+        id: docId as string,
+        name: docName,
+        folderId,
+      });
     },
     [],
   );
@@ -192,9 +225,11 @@ export default function DocumentsPage() {
                 name={folder.name}
                 itemCount={getItemCount(folder._id)}
                 isAdmin={isAdmin}
+                isRestricted={isFolderRestricted(folder)}
                 onFolderClick={handleFolderClick}
                 onFolderRename={handleFolderRename}
                 onFolderDelete={handleFolderDelete}
+                onFolderPermissions={handleFolderPermissions}
               />
             ))}
           </div>
@@ -220,6 +255,18 @@ export default function DocumentsPage() {
             onOpenChange={(open) => !open && setDeleteTarget(null)}
             folderId={deleteTarget.id}
             folderName={deleteTarget.name}
+          />
+        )}
+
+        {/* Permissions panel */}
+        {permissionsTarget && (
+          <PermissionsPanel
+            open={!!permissionsTarget}
+            onOpenChange={(open) => !open && setPermissionsTarget(null)}
+            targetType={permissionsTarget.type}
+            targetId={permissionsTarget.id}
+            targetName={permissionsTarget.name}
+            folderId={permissionsTarget.folderId}
           />
         )}
       </div>
@@ -268,9 +315,11 @@ export default function DocumentsPage() {
                   name={folder.name}
                   itemCount={getItemCount(folder._id)}
                   isAdmin={isAdmin}
+                  isRestricted={isFolderRestricted(folder)}
                   onFolderClick={handleFolderClick}
                   onFolderRename={handleFolderRename}
                   onFolderDelete={handleFolderDelete}
+                  onFolderPermissions={handleFolderPermissions}
                 />
               ))}
             </div>
@@ -357,6 +406,7 @@ export default function DocumentsPage() {
         isAdmin={isAdmin}
         onReplace={handleReplaceFromDetail}
         onDelete={handleDeleteFromDetail}
+        onPermissions={handlePermissionsFromDetail}
       />
 
       {replaceTarget && (
@@ -375,6 +425,18 @@ export default function DocumentsPage() {
           documentId={docDeleteTarget.id}
           documentName={docDeleteTarget.name}
           onDeleted={handleDocumentDeleted}
+        />
+      )}
+
+      {/* Permissions panel */}
+      {permissionsTarget && (
+        <PermissionsPanel
+          open={!!permissionsTarget}
+          onOpenChange={(open) => !open && setPermissionsTarget(null)}
+          targetType={permissionsTarget.type}
+          targetId={permissionsTarget.id}
+          targetName={permissionsTarget.name}
+          folderId={permissionsTarget.folderId}
         />
       )}
     </div>

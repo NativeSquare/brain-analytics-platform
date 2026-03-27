@@ -6,10 +6,11 @@ import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { IconFolderPlus, IconFolders } from "@tabler/icons-react";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { FolderCard } from "@/components/documents/FolderCard";
 import { FolderCreateDialog } from "@/components/documents/FolderCreateDialog";
 import { FolderRenameDialog } from "@/components/documents/FolderRenameDialog";
@@ -21,6 +22,19 @@ import { DocumentDetail } from "@/components/documents/DocumentDetail";
 import { ReplaceFileDialog } from "@/components/documents/ReplaceFileDialog";
 import { DocumentDeleteDialog } from "@/components/documents/DocumentDeleteDialog";
 import { PermissionsPanel } from "@/components/documents/PermissionsPanel";
+import { DocumentSearchToolbar } from "@/components/documents/DocumentSearchToolbar";
+import {
+  DocumentSearchResults,
+  type DocumentSearchResult,
+} from "@/components/documents/DocumentSearchResults";
+import { useDocumentSearch } from "@/hooks/useDocumentSearch";
+
+const FILE_TYPE_LABELS: Record<string, string> = {
+  pdf: "PDF",
+  image: "Images",
+  spreadsheet: "Spreadsheets",
+  video: "Video Links",
+};
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
@@ -30,6 +44,17 @@ export default function DocumentsPage() {
   // Current user for role check
   const currentUser = useQuery(api.table.users.currentUser);
   const isAdmin = currentUser?.role === "admin";
+
+  // --- Search & filter state ---
+  const {
+    searchTerm,
+    debouncedSearchTerm,
+    fileType,
+    setSearchTerm,
+    setFileType,
+    clearSearch,
+    isSearchActive,
+  } = useDocumentSearch();
 
   // --- Folder dialog states ---
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
@@ -64,19 +89,33 @@ export default function DocumentsPage() {
     folderId?: string;
   } | null>(null);
 
+  // --- Search query ---
+  const searchResults = useQuery(
+    api.documents.queries.searchDocuments,
+    isSearchActive
+      ? {
+          searchTerm: debouncedSearchTerm,
+          fileType: fileType || undefined,
+        }
+      : "skip",
+  );
+
   // --- Data queries ---
   const topLevelFolders = useQuery(
     api.documents.queries.getFolders,
-    !currentFolderId ? {} : "skip",
+    !currentFolderId && !isSearchActive ? {} : "skip",
   );
 
   const folderContents = useQuery(
     api.documents.queries.getFolderContents,
-    currentFolderId ? { folderId: currentFolderId } : "skip",
+    currentFolderId && !isSearchActive
+      ? { folderId: currentFolderId, fileType: fileType || undefined }
+      : "skip",
   );
 
   // Build folder IDs for batch item count
   const visibleFolderIds = React.useMemo(() => {
+    if (isSearchActive) return [];
     if (!currentFolderId && topLevelFolders) {
       return topLevelFolders.map((f) => f._id);
     }
@@ -84,7 +123,7 @@ export default function DocumentsPage() {
       return folderContents.subfolders.map((f) => f._id);
     }
     return [];
-  }, [currentFolderId, topLevelFolders, folderContents]);
+  }, [isSearchActive, currentFolderId, topLevelFolders, folderContents]);
 
   const itemCounts = useQuery(
     api.documents.queries.getFolderItemCounts,
@@ -92,19 +131,27 @@ export default function DocumentsPage() {
   );
 
   // --- Read tracking data (admin only, Story 4.4) ---
-  const visibleDocumentIds = React.useMemo(() => {
+  const browseDocumentIds = React.useMemo(() => {
+    if (isSearchActive) return [] as Id<"documents">[];
     if (currentFolderId && folderContents?.documents) {
       return folderContents.documents.map(
         (d) => d._id as Id<"documents">,
       );
     }
     return [] as Id<"documents">[];
-  }, [currentFolderId, folderContents]);
+  }, [isSearchActive, currentFolderId, folderContents]);
+
+  const searchDocumentIds = React.useMemo(() => {
+    if (!isSearchActive || !searchResults?.results) return [] as Id<"documents">[];
+    return searchResults.results.map((d) => d._id as Id<"documents">);
+  }, [isSearchActive, searchResults]);
+
+  const activeDocumentIds = isSearchActive ? searchDocumentIds : browseDocumentIds;
 
   const readStats = useQuery(
     api.documents.queries.getReadStats,
-    isAdmin && visibleDocumentIds.length > 0
-      ? { documentIds: visibleDocumentIds }
+    isAdmin && activeDocumentIds.length > 0
+      ? { documentIds: activeDocumentIds }
       : "skip",
   );
 
@@ -202,6 +249,15 @@ export default function DocumentsPage() {
     setSelectedDocumentId(null);
   }, []);
 
+  // --- Search result click handler ---
+  const handleSearchResultClick = React.useCallback(
+    (result: DocumentSearchResult) => {
+      clearSearch();
+      router.push(`/documents?folder=${result.folderId}`);
+    },
+    [clearSearch, router],
+  );
+
   // Determine if we can show "New Subfolder" button
   const canCreateSubfolder =
     isAdmin &&
@@ -212,10 +268,61 @@ export default function DocumentsPage() {
   // Current folder name (for upload dialog)
   const currentFolderName = folderContents?.folder?.name ?? "";
 
-  // Top-level view
+  // --- Search active: show search results ---
+  if (isSearchActive) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        {/* Search toolbar — always visible */}
+        <DocumentSearchToolbar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          fileType={fileType}
+          onFileTypeChange={setFileType}
+        />
+
+        <DocumentSearchResults
+          results={searchResults?.results ?? []}
+          totalCount={searchResults?.totalCount ?? 0}
+          searchTerm={debouncedSearchTerm}
+          isLoading={searchResults === undefined}
+          onResultClick={handleSearchResultClick}
+          isAdmin={isAdmin}
+          readStats={readStats ?? undefined}
+        />
+
+        {/* Shared dialogs */}
+        <SharedDialogs
+          selectedDocumentId={selectedDocumentId}
+          isDetailOpen={isDetailOpen}
+          setIsDetailOpen={setIsDetailOpen}
+          isAdmin={isAdmin}
+          handleReplaceFromDetail={handleReplaceFromDetail}
+          handleDeleteFromDetail={handleDeleteFromDetail}
+          handlePermissionsFromDetail={handlePermissionsFromDetail}
+          replaceTarget={replaceTarget}
+          setReplaceTarget={setReplaceTarget}
+          docDeleteTarget={docDeleteTarget}
+          setDocDeleteTarget={setDocDeleteTarget}
+          handleDocumentDeleted={handleDocumentDeleted}
+          permissionsTarget={permissionsTarget}
+          setPermissionsTarget={setPermissionsTarget}
+        />
+      </div>
+    );
+  }
+
+  // Top-level view (no folder selected)
   if (!currentFolderId) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        {/* Search toolbar — always visible */}
+        <DocumentSearchToolbar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          fileType={fileType}
+          onFileTypeChange={setFileType}
+        />
+
         <div className="flex items-center justify-between">
           <DocumentFolderBreadcrumb />
           {isAdmin && (
@@ -293,6 +400,14 @@ export default function DocumentsPage() {
   // Folder contents view
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      {/* Search toolbar — always visible */}
+      <DocumentSearchToolbar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        fileType={fileType}
+        onFileTypeChange={setFileType}
+      />
+
       <div className="flex items-center justify-between">
         <DocumentFolderBreadcrumb folderId={currentFolderId} />
         <div className="flex items-center gap-2">
@@ -317,6 +432,23 @@ export default function DocumentsPage() {
           )}
         </div>
       </div>
+
+      {/* File type filter active indicator */}
+      {fileType && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1">
+            Filtered by: {FILE_TYPE_LABELS[fileType] ?? fileType}
+            <button
+              type="button"
+              onClick={() => setFileType("")}
+              className="ml-1 rounded-sm hover:bg-accent"
+              aria-label="Clear filter"
+            >
+              <X className="size-3" />
+            </button>
+          </Badge>
+        </div>
+      )}
 
       {folderContents === undefined ? (
         <FolderGridSkeleton />
@@ -369,9 +501,11 @@ export default function DocumentsPage() {
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <IconFolders className="mb-3 size-12 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">
-                  This folder is empty.
+                  {fileType
+                    ? `No ${FILE_TYPE_LABELS[fileType]?.toLowerCase() ?? fileType} documents in this folder.`
+                    : "This folder is empty."}
                 </p>
-                {isAdmin && (
+                {isAdmin && !fileType && (
                   <Button
                     size="sm"
                     className="mt-4"
@@ -421,6 +555,78 @@ export default function DocumentsPage() {
         />
       )}
 
+      <SharedDialogs
+        selectedDocumentId={selectedDocumentId}
+        isDetailOpen={isDetailOpen}
+        setIsDetailOpen={setIsDetailOpen}
+        isAdmin={isAdmin}
+        handleReplaceFromDetail={handleReplaceFromDetail}
+        handleDeleteFromDetail={handleDeleteFromDetail}
+        handlePermissionsFromDetail={handlePermissionsFromDetail}
+        replaceTarget={replaceTarget}
+        setReplaceTarget={setReplaceTarget}
+        docDeleteTarget={docDeleteTarget}
+        setDocDeleteTarget={setDocDeleteTarget}
+        handleDocumentDeleted={handleDocumentDeleted}
+        permissionsTarget={permissionsTarget}
+        setPermissionsTarget={setPermissionsTarget}
+      />
+    </div>
+  );
+}
+
+// --- Sub-components ---
+
+/** Shared dialogs extracted to avoid duplication across views. */
+function SharedDialogs({
+  selectedDocumentId,
+  isDetailOpen,
+  setIsDetailOpen,
+  isAdmin,
+  handleReplaceFromDetail,
+  handleDeleteFromDetail,
+  handlePermissionsFromDetail,
+  replaceTarget,
+  setReplaceTarget,
+  docDeleteTarget,
+  setDocDeleteTarget,
+  handleDocumentDeleted,
+  permissionsTarget,
+  setPermissionsTarget,
+}: {
+  selectedDocumentId: Id<"documents"> | null;
+  isDetailOpen: boolean;
+  setIsDetailOpen: (open: boolean) => void;
+  isAdmin: boolean;
+  handleReplaceFromDetail: (docId: Id<"documents">, docName: string) => void;
+  handleDeleteFromDetail: (docId: Id<"documents">, docName: string) => void;
+  handlePermissionsFromDetail: (
+    docId: Id<"documents">,
+    docName: string,
+    folderId: string,
+  ) => void;
+  replaceTarget: { id: Id<"documents">; name: string } | null;
+  setReplaceTarget: (target: { id: Id<"documents">; name: string } | null) => void;
+  docDeleteTarget: { id: Id<"documents">; name: string } | null;
+  setDocDeleteTarget: (target: { id: Id<"documents">; name: string } | null) => void;
+  handleDocumentDeleted: () => void;
+  permissionsTarget: {
+    type: "folder" | "document";
+    id: string;
+    name: string;
+    folderId?: string;
+  } | null;
+  setPermissionsTarget: (
+    target: {
+      type: "folder" | "document";
+      id: string;
+      name: string;
+      folderId?: string;
+    } | null,
+  ) => void;
+}) {
+  return (
+    <>
       <DocumentDetail
         documentId={selectedDocumentId}
         open={isDetailOpen}
@@ -461,11 +667,9 @@ export default function DocumentsPage() {
           folderId={permissionsTarget.folderId}
         />
       )}
-    </div>
+    </>
   );
 }
-
-// --- Sub-components ---
 
 function FolderGridSkeleton() {
   return (

@@ -9,6 +9,28 @@ import {
   checkDocumentAccess,
 } from "../lib/permissions";
 
+// ---------------------------------------------------------------------------
+// File type matching helper
+// ---------------------------------------------------------------------------
+
+function matchesFileType(
+  doc: { extension?: string; videoUrl?: string },
+  fileType: string,
+): boolean {
+  switch (fileType) {
+    case "pdf":
+      return doc.extension === "pdf";
+    case "image":
+      return ["jpg", "png"].includes(doc.extension ?? "");
+    case "spreadsheet":
+      return ["xlsx", "csv"].includes(doc.extension ?? "");
+    case "video":
+      return doc.videoUrl != null;
+    default:
+      return true;
+  }
+}
+
 /**
  * Returns folders at a given level (top-level if no parentId, or children of parentId).
  * Admin sees all; non-admin sees only unrestricted or role-permitted folders.
@@ -55,8 +77,8 @@ export const getFolders = query({
  * Validates team access. Applies role-based filtering for non-admin users.
  */
 export const getFolderContents = query({
-  args: { folderId: v.id("folders") },
-  handler: async (ctx, { folderId }) => {
+  args: { folderId: v.id("folders"), fileType: v.optional(v.string()) },
+  handler: async (ctx, { folderId, fileType }) => {
     const { user, teamId } = await requireAuth(ctx);
 
     const folder = await ctx.db.get(folderId);
@@ -89,11 +111,16 @@ export const getFolderContents = query({
       )
       .collect();
 
+    // Apply file type filtering if specified
+    const typeFilteredDocs = fileType
+      ? allDocuments.filter((doc) => matchesFileType(doc, fileType))
+      : allDocuments;
+
     // Apply comprehensive access filtering to documents (with inheritance)
     const documents = await filterDocumentsByAccess(
       ctx,
       user,
-      allDocuments,
+      typeFilteredDocs,
       teamId,
       folder,
     );
@@ -567,5 +594,138 @@ export const getReadersDetail = query({
     nonReaders.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
     return { readers, nonReaders, documentName: document.name };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Search query (Story 4.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Search documents across all accessible folders by name substring match.
+ * Applies file type filtering, access control, and enriches with folder path.
+ * Returns max 50 results with total count.
+ */
+export const searchDocuments = query({
+  args: {
+    searchTerm: v.string(),
+    fileType: v.optional(v.string()),
+  },
+  handler: async (ctx, { searchTerm, fileType }) => {
+    const { user, teamId } = await requireAuth(ctx);
+    const trimmed = searchTerm.trim().toLowerCase();
+
+    if (trimmed.length < 2) return { results: [], totalCount: 0 };
+
+    // Fetch all documents for the team
+    const allDocs = await ctx.db
+      .query("documents")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    // Apply name matching
+    let matched = allDocs.filter((doc) =>
+      doc.name.toLowerCase().includes(trimmed),
+    );
+
+    // Apply file type filter
+    if (fileType) {
+      matched = matched.filter((doc) => matchesFileType(doc, fileType));
+    }
+
+    // Apply access filtering (non-admin only)
+    if (user.role !== "admin") {
+      // Batch-load user permissions once
+      const userPerms = await ctx.db
+        .query("documentUserPermissions")
+        .withIndex("by_userId_teamId", (q) =>
+          q.eq("userId", user._id).eq("teamId", teamId),
+        )
+        .collect();
+
+      const permittedTargetIds = new Set(userPerms.map((p) => p.targetId));
+
+      const accessible: Doc<"documents">[] = [];
+      for (const doc of matched) {
+        // Document has its own permissions (override)
+        if (doc.permittedRoles !== undefined) {
+          if (doc.permittedRoles === null) {
+            // null = unrestricted at document level
+            accessible.push(doc);
+            continue;
+          }
+          if (doc.permittedRoles.length === 0) {
+            // No role-based access; check individual grant on document
+            if (permittedTargetIds.has(doc._id as string)) {
+              accessible.push(doc);
+            }
+            continue;
+          }
+          if (user.role && doc.permittedRoles.includes(user.role)) {
+            accessible.push(doc);
+            continue;
+          }
+          // Check individual grant on document
+          if (permittedTargetIds.has(doc._id as string)) {
+            accessible.push(doc);
+          }
+          continue;
+        }
+
+        // Inherit from parent folder
+        const folder = await ctx.db.get(doc.folderId);
+        if (!folder) continue;
+
+        const folderRoles = folder.permittedRoles;
+        if (folderRoles === undefined || folderRoles === null) {
+          // Folder unrestricted → document accessible
+          accessible.push(doc);
+          continue;
+        }
+        if (folderRoles.length === 0) {
+          // No role access; check folder-level individual grant
+          if (permittedTargetIds.has(folder._id as string)) {
+            accessible.push(doc);
+          }
+          continue;
+        }
+        if (user.role && folderRoles.includes(user.role)) {
+          accessible.push(doc);
+          continue;
+        }
+        // Check folder-level individual grant
+        if (permittedTargetIds.has(folder._id as string)) {
+          accessible.push(doc);
+        }
+      }
+      matched = accessible;
+    }
+
+    // Enrich with folder paths
+    const enriched = await Promise.all(
+      matched.map(async (doc) => {
+        const folder = await ctx.db.get(doc.folderId);
+        let folderPath = folder?.name ?? "";
+        if (folder?.parentId) {
+          const parent = await ctx.db.get(folder.parentId);
+          folderPath = parent ? `${parent.name} > ${folder.name}` : folderPath;
+        }
+        return { ...doc, folderPath, folderId: doc.folderId };
+      }),
+    );
+
+    // Sort: exact prefix matches first, then by createdAt desc
+    enriched.sort((a, b) => {
+      const aExact = a.name.toLowerCase().startsWith(trimmed);
+      const bExact = b.name.toLowerCase().startsWith(trimmed);
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      return b.createdAt - a.createdAt;
+    });
+
+    const totalCount = enriched.length;
+    const results = enriched.slice(0, 50);
+
+    return { results, totalCount };
   },
 });

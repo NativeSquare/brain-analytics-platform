@@ -209,6 +209,13 @@ export function AdminTable() {
     }
   }, [userToDelete, deleteUser]);
 
+  const handleRowClick = React.useCallback(
+    (memberId: Id<"users">) => {
+      router.push(`/team/${memberId}`);
+    },
+    [router],
+  );
+
   // Only show active members in this table (pending invites are in PendingInvites component)
   const members: MemberData[] = React.useMemo(() => {
     if (!teamData) return [];
@@ -402,7 +409,7 @@ export function AdminTable() {
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className="cursor-pointer"
-                  onClick={() => router.push(`/team/${row.original._id}`)}
+                  onClick={() => handleRowClick(row.original._id)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

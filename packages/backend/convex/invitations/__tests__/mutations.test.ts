@@ -177,7 +177,8 @@ async function acceptInviteLogic(ctx: any, args: { token: string }) {
     });
   }
 
-  if (user.email !== invite.email) {
+  // Normalize both sides for case-insensitive comparison (matches mutations.ts)
+  if (user.email?.toLowerCase().trim() !== invite.email) {
     throw new ConvexError({
       code: "VALIDATION_ERROR" as const,
       message: "Your email does not match this invitation.",

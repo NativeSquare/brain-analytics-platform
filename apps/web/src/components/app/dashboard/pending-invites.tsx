@@ -49,6 +49,89 @@ function formatTimeRemaining(expiresAt: number): string {
   return `${hours}h remaining`;
 }
 
+type PendingInviteData = {
+  _id: string;
+  _creationTime: number;
+  email: string;
+  name: string;
+  role: string;
+  expiresAt: number;
+  inviterName: string;
+};
+
+/** Memoized list item to prevent re-renders when sibling items change. */
+const PendingInviteItem = React.memo(function PendingInviteItem({
+  invite,
+  resendingId,
+  onResend,
+  onCancelClick,
+}: {
+  invite: PendingInviteData;
+  resendingId: Id<"invitations"> | null;
+  onResend: (id: Id<"invitations">, email: string) => void;
+  onCancelClick: (id: Id<"invitations">) => void;
+}) {
+  const roleLabel = ROLE_LABELS[invite.role as UserRole] ?? invite.role;
+  const inviteId = invite._id as Id<"invitations">;
+
+  const handleResendClick = React.useCallback(() => {
+    onResend(inviteId, invite.email);
+  }, [onResend, inviteId, invite.email]);
+
+  const handleCancelClick = React.useCallback(() => {
+    onCancelClick(inviteId);
+  }, [onCancelClick, inviteId]);
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-3">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{invite.name}</span>
+          <Badge variant="secondary" className="text-xs">
+            {roleLabel}
+          </Badge>
+          <Badge variant="outline" className="text-xs">
+            <IconClock className="mr-1 h-3 w-3" />
+            {formatTimeRemaining(invite.expiresAt)}
+          </Badge>
+        </div>
+        <span className="text-muted-foreground text-sm">{invite.email}</span>
+        {invite.inviterName && (
+          <span className="text-muted-foreground text-xs">
+            Invited by {invite.inviterName}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-primary"
+          disabled={resendingId === inviteId}
+          onClick={handleResendClick}
+          title="Resend invitation"
+        >
+          {resendingId === inviteId ? (
+            <Spinner className="h-4 w-4" />
+          ) : (
+            <IconRefresh className="h-4 w-4" />
+          )}
+          <span className="sr-only">Resend invitation</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-destructive"
+          onClick={handleCancelClick}
+        >
+          <IconX className="h-4 w-4" />
+          <span className="sr-only">Cancel invitation</span>
+        </Button>
+      </div>
+    </div>
+  );
+});
+
 export function PendingInvites() {
   const invites = useQuery(api.invitations.queries.listPendingInvites);
   const cancelInvite = useMutation(api.invitations.mutations.cancelInvite);
@@ -98,6 +181,14 @@ export function PendingInvites() {
     }
   }, [resendInvite]);
 
+  const handleCancelClick = React.useCallback(
+    (id: Id<"invitations">) => {
+      setInviteToCancel(id);
+      setCancelDialogOpen(true);
+    },
+    [],
+  );
+
   // Don't render anything if there are no pending invites
   if (invites === undefined) {
     return null;
@@ -122,71 +213,15 @@ export function PendingInvites() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {invites.map((invite) => {
-              const roleLabel =
-                ROLE_LABELS[invite.role as UserRole] ?? invite.role;
-              return (
-                <div
-                  key={invite._id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{invite.name}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {roleLabel}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        <IconClock className="mr-1 h-3 w-3" />
-                        {formatTimeRemaining(invite.expiresAt)}
-                      </Badge>
-                    </div>
-                    <span className="text-muted-foreground text-sm">
-                      {invite.email}
-                    </span>
-                    {invite.inviterName && (
-                      <span className="text-muted-foreground text-xs">
-                        Invited by {invite.inviterName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-primary"
-                      disabled={resendingId === invite._id}
-                      onClick={() =>
-                        handleResend(
-                          invite._id as Id<"invitations">,
-                          invite.email,
-                        )
-                      }
-                      title="Resend invitation"
-                    >
-                      {resendingId === invite._id ? (
-                        <Spinner className="h-4 w-4" />
-                      ) : (
-                        <IconRefresh className="h-4 w-4" />
-                      )}
-                      <span className="sr-only">Resend invitation</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-destructive"
-                      onClick={() => {
-                        setInviteToCancel(invite._id as Id<"invitations">);
-                        setCancelDialogOpen(true);
-                      }}
-                    >
-                      <IconX className="h-4 w-4" />
-                      <span className="sr-only">Cancel invitation</span>
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+            {invites.map((invite) => (
+              <PendingInviteItem
+                key={invite._id}
+                invite={invite}
+                resendingId={resendingId}
+                onResend={handleResend}
+                onCancelClick={handleCancelClick}
+              />
+            ))}
           </div>
         </CardContent>
       </Card>

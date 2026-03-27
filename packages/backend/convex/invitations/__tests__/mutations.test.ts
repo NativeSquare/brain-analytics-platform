@@ -28,13 +28,11 @@ const modules = import.meta.glob("../../**/*.ts");
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 function generateToken(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  const array = new Uint8Array(24);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => byte.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
 }
 
 async function seedAdminAndTeam(t: ReturnType<typeof convexTest>) {
@@ -261,13 +259,19 @@ async function resendInviteLogic(
     });
   }
 
+  if (invite.cancelledAt) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Cannot resend a cancelled invitation.",
+    });
+  }
+
   const newToken = generateToken();
   const newExpiresAt = Date.now() + SEVEN_DAYS_MS;
 
   await ctx.db.patch(args.invitationId, {
     token: newToken,
     expiresAt: newExpiresAt,
-    cancelledAt: undefined,
   });
 }
 

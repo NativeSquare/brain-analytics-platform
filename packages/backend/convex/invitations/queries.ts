@@ -106,7 +106,7 @@ export const getTeamMembersWithInvites = query({
       .collect();
 
     const activeMembers = members
-      .filter((m) => m.status !== "deactivated" || m.role)
+      .filter((m) => m.status !== "deactivated")
       .map((m) => ({
         _id: m._id,
         type: "member" as const,

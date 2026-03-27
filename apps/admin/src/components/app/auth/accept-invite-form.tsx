@@ -114,8 +114,8 @@ export function AcceptInviteForm({
         await legacyAcceptInvite({ token });
       }
 
-      // Redirect to dashboard
-      router.replace("/dashboard");
+      // Redirect to homepage
+      router.replace("/");
     } catch (error) {
       setFormError(getConvexErrorMessage(error));
     } finally {

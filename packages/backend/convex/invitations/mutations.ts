@@ -7,16 +7,15 @@ import { requireRole } from "../lib/auth";
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
- * Generate a secure random 32-character alphanumeric token.
+ * Generate a cryptographically secure random 32-character alphanumeric token.
+ * Uses Web Crypto API (available in Convex V8 runtime) instead of Math.random().
  */
 function generateToken(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  const array = new Uint8Array(24);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => byte.toString(36).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
 }
 
 const roleValidator = v.union(
@@ -275,6 +274,13 @@ export const resendInvite = mutation({
       });
     }
 
+    if (invite.cancelledAt) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Cannot resend a cancelled invitation.",
+      });
+    }
+
     // Generate new token and reset expiry
     const newToken = generateToken();
     const newExpiresAt = Date.now() + SEVEN_DAYS_MS;
@@ -282,7 +288,6 @@ export const resendInvite = mutation({
     await ctx.db.patch(args.invitationId, {
       token: newToken,
       expiresAt: newExpiresAt,
-      cancelledAt: undefined,
     });
 
     // Schedule email sending

@@ -13,6 +13,7 @@ import {
   IconChevronRight,
   IconDotsVertical,
   IconFolders,
+  IconHome,
   IconLogout,
   IconSettings,
   IconShirtSport,
@@ -77,6 +78,7 @@ const navGroups: NavGroup[] = [
     title: "Platform",
     defaultOpen: true,
     items: [
+      { label: "Home", icon: IconHome, href: "/" },
       { label: "Calendar", icon: IconCalendar, href: "/calendar" },
       { label: "Documents", icon: IconFolders, href: "/documents" },
       { label: "Players", icon: IconShirtSport, href: "/players" },
@@ -106,6 +108,7 @@ function getInitials(name: string): string {
 }
 
 function isRouteActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
 }
 

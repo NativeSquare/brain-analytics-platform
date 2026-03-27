@@ -32,7 +32,9 @@ export const sendInviteEmail = internalAction({
       return null;
     }
 
-    const inviteUrl = `${process.env.ADMIN_URL || "http://localhost:3001"}/accept-invite?token=${invite.token}`;
+    // WEB_APP_URL preferred; fall back to ADMIN_URL for backward compat; default to web app port (3000)
+    const baseUrl = process.env.WEB_APP_URL || process.env.ADMIN_URL || "http://localhost:3000";
+    const inviteUrl = `${baseUrl}/accept-invite?token=${invite.token}`;
     const roleLabel = ROLE_LABELS[invite.role as keyof typeof ROLE_LABELS] ?? invite.role;
 
     const isDev = process.env.IS_DEV === "true";

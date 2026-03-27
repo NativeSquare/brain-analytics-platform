@@ -32,7 +32,7 @@ export function renderAdminInviteHtml(
     <p style="font-size:14px;margin:8px 0;">Thanks,</p>
     <p style="font-size:14px;margin:8px 0;">The ${escapeHtml(appName)} Team</p>
     <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
-    <p style="font-size:14px;margin:8px 0;color:#51525C;">© 2025 ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
+    <p style="font-size:14px;margin:8px 0;color:#51525C;">© ${new Date().getFullYear()} ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
   </div>
 </body>
 </html>`;
@@ -57,7 +57,7 @@ export function renderVerifyEmailHtml(
     <p style="font-size:14px;margin:8px 0;">Thanks,</p>
     <p style="font-size:14px;margin:8px 0;">The ${escapeHtml(appName)} Team</p>
     <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
-    <p style="font-size:14px;margin:8px 0;color:#51525C;">© 2025 ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
+    <p style="font-size:14px;margin:8px 0;color:#51525C;">© ${new Date().getFullYear()} ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
   </div>
 </body>
 </html>`;
@@ -82,7 +82,7 @@ export function renderForgotPasswordHtml(
     <p style="font-size:14px;margin:8px 0;">Thanks,</p>
     <p style="font-size:14px;margin:8px 0;">The ${escapeHtml(appName)} Team</p>
     <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
-    <p style="font-size:14px;margin:8px 0;color:#51525C;">© 2025 ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
+    <p style="font-size:14px;margin:8px 0;color:#51525C;">© ${new Date().getFullYear()} ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
   </div>
 </body>
 </html>`;
@@ -117,7 +117,7 @@ export function renderInviteHtml(
     <p style="font-size:14px;margin:8px 0;">Thanks,</p>
     <p style="font-size:14px;margin:8px 0;">The ${escapeHtml(appName)} Team</p>
     <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
-    <p style="font-size:14px;margin:8px 0;color:#51525C;">© 2025 ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
+    <p style="font-size:14px;margin:8px 0;color:#51525C;">© ${new Date().getFullYear()} ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
   </div>
 </body>
 </html>`;

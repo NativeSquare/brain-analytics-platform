@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
  * These tests verify user-facing acceptance criteria for the invitation system.
  * The accept-invite page is public (no auth required) so we can test error
  * states directly with invalid/missing tokens. The team management page
- * requires authentication, so we verify the auth gate redirects properly.
+ * requires authentication, so we verify the auth gate prevents access.
  */
 
 // ---------------------------------------------------------------------------
@@ -52,30 +52,28 @@ test.describe("Accept Invite Page", () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 
-  test("accept-invite route is registered and does not 404", async ({
+  test("accept-invite page renders structured error card with heading and enabled navigation button", async ({
     page,
   }) => {
-    // AC #4: invitation link navigates to /accept-invite?token={token}
-    const response = await page.goto("/accept-invite?token=route_check");
+    // AC #4: invitation link navigates to /accept-invite?token={token} without 404
+    // AC #5: invalid tokens render a structured error card with actionable UI
+    const response = await page.goto("/accept-invite?token=structure_test");
 
+    // Route must exist (not 404) and not error (not 5xx)
     expect(response).not.toBeNull();
     expect(response!.status()).not.toBe(404);
     expect(response!.status()).toBeLessThan(500);
-  });
 
-  test("renders a card with heading and action button for error state", async ({
-    page,
-  }) => {
-    // Verify proper card UI structure on the accept-invite page
-    await page.goto("/accept-invite?token=structure_test");
-
-    // Should render a heading (either welcome or error)
-    const heading = page.getByRole("heading").first();
+    // Error card must contain an "Invalid Invitation" heading
+    const heading = page.getByRole("heading", {
+      name: /Invalid Invitation/i,
+    });
     await expect(heading).toBeVisible({ timeout: 15000 });
 
-    // Should render at least one actionable button
-    const button = page.getByRole("button").first();
-    await expect(button).toBeVisible();
+    // "Go to Login" button must be present and enabled (not disabled)
+    const goToLoginBtn = page.getByRole("button", { name: /Go to Login/i });
+    await expect(goToLoginBtn).toBeVisible();
+    await expect(goToLoginBtn).toBeEnabled();
   });
 
   test("type=player parameter renders the player-specific accept flow", async ({
@@ -95,15 +93,15 @@ test.describe("Accept Invite Page", () => {
     await expect(goToLoginBtn).toBeVisible();
   });
 
-  test("error card shows 'Go to Login' button that is clickable", async ({
+  test("accept-invite page without token shows error or loading state", async ({
     page,
   }) => {
-    // Verify the error state button is not disabled and is interactive
-    await page.goto("/accept-invite?token=clickable_test");
+    // AC #5: missing token parameter should be handled gracefully, not crash
+    await page.goto("/accept-invite");
 
-    const goToLoginBtn = page.getByRole("button", { name: /Go to Login/i });
-    await expect(goToLoginBtn).toBeVisible({ timeout: 15000 });
-    await expect(goToLoginBtn).toBeEnabled();
+    // Page should render something meaningful (heading) — not be blank or 404
+    const heading = page.getByRole("heading").first();
+    await expect(heading).toBeVisible({ timeout: 15000 });
   });
 });
 
@@ -112,40 +110,35 @@ test.describe("Accept Invite Page", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Team Management Page", () => {
-  test("redirects unauthenticated user to login page", async ({ page }) => {
+  test("prevents unauthenticated access — does not show team management UI", async ({
+    page,
+  }) => {
     // AC #12: authorization enforced — unauthenticated users cannot access /team
     await page.goto("/team");
 
-    // Wait for either a URL redirect to login OR a sign-in heading to appear
-    const loginRedirect = page.waitForURL(/\/(login|sign-in)/i, {
-      timeout: 10000,
-    });
-    const signInHeading = page
-      .getByRole("heading", { name: /sign in|log ?in|welcome/i })
-      .first();
-
-    await Promise.race([
-      loginRedirect,
-      expect(signInHeading).toBeVisible({ timeout: 10000 }),
-    ]).catch(() => {
-      // Acceptable: page may show auth error instead of redirect
+    // Wait for page to settle (redirect, render, or client-side auth check)
+    await page.waitForLoadState("networkidle").catch(() => {
+      // networkidle may not fire if SSE/WebSocket connections stay open
     });
 
     const url = page.url();
-    const bodyText = (await page.textContent("body")) ?? "";
+    const wasRedirected =
+      url.includes("login") || url.includes("sign-in");
 
-    // Verify auth gate: must see login redirect/form OR an application error
-    // (a client-side error when no auth context is present is also valid gating)
-    const isAuthGated =
-      url.includes("login") ||
-      url.includes("sign-in") ||
-      bodyText.toLowerCase().includes("sign in") ||
-      bodyText.toLowerCase().includes("login") ||
-      bodyText.toLowerCase().includes("log in") ||
-      bodyText.toLowerCase().includes("application error") ||
-      bodyText.toLowerCase().includes("welcome back");
-
-    expect(isAuthGated).toBeTruthy();
+    if (wasRedirected) {
+      // Auth gate redirected to login — verify login form is present
+      const loginForm = page.locator(
+        'input[type="email"], input[name="email"], input[type="password"]',
+      );
+      await expect(loginForm.first()).toBeVisible({ timeout: 10000 });
+    } else {
+      // If no redirect, the admin-only "Invite Member" button must NOT be visible
+      // (this proves the auth gate prevented access to team management UI)
+      const inviteButton = page.getByRole("button", {
+        name: /Invite Member/i,
+      });
+      await expect(inviteButton).not.toBeVisible({ timeout: 10000 });
+    }
   });
 
   test("team route responds without server error", async ({ page }) => {
@@ -153,36 +146,5 @@ test.describe("Team Management Page", () => {
 
     expect(response).not.toBeNull();
     expect(response!.status()).toBeLessThan(500);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Login page: supports the accept-invite → sign-up flow (AC #5)
-// ---------------------------------------------------------------------------
-
-test.describe("Login Page", () => {
-  test("renders email input field for authentication", async ({ page }) => {
-    await page.goto("/login");
-
-    const emailInput = page.locator(
-      'input[type="email"], input[name="email"]',
-    );
-    await expect(emailInput.first()).toBeVisible({ timeout: 10000 });
-  });
-
-  test("renders password input field for authentication", async ({ page }) => {
-    await page.goto("/login");
-
-    const passwordInput = page.locator('input[type="password"]');
-    await expect(passwordInput.first()).toBeVisible({ timeout: 10000 });
-  });
-
-  test("renders a submit button for sign-in", async ({ page }) => {
-    await page.goto("/login");
-
-    const submitBtn = page.getByRole("button", {
-      name: /sign in|log ?in|login|submit/i,
-    });
-    await expect(submitBtn.first()).toBeVisible({ timeout: 10000 });
   });
 });

@@ -58,10 +58,12 @@ export const getTeamMembers = query({
 /**
  * Return the static list of available roles.
  * Server-authoritative source for role dropdowns.
+ * Requires authentication per AC #9 (team-scoped access enforcement).
  */
 export const getTeamRoles = query({
   args: {},
-  handler: async () => {
+  handler: async (ctx) => {
+    await requireAuth(ctx);
     return [...USER_ROLES];
   },
 });

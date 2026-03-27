@@ -172,13 +172,12 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
     }
   };
 
-  const handleToggleRole = async (userId: Id<"users">, currentRole: string | undefined) => {
-    const newRole = currentRole === "admin" ? "staff" : "admin";
+  const handlePromoteToAdmin = async (userId: Id<"users">) => {
     try {
-      await updateUser({ userId, updates: { role: newRole } });
-      toast.success(`User role updated to ${newRole}`);
+      await updateUser({ userId, updates: { role: "admin" } });
+      toast.success("User promoted to admin");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update user");
+      toast.error(error instanceof Error ? error.message : "Failed to update user role");
     }
   };
 
@@ -221,11 +220,22 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
       {
         accessorKey: "role",
         header: "Role",
-        cell: ({ row }) => (
-          <span className="text-muted-foreground">
-            {row.original.role === "admin" ? "Administrator" : "User"}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const role = row.original.role;
+          const roleLabels: Record<string, string> = {
+            admin: "Admin",
+            coach: "Coach",
+            analyst: "Analyst",
+            physio: "Physio",
+            player: "Player",
+            staff: "Staff",
+          };
+          return (
+            <Badge variant={role === "admin" ? "default" : "outline"} className="capitalize">
+              {role ? (roleLabels[role] ?? role) : "—"}
+            </Badge>
+          );
+        },
       },
       {
         id: "status",
@@ -286,10 +296,12 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
                   Edit
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleToggleRole(row.original._id, row.original.role)}>
-                <IconUserShield className="mr-2 h-4 w-4" />
-                {row.original.role === "admin" ? "Remove Admin" : "Make Admin"}
-              </DropdownMenuItem>
+              {row.original.role !== "admin" && (
+                <DropdownMenuItem onClick={() => handlePromoteToAdmin(row.original._id)}>
+                  <IconUserShield className="mr-2 h-4 w-4" />
+                  Promote to Admin
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"

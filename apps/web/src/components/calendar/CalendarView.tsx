@@ -6,7 +6,6 @@ import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewMonthGrid } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 import { createCurrentTimePlugin } from "@schedule-x/current-time";
-import "@schedule-x/theme-shadcn/dist/index.css";
 import { format } from "date-fns";
 
 import { Repeat } from "lucide-react";
@@ -196,7 +195,7 @@ export function CalendarView({
   }
 
   return (
-    <div className="sx-react-calendar-wrapper" style={{ height: "800px" }}>
+    <div className="sx-react-calendar-wrapper">
       <ScheduleXCalendar
         calendarApp={calendarApp}
         customComponents={{ monthGridEvent: MonthGridEvent }}

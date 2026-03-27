@@ -6,6 +6,7 @@
   "exports": {
     ".": "./constants.js",
     "./constants": "./constants.js",
-    "./roles": "./roles.ts"
+    "./roles": "./roles.ts",
+    "./calendar": "./calendar.ts"
   }
 }

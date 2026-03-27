@@ -1,3 +1,18 @@
+export default function DocumentsPage() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center p-6">
+      <h1 className="text-2xl font-semibold">Documents</h1>
+      <p className="mt-2 text-muted-foreground">Document Hub coming soon.</p>
+    </div>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Sprint 2 — Full Document Hub implementation (preserved for reactivation)
+// To restore: remove the placeholder above and uncomment everything below.
+// -----------------------------------------------------------------------------
+
+/*
 "use client";
 
 import * as React from "react";
@@ -41,11 +56,9 @@ export default function DocumentsPage() {
   const router = useRouter();
   const currentFolderId = searchParams.get("folder") as Id<"folders"> | null;
 
-  // Current user for role check
   const currentUser = useQuery(api.table.users.currentUser);
   const isAdmin = currentUser?.role === "admin";
 
-  // --- Search & filter state ---
   const {
     searchTerm,
     debouncedSearchTerm,
@@ -56,7 +69,6 @@ export default function DocumentsPage() {
     isSearchActive,
   } = useDocumentSearch();
 
-  // --- Folder dialog states ---
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [renameTarget, setRenameTarget] = React.useState<{
     id: Id<"folders">;
@@ -67,7 +79,6 @@ export default function DocumentsPage() {
     name: string;
   } | null>(null);
 
-  // --- Document dialog states ---
   const [isUploadDialogOpen, setIsUploadDialogOpen] = React.useState(false);
   const [selectedDocumentId, setSelectedDocumentId] =
     React.useState<Id<"documents"> | null>(null);
@@ -81,7 +92,6 @@ export default function DocumentsPage() {
     name: string;
   } | null>(null);
 
-  // --- Permissions panel state ---
   const [permissionsTarget, setPermissionsTarget] = React.useState<{
     type: "folder" | "document";
     id: string;
@@ -89,7 +99,6 @@ export default function DocumentsPage() {
     folderId?: string;
   } | null>(null);
 
-  // --- Search query ---
   const searchResults = useQuery(
     api.documents.queries.searchDocuments,
     isSearchActive
@@ -100,7 +109,6 @@ export default function DocumentsPage() {
       : "skip",
   );
 
-  // --- Data queries ---
   const topLevelFolders = useQuery(
     api.documents.queries.getFolders,
     !currentFolderId && !isSearchActive ? {} : "skip",
@@ -113,7 +121,6 @@ export default function DocumentsPage() {
       : "skip",
   );
 
-  // Build folder IDs for batch item count
   const visibleFolderIds = React.useMemo(() => {
     if (isSearchActive) return [];
     if (!currentFolderId && topLevelFolders) {
@@ -130,7 +137,6 @@ export default function DocumentsPage() {
     visibleFolderIds.length > 0 ? { folderIds: visibleFolderIds } : "skip",
   );
 
-  // --- Read tracking data (admin only, Story 4.4) ---
   const browseDocumentIds = React.useMemo(() => {
     if (isSearchActive) return [] as Id<"documents">[];
     if (currentFolderId && folderContents?.documents) {
@@ -155,7 +161,6 @@ export default function DocumentsPage() {
       : "skip",
   );
 
-  // --- Folder callbacks ---
   const handleFolderClick = React.useCallback(
     (folderId: Id<"folders">) => {
       router.push(`/documents?folder=${folderId}`);
@@ -190,12 +195,10 @@ export default function DocumentsPage() {
     return counts ? counts.subfolders + counts.documents : 0;
   }
 
-  /** Check if a folder has restricted permissions (non-null, non-undefined permittedRoles). */
   function isFolderRestricted(folder: { permittedRoles?: string[] }): boolean {
     return folder.permittedRoles !== undefined && folder.permittedRoles !== null;
   }
 
-  // --- Document action handlers (stable refs for React.memo) ---
   const handleViewDetails = React.useCallback(
     (docId: string) => {
       setSelectedDocumentId(docId as Id<"documents">);
@@ -249,7 +252,6 @@ export default function DocumentsPage() {
     setSelectedDocumentId(null);
   }, []);
 
-  // --- Search result click handler ---
   const handleSearchResultClick = React.useCallback(
     (result: DocumentSearchResult) => {
       clearSearch();
@@ -258,21 +260,17 @@ export default function DocumentsPage() {
     [clearSearch, router],
   );
 
-  // Determine if we can show "New Subfolder" button
   const canCreateSubfolder =
     isAdmin &&
     currentFolderId &&
     folderContents?.folder &&
     folderContents.folder.parentId === undefined;
 
-  // Current folder name (for upload dialog)
   const currentFolderName = folderContents?.folder?.name ?? "";
 
-  // --- Search active: show search results ---
   if (isSearchActive) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-        {/* Search toolbar — always visible */}
         <DocumentSearchToolbar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -290,7 +288,6 @@ export default function DocumentsPage() {
           readStats={readStats ?? undefined}
         />
 
-        {/* Shared dialogs */}
         <SharedDialogs
           selectedDocumentId={selectedDocumentId}
           isDetailOpen={isDetailOpen}
@@ -311,11 +308,9 @@ export default function DocumentsPage() {
     );
   }
 
-  // Top-level view (no folder selected)
   if (!currentFolderId) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-        {/* Search toolbar — always visible */}
         <DocumentSearchToolbar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -382,7 +377,6 @@ export default function DocumentsPage() {
           />
         )}
 
-        {/* Permissions panel */}
         {permissionsTarget && (
           <PermissionsPanel
             open={!!permissionsTarget}
@@ -397,10 +391,8 @@ export default function DocumentsPage() {
     );
   }
 
-  // Folder contents view
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-      {/* Search toolbar — always visible */}
       <DocumentSearchToolbar
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -433,7 +425,6 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* File type filter active indicator */}
       {fileType && (
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="gap-1">
@@ -454,7 +445,6 @@ export default function DocumentsPage() {
         <FolderGridSkeleton />
       ) : (
         <>
-          {/* Subfolders */}
           {folderContents.subfolders.length > 0 && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {folderContents.subfolders.map((folder) => (
@@ -474,7 +464,6 @@ export default function DocumentsPage() {
             </div>
           )}
 
-          {/* Documents */}
           {folderContents.documents.length > 0 && (
             <div className="space-y-1">
               {folderContents.documents.map((doc) => {
@@ -495,7 +484,6 @@ export default function DocumentsPage() {
             </div>
           )}
 
-          {/* Empty state */}
           {folderContents.subfolders.length === 0 &&
             folderContents.documents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -520,7 +508,6 @@ export default function DocumentsPage() {
         </>
       )}
 
-      {/* Folder dialogs */}
       <FolderCreateDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
@@ -545,7 +532,6 @@ export default function DocumentsPage() {
         />
       )}
 
-      {/* Document dialogs */}
       {currentFolderId && (
         <UploadDialog
           open={isUploadDialogOpen}
@@ -575,9 +561,6 @@ export default function DocumentsPage() {
   );
 }
 
-// --- Sub-components ---
-
-/** Shared dialogs extracted to avoid duplication across views. */
 function SharedDialogs({
   selectedDocumentId,
   isDetailOpen,
@@ -656,7 +639,6 @@ function SharedDialogs({
         />
       )}
 
-      {/* Permissions panel */}
       {permissionsTarget && (
         <PermissionsPanel
           open={!!permissionsTarget}
@@ -712,3 +694,4 @@ function EmptyState({
     </div>
   );
 }
+*/

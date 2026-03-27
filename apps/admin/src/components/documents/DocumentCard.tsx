@@ -28,9 +28,9 @@ interface DocumentData {
 interface DocumentCardProps {
   document: DocumentData;
   isAdmin: boolean;
-  onViewDetails: () => void;
-  onReplace: () => void;
-  onDelete: () => void;
+  onViewDetails: (docId: string) => void;
+  onReplace: (docId: string, docName: string) => void;
+  onDelete: (docId: string, docName: string) => void;
 }
 
 export const DocumentCard = React.memo(function DocumentCard({
@@ -42,16 +42,28 @@ export const DocumentCard = React.memo(function DocumentCard({
 }: DocumentCardProps) {
   const isFile = !!document.storageId;
 
+  const handleViewDetails = React.useCallback(() => {
+    onViewDetails(document._id);
+  }, [onViewDetails, document._id]);
+
+  const handleReplace = React.useCallback(() => {
+    onReplace(document._id, document.name);
+  }, [onReplace, document._id, document.name]);
+
+  const handleDelete = React.useCallback(() => {
+    onDelete(document._id, document.name);
+  }, [onDelete, document._id, document.name]);
+
   return (
     <div
       role="button"
       tabIndex={0}
       className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/50 cursor-pointer group"
-      onClick={onViewDetails}
+      onClick={handleViewDetails}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onViewDetails();
+          handleViewDetails();
         }
       }}
     >
@@ -91,7 +103,7 @@ export const DocumentCard = React.memo(function DocumentCard({
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
-                onViewDetails();
+                handleViewDetails();
               }}
             >
               <Eye className="mr-2 size-4" />
@@ -101,7 +113,7 @@ export const DocumentCard = React.memo(function DocumentCard({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  onReplace();
+                  handleReplace();
                 }}
               >
                 <Replace className="mr-2 size-4" />
@@ -112,7 +124,7 @@ export const DocumentCard = React.memo(function DocumentCard({
               className="text-destructive focus:text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete();
+                handleDelete();
               }}
             >
               <Trash2 className="mr-2 size-4" />

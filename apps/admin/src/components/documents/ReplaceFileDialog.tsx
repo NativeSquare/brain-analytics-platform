@@ -44,18 +44,34 @@ export function ReplaceFileDialog({
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
   const replaceFile = useMutation(api.documents.mutations.replaceFile);
 
+  // Abort controller for in-flight file uploads
+  const abortRef = React.useRef<AbortController | null>(null);
+
   function handleOpenChange(newOpen: boolean) {
     if (!newOpen) {
+      abortRef.current?.abort();
+      abortRef.current = null;
       setSelectedFile(null);
       setIsReplacing(false);
     }
     onOpenChange(newOpen);
   }
 
+  // Abort any in-flight upload on unmount
+  React.useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
   async function handleReplace() {
     if (!selectedFile) return;
 
     setIsReplacing(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       // Step 1: Get upload URL
       const uploadUrl = await generateUploadUrl();
@@ -65,6 +81,7 @@ export function ReplaceFileDialog({
         method: "POST",
         headers: { "Content-Type": selectedFile.type },
         body: selectedFile,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -87,8 +104,10 @@ export function ReplaceFileDialog({
       toast.success("File replaced");
       handleOpenChange(false);
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       toast.error(getConvexErrorMessage(error));
     } finally {
+      abortRef.current = null;
       setIsReplacing(false);
     }
   }

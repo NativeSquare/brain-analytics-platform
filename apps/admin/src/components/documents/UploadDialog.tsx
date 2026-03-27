@@ -64,7 +64,12 @@ export function UploadDialog({
   const uploadDocument = useMutation(api.documents.mutations.uploadDocument);
   const addVideoLink = useMutation(api.documents.mutations.addVideoLink);
 
+  // Abort controller for in-flight file uploads
+  const abortRef = React.useRef<AbortController | null>(null);
+
   function resetAll() {
+    abortRef.current?.abort();
+    abortRef.current = null;
     setSelectedFile(null);
     setFileName("");
     setFileError(null);
@@ -72,6 +77,13 @@ export function UploadDialog({
     setActiveTab("file");
     setIsUploading(false);
   }
+
+  // Abort any in-flight upload on unmount
+  React.useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   function handleOpenChange(newOpen: boolean) {
     if (!newOpen) {
@@ -102,6 +114,9 @@ export function UploadDialog({
     setIsUploading(true);
     setFileError(null);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       // Step 1: Get upload URL
       const uploadUrl = await generateUploadUrl();
@@ -111,6 +126,7 @@ export function UploadDialog({
         method: "POST",
         headers: { "Content-Type": selectedFile.type },
         body: selectedFile,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -139,8 +155,10 @@ export function UploadDialog({
       resetAll();
       onOpenChange(false);
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       toast.error(getConvexErrorMessage(error));
     } finally {
+      abortRef.current = null;
       setIsUploading(false);
     }
   }

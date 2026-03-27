@@ -110,32 +110,47 @@ export default function DocumentsPage() {
     return counts ? counts.subfolders + counts.documents : 0;
   }
 
-  // --- Document action handlers ---
-  function handleViewDetails(docId: Id<"documents">) {
-    setSelectedDocumentId(docId);
-    setIsDetailOpen(true);
-  }
+  // --- Document action handlers (stable refs for React.memo) ---
+  const handleViewDetails = React.useCallback(
+    (docId: string) => {
+      setSelectedDocumentId(docId as Id<"documents">);
+      setIsDetailOpen(true);
+    },
+    [],
+  );
 
-  function handleReplaceFromCard(docId: Id<"documents">, docName: string) {
-    setReplaceTarget({ id: docId, name: docName });
-  }
+  const handleReplaceFromCard = React.useCallback(
+    (docId: string, docName: string) => {
+      setReplaceTarget({ id: docId as Id<"documents">, name: docName });
+    },
+    [],
+  );
 
-  function handleDeleteFromCard(docId: Id<"documents">, docName: string) {
-    setDocDeleteTarget({ id: docId, name: docName });
-  }
+  const handleDeleteFromCard = React.useCallback(
+    (docId: string, docName: string) => {
+      setDocDeleteTarget({ id: docId as Id<"documents">, name: docName });
+    },
+    [],
+  );
 
-  function handleReplaceFromDetail(docId: Id<"documents">, docName: string) {
-    setReplaceTarget({ id: docId, name: docName });
-  }
+  const handleReplaceFromDetail = React.useCallback(
+    (docId: Id<"documents">, docName: string) => {
+      setReplaceTarget({ id: docId, name: docName });
+    },
+    [],
+  );
 
-  function handleDeleteFromDetail(docId: Id<"documents">, docName: string) {
-    setDocDeleteTarget({ id: docId, name: docName });
-  }
+  const handleDeleteFromDetail = React.useCallback(
+    (docId: Id<"documents">, docName: string) => {
+      setDocDeleteTarget({ id: docId, name: docName });
+    },
+    [],
+  );
 
-  function handleDocumentDeleted() {
+  const handleDocumentDeleted = React.useCallback(() => {
     setIsDetailOpen(false);
     setSelectedDocumentId(null);
-  }
+  }, []);
 
   // Determine if we can show "New Subfolder" button
   const canCreateSubfolder =
@@ -269,21 +284,9 @@ export default function DocumentsPage() {
                   key={doc._id}
                   document={doc}
                   isAdmin={isAdmin}
-                  onViewDetails={() =>
-                    handleViewDetails(doc._id as Id<"documents">)
-                  }
-                  onReplace={() =>
-                    handleReplaceFromCard(
-                      doc._id as Id<"documents">,
-                      doc.name,
-                    )
-                  }
-                  onDelete={() =>
-                    handleDeleteFromCard(
-                      doc._id as Id<"documents">,
-                      doc.name,
-                    )
-                  }
+                  onViewDetails={handleViewDetails}
+                  onReplace={handleReplaceFromCard}
+                  onDelete={handleDeleteFromCard}
                 />
               ))}
             </div>

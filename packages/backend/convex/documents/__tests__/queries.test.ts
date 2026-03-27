@@ -532,6 +532,39 @@ describe("getDocumentUrl", () => {
     mockGetAuthUserId.mockReset();
   });
 
+  it("returns a URL string for file-type documents", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const folderId = await insertFolder(t, teamId, userId, {
+      name: "Docs",
+    });
+
+    // Create a real storage blob so getUrl returns a valid URL
+    const storageId = await t.run(async (ctx) =>
+      ctx.storage.store(new Blob(["file content"])),
+    );
+
+    const docId = await insertDocument(t, teamId, folderId, userId, {
+      name: "Report",
+      filename: "report.pdf",
+      extension: "pdf",
+      storageId: storageId as string,
+      mimeType: "application/pdf",
+      fileSize: 1024,
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDocumentUrl,
+      { documentId: docId },
+    );
+
+    expect(result).toBeDefined();
+    expect(typeof result).toBe("string");
+    expect(result).not.toBeNull();
+  });
+
   it("returns null for video link documents (no storageId)", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);

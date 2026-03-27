@@ -413,6 +413,14 @@ export const getReadStats = query({
   handler: async (ctx, { documentIds }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
+    // Guard against unbounded input — cap at 100 documents per call
+    if (documentIds.length > 100) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Cannot query read stats for more than 100 documents at once.",
+      });
+    }
+
     const result: Record<
       string,
       {

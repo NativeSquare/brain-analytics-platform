@@ -25,9 +25,14 @@ export function ReadTrackerDetail({
   documentId,
   trigger,
 }: ReadTrackerDetailProps) {
-  const detail = useQuery(api.documents.queries.getReadersDetail, {
-    documentId,
-  });
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  // Only subscribe to detailed reader data when the popover is actually open.
+  // This avoids creating N unnecessary Convex subscriptions for N document cards.
+  const detail = useQuery(
+    api.documents.queries.getReadersDetail,
+    isOpen ? { documentId } : "skip",
+  );
 
   const totalReaders = detail ? detail.readers.length : 0;
   const totalUsers = detail
@@ -35,7 +40,7 @@ export function ReadTrackerDetail({
     : 0;
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         className="w-80 p-0"

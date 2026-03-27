@@ -104,6 +104,7 @@ export default function CalendarPage() {
         eventId={selectedEventId}
         open={selectedEventId !== null}
         onClose={handleCloseEvent}
+        isAdmin={isAdmin}
       />
 
       {/* Day events sheet */}

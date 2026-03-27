@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EventTypeBadge } from "@/components/shared/EventTypeBadge";
 import type { EventType } from "@/components/shared/EventTypeBadge";
@@ -24,6 +25,7 @@ export interface EventCardProps {
   name: string;
   eventType: EventType;
   startsAt: number;
+  isRecurring?: boolean;
   onClick?: () => void;
   className?: string;
 }
@@ -32,6 +34,7 @@ export function EventCard({
   name,
   eventType,
   startsAt,
+  isRecurring,
   onClick,
   className,
 }: EventCardProps) {
@@ -50,6 +53,9 @@ export function EventCard({
       <EventTypeBadge type={eventType} size="sm" className="shrink-0" />
       <span className="text-muted-foreground shrink-0 text-sm">{startTime}</span>
       <span className="truncate text-sm font-medium">{name}</span>
+      {isRecurring && (
+        <Repeat className="text-muted-foreground ml-auto size-3.5 shrink-0" />
+      )}
     </button>
   );
 }

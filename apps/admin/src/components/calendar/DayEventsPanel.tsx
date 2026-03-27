@@ -66,6 +66,7 @@ export function DayEventsPanel({
                 name={event.name}
                 eventType={event.eventType as EventType}
                 startsAt={event.startsAt}
+                isRecurring={event.isRecurring}
                 onClick={() => onEventClick(event._id)}
               />
             ))

@@ -11,8 +11,10 @@ import { CalendarIcon } from "lucide-react";
 
 import {
   createEventSchema,
+  createRecurringEventSchema,
   EVENT_TYPES,
   type CreateEventFormData,
+  type RecurrenceFrequency,
   type EventType,
 } from "@packages/shared/calendar";
 import type { UserRole } from "@packages/shared/roles";
@@ -37,10 +39,11 @@ import {
   InvitationSelector,
   type SelectedUser,
 } from "@/components/calendar/InvitationSelector";
+import { RecurrenceOptions } from "@/components/calendar/RecurrenceOptions";
 import { getConvexErrorMessage } from "@/utils/getConvexErrorMessage";
 import { cn } from "@/lib/utils";
 
-import type { Id } from "@packages/backend/convex/_generated/dataModel";
+import type { Id, Doc } from "@packages/backend/convex/_generated/dataModel";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,44 +57,86 @@ function combineDateAndTime(date: Date, time: string): number {
   return combined.getTime();
 }
 
+/** Extract time string "HH:MM" from a timestamp */
+function extractTime(ts: number): string {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 /** Default time values */
 const DEFAULT_START_TIME = "10:00";
 const DEFAULT_END_TIME = "11:00";
 
 // ---------------------------------------------------------------------------
-// Component
+// Types
 // ---------------------------------------------------------------------------
 
-interface EventFormProps {
-  onSuccess: () => void;
+export interface EventFormProps {
+  /** "create" = new event (default), "edit" = update existing event */
+  mode?: "create" | "edit";
+  /** Existing event data when in edit mode */
+  event?: Doc<"calendarEvents"> | null;
+  /** Called on successful submission */
+  onSuccess: (result?: { eventCount?: number }) => void;
+  /** Called when the user cancels */
   onCancel: () => void;
 }
 
-export function EventForm({ onSuccess, onCancel }: EventFormProps) {
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function EventForm({
+  mode = "create",
+  event,
+  onSuccess,
+  onCancel,
+}: EventFormProps) {
   const createEvent = useMutation(api.calendar.mutations.createEvent);
+  const createRecurringEvent = useMutation(
+    api.calendar.mutations.createRecurringEvent,
+  );
+  const updateEvent = useMutation(api.calendar.mutations.updateEvent);
   const [isPending, setIsPending] = useState(false);
 
+  const isEdit = mode === "edit" && event;
+
   // Separate state for date pickers and time inputs
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
-  const [startTime, setStartTime] = useState(DEFAULT_START_TIME);
-  const [endTime, setEndTime] = useState(DEFAULT_END_TIME);
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    isEdit ? new Date(event.startsAt) : undefined,
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    isEdit ? new Date(event.endsAt) : undefined,
+  );
+  const [startTime, setStartTime] = useState(
+    isEdit ? extractTime(event.startsAt) : DEFAULT_START_TIME,
+  );
+  const [endTime, setEndTime] = useState(
+    isEdit ? extractTime(event.endsAt) : DEFAULT_END_TIME,
+  );
+
+  // Recurrence state (only for create mode, not edit)
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<RecurrenceFrequency | undefined>();
+  const [seriesEndDate, setSeriesEndDate] = useState<number | undefined>();
 
   // Invitation state (managed outside RHF since complex)
-  const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(
+    isEdit ? ((event.invitedRoles as UserRole[]) ?? []) : [],
+  );
   const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([]);
 
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
-      name: "",
-      eventType: undefined,
-      startsAt: 0,
-      endsAt: 0,
-      location: "",
-      description: "",
-      rsvpEnabled: true,
-      invitedRoles: [],
+      name: isEdit ? event.name : "",
+      eventType: isEdit ? event.eventType : undefined,
+      startsAt: isEdit ? event.startsAt : 0,
+      endsAt: isEdit ? event.endsAt : 0,
+      location: isEdit ? (event.location ?? "") : "",
+      description: isEdit ? (event.description ?? "") : "",
+      rsvpEnabled: isEdit ? event.rsvpEnabled : true,
+      invitedRoles: isEdit ? ((event.invitedRoles as UserRole[]) ?? []) : [],
       invitedUserIds: [],
     },
   });
@@ -113,16 +158,17 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
     }
   }, [endDate, endTime, form]);
 
-  // Auto-set end date to start date + 1 hour when start is first set
+  // Auto-set end date to start date + 1 hour when start is first set (create only)
   useEffect(() => {
-    if (startDate && !endDate) {
+    if (!isEdit && startDate && !endDate) {
       setEndDate(startDate);
-      // Set end time to 1 hour after start time
       const [h, m] = startTime.split(":").map(Number);
       const endH = Math.min(h + 1, 23);
-      setEndTime(`${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+      setEndTime(
+        `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+      );
     }
-  }, [startDate, endDate, startTime]);
+  }, [startDate, endDate, startTime, isEdit]);
 
   // Sync invitation state → form
   useEffect(() => {
@@ -142,25 +188,71 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
   async function onSubmit(data: CreateEventFormData) {
     setIsPending(true);
     try {
-      await createEvent({
-        name: data.name,
-        eventType: data.eventType,
-        startsAt: data.startsAt,
-        endsAt: data.endsAt,
-        location: data.location || undefined,
-        description: data.description || undefined,
-        rsvpEnabled: data.rsvpEnabled,
-        invitedRoles: data.invitedRoles,
-        invitedUserIds: data.invitedUserIds as Id<"users">[],
-      });
-      form.reset();
-      setStartDate(undefined);
-      setEndDate(undefined);
-      setStartTime(DEFAULT_START_TIME);
-      setEndTime(DEFAULT_END_TIME);
-      setSelectedRoles([]);
-      setSelectedUsers([]);
-      onSuccess();
+      if (isEdit) {
+        // Edit mode — update single occurrence
+        await updateEvent({
+          eventId: event._id,
+          name: data.name,
+          eventType: data.eventType,
+          startsAt: data.startsAt,
+          endsAt: data.endsAt,
+          location: data.location || undefined,
+          description: data.description || undefined,
+          rsvpEnabled: data.rsvpEnabled,
+          invitedRoles: data.invitedRoles,
+          invitedUserIds: (data.invitedUserIds as Id<"users">[]).length > 0
+            ? (data.invitedUserIds as Id<"users">[])
+            : undefined,
+        });
+        onSuccess();
+      } else if (isRecurring && frequency && seriesEndDate) {
+        // Recurring event — validate with recurring schema first
+        const recurringData = {
+          ...data,
+          isRecurring: true as const,
+          frequency,
+          endDate: seriesEndDate,
+        };
+
+        const parsed = createRecurringEventSchema.safeParse(recurringData);
+        if (!parsed.success) {
+          const firstIssue = parsed.error.issues[0];
+          toast.error(firstIssue.message);
+          setIsPending(false);
+          return;
+        }
+
+        const result = await createRecurringEvent({
+          name: data.name,
+          eventType: data.eventType,
+          startsAt: data.startsAt,
+          endsAt: data.endsAt,
+          location: data.location || undefined,
+          description: data.description || undefined,
+          rsvpEnabled: data.rsvpEnabled,
+          invitedRoles: data.invitedRoles,
+          invitedUserIds: data.invitedUserIds as Id<"users">[],
+          frequency,
+          endDate: seriesEndDate,
+        });
+        resetForm();
+        onSuccess({ eventCount: result.eventCount });
+      } else {
+        // One-off event
+        await createEvent({
+          name: data.name,
+          eventType: data.eventType,
+          startsAt: data.startsAt,
+          endsAt: data.endsAt,
+          location: data.location || undefined,
+          description: data.description || undefined,
+          rsvpEnabled: data.rsvpEnabled,
+          invitedRoles: data.invitedRoles,
+          invitedUserIds: data.invitedUserIds as Id<"users">[],
+        });
+        resetForm();
+        onSuccess();
+      }
     } catch (error) {
       toast.error(getConvexErrorMessage(error));
     } finally {
@@ -168,7 +260,7 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
     }
   }
 
-  function handleCancel() {
+  function resetForm() {
     form.reset();
     setStartDate(undefined);
     setEndDate(undefined);
@@ -176,8 +268,18 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
     setEndTime(DEFAULT_END_TIME);
     setSelectedRoles([]);
     setSelectedUsers([]);
+    setIsRecurring(false);
+    setFrequency(undefined);
+    setSeriesEndDate(undefined);
+  }
+
+  function handleCancel() {
+    resetForm();
     onCancel();
   }
+
+  const startsAtValue = form.watch("startsAt");
+  const endsAtValue = form.watch("endsAt");
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -355,6 +457,20 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
           )}
         />
 
+        {/* Recurrence Options (create mode only, not shown in edit mode) */}
+        {!isEdit && (
+          <RecurrenceOptions
+            isRecurring={isRecurring}
+            onRecurringChange={setIsRecurring}
+            frequency={frequency}
+            onFrequencyChange={setFrequency}
+            endDate={seriesEndDate}
+            onEndDateChange={setSeriesEndDate}
+            startsAt={startsAtValue || undefined}
+            endsAt={endsAtValue || undefined}
+          />
+        )}
+
         {/* Invitations */}
         <div className="space-y-2">
           <FieldLabel>Who to Invite</FieldLabel>
@@ -382,7 +498,7 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
         </Button>
         <Button type="submit" disabled={isPending}>
           {isPending ? <Spinner className="mr-2" /> : null}
-          Create Event
+          {isEdit ? "Save Changes" : "Create Event"}
         </Button>
       </div>
     </form>

@@ -21,8 +21,14 @@ interface CreateEventDialogProps {
 }
 
 export function CreateEventDialog({ open, onOpenChange }: CreateEventDialogProps) {
-  function handleSuccess() {
-    toast.success("Event created");
+  function handleSuccess(result?: { eventCount?: number }) {
+    if (result?.eventCount) {
+      toast.success(
+        `Recurring event created — ${result.eventCount} occurrences`,
+      );
+    } else {
+      toast.success("Event created");
+    }
     onOpenChange(false);
   }
 

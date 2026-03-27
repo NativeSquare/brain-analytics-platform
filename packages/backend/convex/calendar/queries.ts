@@ -148,3 +148,37 @@ export const getDayEvents = query({
       .sort((a, b) => a.startsAt - b.startsAt);
   },
 });
+
+// ---------------------------------------------------------------------------
+// getSeriesInfo (AC #11)
+// ---------------------------------------------------------------------------
+
+export const getSeriesInfo = query({
+  args: {
+    seriesId: v.id("calendarEventSeries"),
+  },
+  handler: async (ctx, { seriesId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const series = await ctx.db.get(seriesId);
+    if (!series || series.teamId !== teamId) return null;
+
+    const events = await ctx.db
+      .query("calendarEvents")
+      .withIndex("by_seriesId", (q) => q.eq("seriesId", seriesId))
+      .collect();
+
+    const totalOccurrences = events.length;
+    const activeOccurrences = events.filter((e) => !e.isCancelled).length;
+
+    return {
+      series: {
+        frequency: series.frequency,
+        endDate: series.endDate,
+        createdAt: series.createdAt,
+      },
+      totalOccurrences,
+      activeOccurrences,
+    };
+  },
+});

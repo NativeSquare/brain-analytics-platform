@@ -19,6 +19,7 @@ export const calendarEvents = defineTable({
   isRecurring: v.boolean(),
   seriesId: v.optional(v.id("calendarEventSeries")),
   isCancelled: v.boolean(),
+  isModified: v.optional(v.boolean()),
   invitedRoles: v.optional(v.array(v.string())),
   createdAt: v.number(),
 })

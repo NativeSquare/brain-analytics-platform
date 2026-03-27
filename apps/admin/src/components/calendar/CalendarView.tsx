@@ -8,6 +8,7 @@ import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import "@schedule-x/theme-shadcn/dist/index.css";
 import { format } from "date-fns";
 
+import { Repeat } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventTypeBadge } from "@/components/shared/EventTypeBadge";
 import type { EventType } from "@/components/shared/EventTypeBadge";
@@ -24,6 +25,7 @@ export interface CalendarEvent {
   endsAt: number;
   location?: string;
   description?: string;
+  isRecurring?: boolean;
 }
 
 interface CalendarViewProps {
@@ -98,6 +100,7 @@ function mapEvents(
       monthGrid: `<span class="sx-event-name">${e.name}</span>`,
     },
     eventType: e.eventType,
+    isRecurring: e.isRecurring ?? false,
     originalId: e._id,
   }));
 }
@@ -114,6 +117,7 @@ function MonthGridEvent({
     title?: string;
     start: string;
     eventType?: EventType;
+    isRecurring?: boolean;
     originalId?: string;
   };
 }) {
@@ -127,6 +131,9 @@ function MonthGridEvent({
       <EventTypeBadge type={eventType} size="sm" className="shrink-0" />
       <span className="text-muted-foreground shrink-0">{startTime}</span>
       <span className="truncate font-medium">{calendarEvent.title}</span>
+      {calendarEvent.isRecurring && (
+        <Repeat className="text-muted-foreground ml-auto size-3 shrink-0" />
+      )}
     </div>
   );
 }

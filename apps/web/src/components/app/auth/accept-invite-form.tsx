@@ -116,7 +116,7 @@ function AcceptPlayerInviteForm({
     const errorMap: Record<string, { title: string; message: string }> = {
       not_found: {
         title: "Invalid Invitation",
-        message: "This invitation link is not valid.",
+        message: "This invitation link is invalid.",
       },
       already_used: {
         title: "Invitation Already Used",

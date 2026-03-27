@@ -192,7 +192,7 @@ export function AdminTable() {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
 
-  const handleDelete = async () => {
+  const handleDelete = React.useCallback(async () => {
     if (!userToDelete) return;
     try {
       await deleteUser({ userId: userToDelete });
@@ -207,7 +207,7 @@ export function AdminTable() {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     }
-  };
+  }, [userToDelete, deleteUser]);
 
   // Only show active members in this table (pending invites are in PendingInvites component)
   const members: MemberData[] = React.useMemo(() => {

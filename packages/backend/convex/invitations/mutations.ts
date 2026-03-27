@@ -173,8 +173,9 @@ export const acceptInvite = mutation({
       });
     }
 
-    // Verify email match
-    if (user.email !== invite.email) {
+    // Verify email match (normalize both sides — auth may store original casing
+    // while createInvite lowercases the invite email)
+    if (user.email?.toLowerCase().trim() !== invite.email) {
       throw new ConvexError({
         code: "VALIDATION_ERROR" as const,
         message: "Your email does not match this invitation.",

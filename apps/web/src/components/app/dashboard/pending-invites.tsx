@@ -61,7 +61,7 @@ export function PendingInvites() {
   const [resendingId, setResendingId] =
     React.useState<Id<"invitations"> | null>(null);
 
-  const handleCancel = async () => {
+  const handleCancel = React.useCallback(async () => {
     if (!inviteToCancel) return;
 
     setIsLoading(true);
@@ -77,9 +77,9 @@ export function PendingInvites() {
       setCancelDialogOpen(false);
       setInviteToCancel(null);
     }
-  };
+  }, [inviteToCancel, cancelInvite]);
 
-  const handleResend = async (
+  const handleResend = React.useCallback(async (
     invitationId: Id<"invitations">,
     email: string,
   ) => {
@@ -96,7 +96,7 @@ export function PendingInvites() {
     } finally {
       setResendingId(null);
     }
-  };
+  }, [resendInvite]);
 
   // Don't render anything if there are no pending invites
   if (invites === undefined) {

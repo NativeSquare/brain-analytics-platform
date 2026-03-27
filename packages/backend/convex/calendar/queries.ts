@@ -90,8 +90,8 @@ export const getMonthEvents = query({
 
 /**
  * Return a single event with full details including the owner's display name.
- * Returns `null` when the event does not exist or the user's team does not
- * match.
+ * Returns `null` when the event does not exist, the user's team does not
+ * match, or the user does not have access to the event (AC #13).
  */
 export const getEventDetail = query({
   args: {
@@ -102,6 +102,11 @@ export const getEventDetail = query({
 
     const event = await ctx.db.get(eventId);
     if (!event || event.teamId !== teamId) return null;
+
+    // Per-event access control (AC #13): user must be admin, in invitedRoles,
+    // or individually invited via calendarEventUsers.
+    const invitedEventIds = await getUserInvitedEventIds(ctx, user._id, teamId);
+    if (!canUserAccessEvent(user, event, invitedEventIds)) return null;
 
     // Fetch owner name
     const owner = await ctx.db.get(event.ownerId);

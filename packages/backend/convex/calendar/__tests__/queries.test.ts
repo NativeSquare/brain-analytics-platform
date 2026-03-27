@@ -378,6 +378,79 @@ describe("getEventDetail", () => {
     expect(result).not.toBeNull();
     expect(result!.ownerName).toBe("Test User");
   });
+
+  it("returns null when user role is not in invitedRoles and not individually invited", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "player" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    // Event created by a different user, only coaches invited
+    const ownerId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        name: "Owner",
+        email: "owner@example.com",
+        role: "admin",
+        status: "active",
+        teamId,
+      });
+    });
+
+    const eventId = await seedEvent(t, teamId, ownerId, {
+      name: "Coach Only Event",
+      invitedRoles: ["coach"],
+      startsAt: new Date(2026, 2, 15, 10, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 12, 0).getTime(),
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getEventDetail,
+      { eventId },
+    );
+
+    // Player should NOT see a coach-only event
+    expect(result).toBeNull();
+  });
+
+  it("returns event when user is individually invited via calendarEventUsers", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "player" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const ownerId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        name: "Owner",
+        email: "owner@example.com",
+        role: "admin",
+        status: "active",
+        teamId,
+      });
+    });
+
+    const eventId = await seedEvent(t, teamId, ownerId, {
+      name: "Individual Invite Detail",
+      invitedRoles: ["coach"], // player not in roles
+      startsAt: new Date(2026, 2, 15, 14, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 16, 0).getTime(),
+    });
+
+    // Add individual invitation for the player
+    await t.run(async (ctx) => {
+      await ctx.db.insert("calendarEventUsers", {
+        eventId,
+        userId,
+        teamId,
+      });
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getEventDetail,
+      { eventId },
+    );
+
+    // Player should see the event because of individual invitation
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe("Individual Invite Detail");
+  });
 });
 
 // ---------------------------------------------------------------------------

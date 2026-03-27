@@ -142,6 +142,7 @@ export function CalendarView({
   onMonthChange,
 }: CalendarViewProps) {
   const calendarControls = useMemo(() => createCalendarControlsPlugin(), []);
+  const currentTimePlugin = useMemo(() => createCurrentTimePlugin(), []);
 
   const calendarApp = useNextCalendarApp({
     views: [createViewMonthGrid()],
@@ -168,7 +169,7 @@ export function CalendarView({
         onMonthChange(mid.getFullYear(), mid.getMonth() + 1);
       },
     },
-  }, [calendarControls, createCurrentTimePlugin()]);
+  }, [calendarControls, currentTimePlugin]);
 
   // Sync Convex events into Schedule-X whenever events change
   useEffect(() => {

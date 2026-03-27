@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { format } from "date-fns";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -61,6 +61,14 @@ export function DayEventsPanel({
 
   const dayLabel = date !== null ? format(new Date(date), "EEEE, d MMMM yyyy") : "";
 
+  // Stable click handler factory to avoid inline arrow functions per item
+  const handleEventClick = useCallback(
+    (eventId: string) => {
+      onEventClick(eventId);
+    },
+    [onEventClick],
+  );
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="overflow-y-auto sm:max-w-md">
@@ -78,19 +86,16 @@ export function DayEventsPanel({
             </p>
           ) : (
             events.map((event) => (
-              <EventCard
+              <DayEventItem
                 key={event._id}
-                name={event.name}
-                eventType={event.eventType as EventType}
-                startsAt={event.startsAt}
-                isRecurring={event.isRecurring}
+                event={event}
                 rsvpStatus={
                   rsvpStatuses?.[event._id] as
                     | "attending"
                     | "not_attending"
                     | undefined
                 }
-                onClick={() => onEventClick(event._id)}
+                onEventClick={handleEventClick}
               />
             ))
           )}
@@ -99,6 +104,45 @@ export function DayEventsPanel({
     </Sheet>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Memoized list item to avoid inline closures per event
+// ---------------------------------------------------------------------------
+
+import { memo } from "react";
+
+interface DayEventItemProps {
+  event: {
+    _id: string;
+    name: string;
+    eventType: string;
+    startsAt: number;
+    isRecurring: boolean;
+  };
+  rsvpStatus?: "attending" | "not_attending";
+  onEventClick: (eventId: string) => void;
+}
+
+const DayEventItem = memo(function DayEventItem({
+  event,
+  rsvpStatus,
+  onEventClick,
+}: DayEventItemProps) {
+  const handleClick = useCallback(() => {
+    onEventClick(event._id);
+  }, [onEventClick, event._id]);
+
+  return (
+    <EventCard
+      name={event.name}
+      eventType={event.eventType as EventType}
+      startsAt={event.startsAt}
+      isRecurring={event.isRecurring}
+      rsvpStatus={rsvpStatus}
+      onClick={handleClick}
+    />
+  );
+});
 
 // ---------------------------------------------------------------------------
 // Skeleton

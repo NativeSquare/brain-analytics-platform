@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
+import type { MutationCtx } from "../_generated/server";
 import { requireAuth, requireRole } from "../lib/auth";
 import { createNotification } from "../lib/notifications";
 import { EVENT_TYPE_LABELS, RECURRENCE_FREQUENCY_LABELS } from "@packages/shared/calendar";
@@ -188,7 +189,7 @@ const MAX_SERIES_SPAN_MS = 365 * 24 * 60 * 60 * 1000;
  * excluding a specific user (typically the admin performing the action).
  */
 async function collectInvitedUserIds(
-  ctx: any,
+  ctx: MutationCtx,
   teamId: Id<"teams">,
   invitedRoles: string[],
   invitedUserIds: Id<"users">[],
@@ -199,8 +200,8 @@ async function collectInvitedUserIds(
   for (const role of invitedRoles) {
     const usersWithRole = await ctx.db
       .query("users")
-      .withIndex("by_teamId_role", (q: any) =>
-        q.eq("teamId", teamId).eq("role", role),
+      .withIndex("by_teamId_role", (q) =>
+        q.eq("teamId", teamId).eq("role", role as any),
       )
       .collect();
     for (const u of usersWithRole) {
@@ -560,8 +561,8 @@ export const deleteEventSeries = mutation({
       for (const role of firstEventRoles) {
         const usersWithRole = await ctx.db
           .query("users")
-          .withIndex("by_teamId_role", (q: any) =>
-            q.eq("teamId", teamId).eq("role", role),
+          .withIndex("by_teamId_role", (q) =>
+            q.eq("teamId", teamId).eq("role", role as any),
           )
           .collect();
         for (const u of usersWithRole) {

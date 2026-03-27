@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewMonthGrid } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
@@ -109,7 +109,7 @@ function mapEvents(
 // Custom month grid event component for Schedule-X
 // ---------------------------------------------------------------------------
 
-function MonthGridEvent({
+const MonthGridEvent = memo(function MonthGridEvent({
   calendarEvent,
 }: {
   calendarEvent: {
@@ -136,7 +136,7 @@ function MonthGridEvent({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // CalendarView

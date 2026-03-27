@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
@@ -71,13 +71,16 @@ export function RecurrenceOptions({
     return { count: occurrences.length };
   }, [isRecurring, startsAt, endsAt, frequency, endDate]);
 
-  function handleToggle(checked: boolean) {
-    onRecurringChange(checked);
-    if (!checked) {
-      onFrequencyChange(undefined);
-      onEndDateChange(undefined);
-    }
-  }
+  const handleToggle = useCallback(
+    (checked: boolean) => {
+      onRecurringChange(checked);
+      if (!checked) {
+        onFrequencyChange(undefined);
+        onEndDateChange(undefined);
+      }
+    },
+    [onRecurringChange, onFrequencyChange, onEndDateChange],
+  );
 
   const endDateAsDate = endDate ? new Date(endDate) : undefined;
 

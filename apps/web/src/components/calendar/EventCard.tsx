@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { format } from "date-fns";
 import { CheckCircle, Repeat, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ export interface EventCardProps {
   className?: string;
 }
 
-export function EventCard({
+export const EventCard = memo(function EventCard({
   name,
   eventType,
   startsAt,
@@ -69,4 +70,4 @@ export function EventCard({
       </div>
     </button>
   );
-}
+});

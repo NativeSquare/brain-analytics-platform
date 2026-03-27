@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@schedule-x/theme-shadcn/dist/index.css";
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -118,9 +116,21 @@
   --sidebar-ring: oklch(0.56 0.021 213.5);
 }
 
-/* Schedule-X calendar requires an explicit height — its internals use height:100% */
+/* Schedule-X calendar overrides */
 .sx-react-calendar-wrapper {
-  height: 800px;
+  height: 100% !important;
+}
+
+/* Undo Tailwind preflight border-width:0 inside the calendar */
+.sx__calendar-wrapper *,
+.sx__calendar-wrapper *::before,
+.sx__calendar-wrapper *::after {
+  border-style: solid;
+}
+
+/* Add padding inside month grid day cells */
+.sx__month-grid-day__events {
+  padding: 2px 4px;
 }
 
 @layer base {

@@ -1,6 +1,7 @@
 "use client";
 
 import "temporal-polyfill/global";
+import "@schedule-x/theme-shadcn/dist/index.css";
 import { memo, useEffect, useMemo } from "react";
 import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewMonthGrid } from "@schedule-x/calendar";
@@ -9,6 +10,7 @@ import { createCurrentTimePlugin } from "@schedule-x/current-time";
 import { format } from "date-fns";
 
 import { Repeat } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EventTypeBadge } from "@/components/shared/EventTypeBadge";
 import type { EventType } from "@/components/shared/EventTypeBadge";
@@ -66,30 +68,14 @@ const CALENDAR_TYPES = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Convert Unix ms timestamp → "YYYY-MM-DD HH:mm" for Schedule-X */
-function toScheduleXDateTime(ts: number): string {
-  const d = new Date(ts);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+/** Convert Unix ms timestamp → Temporal.ZonedDateTime for Schedule-X v4 */
+function toScheduleXDateTime(ts: number) {
+  const instant = Temporal.Instant.fromEpochMilliseconds(ts);
+  return instant.toZonedDateTimeISO(Temporal.Now.timeZoneId());
 }
 
 /** Map our Convex events to Schedule-X event format */
-function mapEvents(
-  events: CalendarEvent[],
-): Array<{
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  calendarId: string;
-  _customContent: { monthGrid: string };
-  eventType: EventType;
-  originalId: string;
-}> {
+function mapEvents(events: CalendarEvent[]) {
   return events.map((e) => ({
     id: e._id,
     title: e.name,
@@ -115,19 +101,37 @@ const MonthGridEvent = memo(function MonthGridEvent({
   calendarEvent: {
     id: string | number;
     title?: string;
-    start: string;
+    start: unknown;
     eventType?: EventType;
     isRecurring?: boolean;
     originalId?: string;
   };
 }) {
   const eventType = (calendarEvent.eventType ?? "meeting") as EventType;
-  const startTime = calendarEvent.start
-    ? format(new Date(calendarEvent.start.replace(" ", "T")), "HH:mm")
-    : "";
+  const startTime = (() => {
+    const s = calendarEvent.start;
+    if (!s) return "";
+    if (typeof s === "object" && "hour" in s && "minute" in s) {
+      const h = String((s as { hour: number }).hour).padStart(2, "0");
+      const m = String((s as { minute: number }).minute).padStart(2, "0");
+      return `${h}:${m}`;
+    }
+    if (typeof s === "string") {
+      try { return format(new Date(s.replace(" ", "T")), "HH:mm"); } catch { return ""; }
+    }
+    return "";
+  })();
+
+  const barColor: Record<string, string> = {
+    match: "bg-red-500",
+    training: "bg-green-500",
+    meeting: "bg-blue-500",
+    rehab: "bg-orange-500",
+  };
 
   return (
-    <div className="flex items-center gap-1 truncate px-0.5 py-px text-xs">
+    <div className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs">
+      <div className={cn("w-0.5 self-stretch shrink-0 rounded-full", barColor[eventType] ?? "bg-blue-500")} />
       <EventTypeBadge type={eventType} size="sm" className="shrink-0" />
       <span className="text-muted-foreground shrink-0">{startTime}</span>
       <span className="truncate font-medium">{calendarEvent.title}</span>
@@ -182,8 +186,7 @@ export function CalendarView({
   useEffect(() => {
     if (!calendarApp || !events) return;
     const mapped = mapEvents(events);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    calendarApp.events.set(mapped as any);
+    calendarApp.events.set(mapped);
   }, [calendarApp, events]);
 
   if (events === undefined) {
@@ -196,9 +199,11 @@ export function CalendarView({
   }
 
   return (
-    <ScheduleXCalendar
-      calendarApp={calendarApp}
-      customComponents={{ monthGridEvent: MonthGridEvent }}
-    />
+    <div style={{ height: "calc(100vh - 250px)" }}>
+      <ScheduleXCalendar
+        calendarApp={calendarApp}
+        customComponents={{ monthGridEvent: MonthGridEvent }}
+      />
+    </div>
   );
 }

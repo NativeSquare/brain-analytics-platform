@@ -400,6 +400,31 @@ describe("getPlayerById", () => {
     expect(result).not.toBeNull();
     expect(result!.photoUrl).toBeNull();
   });
+
+  it("returns null for non-existent player ID", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    // Insert and then delete a player to get a valid but non-existent ID
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Ghost",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+    await t.run(async (ctx) => {
+      await ctx.db.delete(playerId);
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getPlayerById,
+      { playerId }
+    );
+
+    expect(result).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------

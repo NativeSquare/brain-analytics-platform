@@ -58,7 +58,7 @@ export const getPlayers = query({
         firstName: player.firstName,
         lastName: player.lastName,
         photoUrl: player.photo
-          ? await ctx.storage.getUrl(player.photo as any)
+          ? await ctx.storage.getUrl(player.photo as Parameters<typeof ctx.storage.getUrl>[0])
           : null,
         position: player.position,
         squadNumber: player.squadNumber,
@@ -88,7 +88,7 @@ export const getPlayerById = query({
     }
 
     const photoUrl = player.photo
-      ? await ctx.storage.getUrl(player.photo as any)
+      ? await ctx.storage.getUrl(player.photo as Parameters<typeof ctx.storage.getUrl>[0])
       : null;
 
     return {

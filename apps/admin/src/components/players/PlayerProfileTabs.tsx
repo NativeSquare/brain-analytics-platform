@@ -8,7 +8,6 @@ import {
   IconFirstAidKit,
   IconFileText,
   IconLink,
-  IconClock,
 } from "@tabler/icons-react";
 import {
   PLAYER_STATUS_LABELS,

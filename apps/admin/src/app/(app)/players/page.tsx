@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -24,28 +24,44 @@ function PlayersPageContent() {
     search: searchFilter,
   });
 
-  const updateFilter = (key: string, value: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    const qs = params.toString();
-    router.push(qs ? `/players?${qs}` : "/players");
-  };
+  // Keep a ref to searchParams so useCallback closures always read the latest value
+  const searchParamsRef = useRef(searchParams);
+  searchParamsRef.current = searchParams;
 
-  const handleStatusChange = (status: string | undefined) => {
-    updateFilter("status", status ?? null);
-  };
+  const updateFilter = useCallback(
+    (key: string, value: string | null) => {
+      const params = new URLSearchParams(searchParamsRef.current.toString());
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      const qs = params.toString();
+      router.push(qs ? `/players?${qs}` : "/players");
+    },
+    [router]
+  );
 
-  const handleSearchChange = (value: string) => {
-    updateFilter("search", value || null);
-  };
+  const handleStatusChange = useCallback(
+    (status: string | undefined) => {
+      updateFilter("status", status ?? null);
+    },
+    [updateFilter]
+  );
 
-  const handlePlayerClick = (playerId: Id<"players">) => {
-    router.push(`/players/${playerId}`);
-  };
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      updateFilter("search", value || null);
+    },
+    [updateFilter]
+  );
+
+  const handlePlayerClick = useCallback(
+    (playerId: Id<"players">) => {
+      router.push(`/players/${playerId}`);
+    },
+    [router]
+  );
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">

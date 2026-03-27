@@ -63,14 +63,27 @@ export default function DocumentsPage() {
     visibleFolderIds.length > 0 ? { folderIds: visibleFolderIds } : "skip",
   );
 
-  // Navigation
-  function navigateToFolder(folderId: string | null) {
-    if (folderId) {
+  // Stable callbacks for FolderCard (memoized to avoid re-renders)
+  const handleFolderClick = React.useCallback(
+    (folderId: Id<"folders">) => {
       router.push(`/documents?folder=${folderId}`);
-    } else {
-      router.push("/documents");
-    }
-  }
+    },
+    [router],
+  );
+
+  const handleFolderRename = React.useCallback(
+    (folderId: Id<"folders">, name: string) => {
+      setRenameTarget({ id: folderId, name });
+    },
+    [],
+  );
+
+  const handleFolderDelete = React.useCallback(
+    (folderId: Id<"folders">, name: string) => {
+      setDeleteTarget({ id: folderId, name });
+    },
+    [],
+  );
 
   function getItemCount(folderId: Id<"folders">): number {
     if (!itemCounts) return 0;
@@ -116,13 +129,9 @@ export default function DocumentsPage() {
                 name={folder.name}
                 itemCount={getItemCount(folder._id)}
                 isAdmin={isAdmin}
-                onClick={() => navigateToFolder(folder._id)}
-                onRename={() =>
-                  setRenameTarget({ id: folder._id, name: folder.name })
-                }
-                onDelete={() =>
-                  setDeleteTarget({ id: folder._id, name: folder.name })
-                }
+                onFolderClick={handleFolderClick}
+                onFolderRename={handleFolderRename}
+                onFolderDelete={handleFolderDelete}
               />
             ))}
           </div>
@@ -181,13 +190,9 @@ export default function DocumentsPage() {
                   name={folder.name}
                   itemCount={getItemCount(folder._id)}
                   isAdmin={isAdmin}
-                  onClick={() => navigateToFolder(folder._id)}
-                  onRename={() =>
-                    setRenameTarget({ id: folder._id, name: folder.name })
-                  }
-                  onDelete={() =>
-                    setDeleteTarget({ id: folder._id, name: folder.name })
-                  }
+                  onFolderClick={handleFolderClick}
+                  onFolderRename={handleFolderRename}
+                  onFolderDelete={handleFolderDelete}
                 />
               ))}
             </div>

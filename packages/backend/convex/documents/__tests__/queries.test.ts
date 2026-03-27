@@ -410,3 +410,115 @@ describe("getFolderBreadcrumb", () => {
     expect(result.length).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// getFolderItemCounts
+// ---------------------------------------------------------------------------
+
+describe("getFolderItemCounts", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  it("returns correct counts for subfolders and documents", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const parentId = await insertFolder(t, teamId, userId, {
+      name: "Category",
+    });
+    await insertFolder(t, teamId, userId, {
+      name: "Sub A",
+      parentId,
+    });
+    await insertFolder(t, teamId, userId, {
+      name: "Sub B",
+      parentId,
+    });
+    await insertDocument(t, teamId, parentId, userId, { name: "Doc 1" });
+
+    const result = await t.query(
+      (await import("../queries")).getFolderItemCounts,
+      { folderIds: [parentId] },
+    );
+
+    expect(result[parentId]).toBeDefined();
+    expect(result[parentId].subfolders).toBe(2);
+    expect(result[parentId].documents).toBe(1);
+  });
+
+  it("returns zero counts for an empty folder", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const folderId = await insertFolder(t, teamId, userId, {
+      name: "Empty Folder",
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getFolderItemCounts,
+      { folderIds: [folderId] },
+    );
+
+    expect(result[folderId]).toBeDefined();
+    expect(result[folderId].subfolders).toBe(0);
+    expect(result[folderId].documents).toBe(0);
+  });
+
+  it("handles multiple folder IDs in a single batch", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const folder1 = await insertFolder(t, teamId, userId, {
+      name: "Folder 1",
+    });
+    const folder2 = await insertFolder(t, teamId, userId, {
+      name: "Folder 2",
+    });
+    await insertDocument(t, teamId, folder1, userId, { name: "Doc A" });
+    await insertDocument(t, teamId, folder1, userId, { name: "Doc B" });
+    await insertFolder(t, teamId, userId, {
+      name: "Sub of Folder2",
+      parentId: folder2,
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getFolderItemCounts,
+      { folderIds: [folder1, folder2] },
+    );
+
+    expect(result[folder1].subfolders).toBe(0);
+    expect(result[folder1].documents).toBe(2);
+    expect(result[folder2].subfolders).toBe(1);
+    expect(result[folder2].documents).toBe(0);
+  });
+
+  it("excludes soft-deleted subfolders from count", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const parentId = await insertFolder(t, teamId, userId, {
+      name: "Category",
+    });
+    await insertFolder(t, teamId, userId, {
+      name: "Active Sub",
+      parentId,
+    });
+    await insertFolder(t, teamId, userId, {
+      name: "Deleted Sub",
+      parentId,
+      isDeleted: true,
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getFolderItemCounts,
+      { folderIds: [parentId] },
+    );
+
+    expect(result[parentId].subfolders).toBe(1);
+  });
+});

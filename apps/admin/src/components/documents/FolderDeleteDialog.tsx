@@ -8,7 +8,6 @@ import { toast } from "sonner";
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -16,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { getConvexErrorMessage } from "@/utils/getConvexErrorMessage";
 
 interface FolderDeleteDialogProps {
@@ -48,7 +48,7 @@ export function FolderDeleteDialog({
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={isLoading ? undefined : onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Folder</AlertDialogTitle>
@@ -58,14 +58,14 @@ export function FolderDeleteDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <Button
             onClick={handleDelete}
             disabled={isLoading}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            variant="destructive"
           >
             {isLoading ? "Deleting..." : "Delete"}
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

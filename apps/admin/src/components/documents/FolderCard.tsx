@@ -21,23 +21,44 @@ interface FolderCardProps {
   name: string;
   itemCount: number;
   isAdmin: boolean;
-  onClick: () => void;
-  onRename: () => void;
-  onDelete: () => void;
+  onFolderClick: (folderId: Id<"folders">) => void;
+  onFolderRename: (folderId: Id<"folders">, name: string) => void;
+  onFolderDelete: (folderId: Id<"folders">, name: string) => void;
 }
 
-export function FolderCard({
+export const FolderCard = React.memo(function FolderCard({
+  folderId,
   name,
   itemCount,
   isAdmin,
-  onClick,
-  onRename,
-  onDelete,
+  onFolderClick,
+  onFolderRename,
+  onFolderDelete,
 }: FolderCardProps) {
+  const handleClick = React.useCallback(() => {
+    onFolderClick(folderId);
+  }, [onFolderClick, folderId]);
+
+  const handleRename = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onFolderRename(folderId, name);
+    },
+    [onFolderRename, folderId, name],
+  );
+
+  const handleDelete = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onFolderDelete(folderId, name);
+    },
+    [onFolderDelete, folderId, name],
+  );
+
   return (
     <Card
       className="group relative cursor-pointer transition-colors hover:bg-accent/50"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardContent className="flex items-center gap-3 p-4">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
@@ -63,21 +84,13 @@ export function FolderCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRename();
-                }}
-              >
+              <DropdownMenuItem onClick={handleRename}>
                 <IconPencil className="mr-2 size-4" />
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
+                onClick={handleDelete}
               >
                 <IconTrash className="mr-2 size-4" />
                 Delete
@@ -88,4 +101,4 @@ export function FolderCard({
       </CardContent>
     </Card>
   );
-}
+});

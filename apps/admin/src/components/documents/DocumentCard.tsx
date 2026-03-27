@@ -5,8 +5,10 @@ import { format } from "date-fns";
 import { MoreHorizontal, Eye, Replace, Trash2 } from "lucide-react";
 
 import { formatFileSize } from "@packages/shared/documents";
+import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getDocumentIcon } from "./documentIcons";
+import { ReadTrackerDetail } from "./ReadTrackerDetail";
 
 interface DocumentData {
   _id: string;
@@ -31,6 +34,8 @@ interface DocumentCardProps {
   onViewDetails: (docId: string) => void;
   onReplace: (docId: string, docName: string) => void;
   onDelete: (docId: string, docName: string) => void;
+  readCount?: number;
+  totalAccess?: number;
 }
 
 export const DocumentCard = React.memo(function DocumentCard({
@@ -39,6 +44,8 @@ export const DocumentCard = React.memo(function DocumentCard({
   onViewDetails,
   onReplace,
   onDelete,
+  readCount,
+  totalAccess,
 }: DocumentCardProps) {
   const isFile = !!document.storageId;
 
@@ -53,6 +60,11 @@ export const DocumentCard = React.memo(function DocumentCard({
   const handleDelete = React.useCallback(() => {
     onDelete(document._id, document.name);
   }, [onDelete, document._id, document.name]);
+
+  const progressPct =
+    totalAccess != null && totalAccess > 0 && readCount != null
+      ? Math.round((readCount / totalAccess) * 100)
+      : 0;
 
   return (
     <div
@@ -71,6 +83,25 @@ export const DocumentCard = React.memo(function DocumentCard({
         className: "size-4 shrink-0 text-muted-foreground",
       })}
       <span className="flex-1 truncate text-sm">{document.name}</span>
+
+      {/* Read tracking indicator — admin only */}
+      {isAdmin && readCount != null && totalAccess != null && (
+        <ReadTrackerDetail
+          documentId={document._id as Id<"documents">}
+          trigger={
+            <button
+              type="button"
+              className="flex items-center gap-1.5 shrink-0 cursor-pointer rounded px-1.5 py-0.5 hover:bg-accent"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Progress value={progressPct} className="h-1.5 w-12" />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                Opened by {readCount}/{totalAccess}
+              </span>
+            </button>
+          }
+        />
+      )}
 
       {isFile && document.fileSize != null ? (
         <span className="shrink-0 text-xs text-muted-foreground">

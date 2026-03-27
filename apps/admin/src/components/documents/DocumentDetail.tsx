@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { format } from "date-fns";
@@ -49,17 +49,23 @@ export function DocumentDetail({
     documentId ? { documentId } : "skip",
   );
 
+  const trackRead = useMutation(api.documents.mutations.trackRead);
+
   const isFile = document?.storageId != null;
   const isVideo = document?.videoUrl != null;
 
   function handleOpenDownload() {
-    if (documentUrl) {
+    if (documentUrl && documentId) {
+      // Fire-and-forget tracking
+      void trackRead({ documentId }).catch(() => {});
       window.open(documentUrl, "_blank");
     }
   }
 
   function handleWatchVideo() {
-    if (document?.videoUrl) {
+    if (document?.videoUrl && documentId) {
+      // Fire-and-forget tracking
+      void trackRead({ documentId }).catch(() => {});
       window.open(document.videoUrl, "_blank");
     }
   }

@@ -91,6 +91,23 @@ export default function DocumentsPage() {
     visibleFolderIds.length > 0 ? { folderIds: visibleFolderIds } : "skip",
   );
 
+  // --- Read tracking data (admin only, Story 4.4) ---
+  const visibleDocumentIds = React.useMemo(() => {
+    if (currentFolderId && folderContents?.documents) {
+      return folderContents.documents.map(
+        (d) => d._id as Id<"documents">,
+      );
+    }
+    return [] as Id<"documents">[];
+  }, [currentFolderId, folderContents]);
+
+  const readStats = useQuery(
+    api.documents.queries.getReadStats,
+    isAdmin && visibleDocumentIds.length > 0
+      ? { documentIds: visibleDocumentIds }
+      : "skip",
+  );
+
   // --- Folder callbacks ---
   const handleFolderClick = React.useCallback(
     (folderId: Id<"folders">) => {
@@ -328,16 +345,21 @@ export default function DocumentsPage() {
           {/* Documents */}
           {folderContents.documents.length > 0 && (
             <div className="space-y-1">
-              {folderContents.documents.map((doc) => (
-                <DocumentCard
-                  key={doc._id}
-                  document={doc}
-                  isAdmin={isAdmin}
-                  onViewDetails={handleViewDetails}
-                  onReplace={handleReplaceFromCard}
-                  onDelete={handleDeleteFromCard}
-                />
-              ))}
+              {folderContents.documents.map((doc) => {
+                const stats = readStats?.[doc._id];
+                return (
+                  <DocumentCard
+                    key={doc._id}
+                    document={doc}
+                    isAdmin={isAdmin}
+                    onViewDetails={handleViewDetails}
+                    onReplace={handleReplaceFromCard}
+                    onDelete={handleDeleteFromCard}
+                    readCount={stats?.uniqueReaders}
+                    totalAccess={stats?.totalWithAccess}
+                  />
+                );
+              })}
             </div>
           )}
 

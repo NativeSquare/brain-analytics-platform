@@ -8,4 +8,5 @@ export const documentReads = defineTable({
   readAt: v.number(),
 })
   .index("by_documentId", ["documentId"])
-  .index("by_userId_documentId", ["userId", "documentId"]);
+  .index("by_userId_documentId", ["userId", "documentId"])
+  .index("by_teamId", ["teamId"]);

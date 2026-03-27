@@ -1,8 +1,8 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
-import { requireRole } from "../lib/auth";
-import { VALID_PERMISSION_ROLES } from "../lib/permissions";
+import { requireAuth, requireRole } from "../lib/auth";
+import { checkDocumentAccess, VALID_PERMISSION_ROLES } from "../lib/permissions";
 
 /**
  * Creates a new folder. Admin-only.
@@ -490,6 +490,62 @@ export const setDocumentPermissions = mutation({
         userId: uid,
         grantedBy: user._id,
         createdAt: Date.now(),
+      });
+    }
+
+    return { success: true };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Read tracking (Story 4.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Records a document open event. Any authenticated user can call this.
+ * Upserts — updates `readAt` if a record already exists for this user+document.
+ */
+export const trackRead = mutation({
+  args: {
+    documentId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    // Validate document exists and belongs to user's team
+    const document = await ctx.db.get(args.documentId);
+    if (!document || document.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Document not found",
+      });
+    }
+
+    // Verify user has access to this document
+    const hasAccess = await checkDocumentAccess(ctx, user, document);
+    if (!hasAccess) {
+      throw new ConvexError({
+        code: "NOT_AUTHORIZED" as const,
+        message: "You don't have access to this document",
+      });
+    }
+
+    // Upsert: check for existing read record
+    const existing = await ctx.db
+      .query("documentReads")
+      .withIndex("by_userId_documentId", (q) =>
+        q.eq("userId", user._id).eq("documentId", args.documentId),
+      )
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { readAt: Date.now() });
+    } else {
+      await ctx.db.insert("documentReads", {
+        teamId,
+        documentId: args.documentId,
+        userId: user._id,
+        readAt: Date.now(),
       });
     }
 

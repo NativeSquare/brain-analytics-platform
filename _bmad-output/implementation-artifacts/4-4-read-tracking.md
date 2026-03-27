@@ -35,52 +35,52 @@ so that I know whether the team is engaging with shared materials.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Add `documentReads` table to schema** (AC: #9, #10)
-  - [ ] 1.1: Open `packages/backend/convex/schema.ts`. Add (or verify) the `documentReads` table definition with fields: `teamId: v.id("teams")`, `documentId: v.id("documents")`, `userId: v.id("users")`, `readAt: v.number()`.
-  - [ ] 1.2: Add indexes: `by_documentId` on `[documentId]`, `by_userId_documentId` on `[userId, documentId]`, `by_teamId` on `[teamId]`.
-  - [ ] 1.3: Run `npx convex dev` to verify schema deploys without errors.
+- [x] **Task 1: Add `documentReads` table to schema** (AC: #9, #10)
+  - [x] 1.1: Open `packages/backend/convex/schema.ts`. Add (or verify) the `documentReads` table definition with fields: `teamId: v.id("teams")`, `documentId: v.id("documents")`, `userId: v.id("users")`, `readAt: v.number()`.
+  - [x] 1.2: Add indexes: `by_documentId` on `[documentId]`, `by_userId_documentId` on `[userId, documentId]`, `by_teamId` on `[teamId]`.
+  - [x] 1.3: Run `npx convex dev` to verify schema deploys without errors.
 
-- [ ] **Task 2: Implement `trackRead` mutation** (AC: #1, #10)
-  - [ ] 2.1: Add `trackRead` to `packages/backend/convex/documents/mutations.ts`. Accepts `{ documentId: v.id("documents") }`.
-  - [ ] 2.2: Call `requireAuth(ctx)` to get `{ user, teamId }`.
-  - [ ] 2.3: Fetch the document by ID. Validate it exists and `document.teamId === teamId`. If not, throw `ConvexError({ code: "NOT_FOUND", message: "Document not found" })`.
-  - [ ] 2.4: Call `checkDocumentAccess(ctx, user, document)` from `convex/lib/permissions.ts` (Story 4.3). If access denied, throw `ConvexError({ code: "NOT_AUTHORIZED", message: "You don't have access to this document" })`.
-  - [ ] 2.5: Query `documentReads` using the `by_userId_documentId` index to check if a record already exists for this user + document combination.
-  - [ ] 2.6: If record exists, patch it with `{ readAt: Date.now() }` (update last read timestamp). If no record exists, insert `{ teamId, documentId, userId: user._id, readAt: Date.now() }`.
-  - [ ] 2.7: Return `{ success: true }`.
+- [x] **Task 2: Implement `trackRead` mutation** (AC: #1, #10)
+  - [x] 2.1: Add `trackRead` to `packages/backend/convex/documents/mutations.ts`. Accepts `{ documentId: v.id("documents") }`.
+  - [x] 2.2: Call `requireAuth(ctx)` to get `{ user, teamId }`.
+  - [x] 2.3: Fetch the document by ID. Validate it exists and `document.teamId === teamId`. If not, throw `ConvexError({ code: "NOT_FOUND", message: "Document not found" })`.
+  - [x] 2.4: Call `checkDocumentAccess(ctx, user, document)` from `convex/lib/permissions.ts` (Story 4.3). If access denied, throw `ConvexError({ code: "NOT_AUTHORIZED", message: "You don't have access to this document" })`.
+  - [x] 2.5: Query `documentReads` using the `by_userId_documentId` index to check if a record already exists for this user + document combination.
+  - [x] 2.6: If record exists, patch it with `{ readAt: Date.now() }` (update last read timestamp). If no record exists, insert `{ teamId, documentId, userId: user._id, readAt: Date.now() }`.
+  - [x] 2.7: Return `{ success: true }`.
 
-- [ ] **Task 3: Implement `getReadStats` query** (AC: #3, #6, #10)
-  - [ ] 3.1: Add `getReadStats` to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentIds: v.array(v.id("documents")) }`.
-  - [ ] 3.2: Call `requireRole(ctx, ["admin"])` to enforce admin-only access.
-  - [ ] 3.3: For each `documentId` in the input array, query `documentReads` using the `by_documentId` index. Collect all read records.
-  - [ ] 3.4: For each read record, fetch the associated user to get `fullName`. Build the grouped result: `Record<string, { uniqueReaders: number, reads: Array<{ userId, fullName, readAt }> }>`.
-  - [ ] 3.5: Sort each document's `reads` array by `readAt` descending (most recent first).
-  - [ ] 3.6: Return the grouped stats object.
+- [x] **Task 3: Implement `getReadStats` query** (AC: #3, #6, #10)
+  - [x] 3.1: Add `getReadStats` to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentIds: v.array(v.id("documents")) }`.
+  - [x] 3.2: Call `requireRole(ctx, ["admin"])` to enforce admin-only access.
+  - [x] 3.3: For each `documentId` in the input array, query `documentReads` using the `by_documentId` index. Collect all read records.
+  - [x] 3.4: For each read record, fetch the associated user to get `fullName`. Build the grouped result: `Record<string, { uniqueReaders: number, reads: Array<{ userId, fullName, readAt }> }>`.
+  - [x] 3.5: Sort each document's `reads` array by `readAt` descending (most recent first).
+  - [x] 3.6: Return the grouped stats object.
 
-- [ ] **Task 4: Implement `getUsersWithAccessCount` query** (AC: #4, #6, #10)
-  - [ ] 4.1: Add `getUsersWithAccessCount` to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentId: v.id("documents") }`.
-  - [ ] 4.2: Call `requireRole(ctx, ["admin"])`.
-  - [ ] 4.3: Fetch the document. If `document.permittedRoles` is defined (override), use it. If `undefined`, fetch the parent folder and use its `permittedRoles` (inheritance from Story 4.3).
-  - [ ] 4.4: Determine total users with access:
+- [x] **Task 4: Implement `getUsersWithAccessCount` query** (AC: #4, #6, #10)
+  - [x] 4.1: Add `getUsersWithAccessCount` to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentId: v.id("documents") }`.
+  - [x] 4.2: Call `requireRole(ctx, ["admin"])`.
+  - [x] 4.3: Fetch the document. If `document.permittedRoles` is defined (override), use it. If `undefined`, fetch the parent folder and use its `permittedRoles` (inheritance from Story 4.3).
+  - [x] 4.4: Determine total users with access:
     - If `permittedRoles` is `undefined`/`null` (unrestricted), count all active users in the team: `ctx.db.query("users").withIndex("by_teamId", q => q.eq("teamId", teamId)).collect()`, then count those with active status.
     - If `permittedRoles` is an array, count users whose `role` is in the array. Additionally, query `documentUserPermissions` for individual grants on this document or its folder (if inheriting). Union the two sets (avoid double-counting users who qualify by both role and individual grant).
     - Always include admin users in the count (admins always have access).
-  - [ ] 4.5: Return `{ totalWithAccess: number }`.
+  - [x] 4.5: Return `{ totalWithAccess: number }`.
 
-- [ ] **Task 5: Implement `getReadersDetail` query for the detail popover** (AC: #7, #6, #10)
-  - [ ] 5.1: Add `getReadersDetail` to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentId: v.id("documents") }`.
-  - [ ] 5.2: Call `requireRole(ctx, ["admin"])`.
-  - [ ] 5.3: Fetch all `documentReads` for this document (using `by_documentId` index). Join with users table to get `fullName`, `email`, `role`.
-  - [ ] 5.4: Determine all users with access to this document (same logic as Task 4 — reuse via a shared helper function `_getUsersWithAccess(ctx, document, teamId)` that returns the full user list).
-  - [ ] 5.5: Split into two lists: `readers` (users who have a `documentReads` record, with their `readAt` timestamp) and `nonReaders` (users with access but no read record).
-  - [ ] 5.6: Sort `readers` by `readAt` descending. Sort `nonReaders` alphabetically by `fullName`.
-  - [ ] 5.7: Return `{ readers: Array<{ userId, fullName, role, readAt }>, nonReaders: Array<{ userId, fullName, role }> }`.
+- [x] **Task 5: Implement `getReadersDetail` query for the detail popover** (AC: #7, #6, #10)
+  - [x] 5.1: Add `getReadersDetail` to `packages/backend/convex/documents/queries.ts`. Accepts `{ documentId: v.id("documents") }`.
+  - [x] 5.2: Call `requireRole(ctx, ["admin"])`.
+  - [x] 5.3: Fetch all `documentReads` for this document (using `by_documentId` index). Join with users table to get `fullName`, `email`, `role`.
+  - [x] 5.4: Determine all users with access to this document (same logic as Task 4 — reuse via a shared helper function `_getUsersWithAccess(ctx, document, teamId)` that returns the full user list).
+  - [x] 5.5: Split into two lists: `readers` (users who have a `documentReads` record, with their `readAt` timestamp) and `nonReaders` (users with access but no read record).
+  - [x] 5.6: Sort `readers` by `readAt` descending. Sort `nonReaders` alphabetically by `fullName`.
+  - [x] 5.7: Return `{ readers: Array<{ userId, fullName, role, readAt }>, nonReaders: Array<{ userId, fullName, role }> }`.
 
-- [ ] **Task 6: Wire `trackRead` to document open/download actions** (AC: #2)
-  - [ ] 6.1: Modify `apps/admin/src/components/documents/DocumentDetail.tsx` (from Story 4.2). In the "Open" / view action handler, add a call to `trackRead({ documentId })` using `useMutation`. Wrap in a try-catch — the tracking must not block or break the open action.
-  - [ ] 6.2: In the "Download" action handler, add the same `trackRead({ documentId })` call. The download proceeds regardless of whether tracking succeeds.
-  - [ ] 6.3: For video links (videoUrl documents), call `trackRead` when the user clicks the video link (before opening in new tab).
-  - [ ] 6.4: Ensure the `trackRead` call is non-blocking: use `void trackRead({ documentId })` pattern (fire-and-forget, no `await` blocking the open/download action). Example:
+- [x] **Task 6: Wire `trackRead` to document open/download actions** (AC: #2)
+  - [x] 6.1: Modify `apps/admin/src/components/documents/DocumentDetail.tsx` (from Story 4.2). In the "Open" / view action handler, add a call to `trackRead({ documentId })` using `useMutation`. Wrap in a try-catch — the tracking must not block or break the open action.
+  - [x] 6.2: In the "Download" action handler, add the same `trackRead({ documentId })` call. The download proceeds regardless of whether tracking succeeds.
+  - [x] 6.3: For video links (videoUrl documents), call `trackRead` when the user clicks the video link (before opening in new tab).
+  - [x] 6.4: Ensure the `trackRead` call is non-blocking: use `void trackRead({ documentId })` pattern (fire-and-forget, no `await` blocking the open/download action). Example:
     ```typescript
     const handleOpen = async () => {
       // Fire-and-forget tracking
@@ -90,52 +90,52 @@ so that I know whether the team is engaging with shared materials.
     }
     ```
 
-- [ ] **Task 7: Build `ReadTrackerDetail` component (reader list popover)** (AC: #7)
-  - [ ] 7.1: Create `apps/admin/src/components/documents/ReadTrackerDetail.tsx`. This is a `Popover` (shadcn) that shows the detailed reader list. Accepts props: `documentId: Id<"documents">`, `trigger: ReactNode` (the clickable element).
-  - [ ] 7.2: Inside the popover content, call `useQuery(api.documents.queries.getReadersDetail, { documentId })`. Show skeleton while loading (`undefined`).
-  - [ ] 7.3: Render two sections:
+- [x] **Task 7: Build `ReadTrackerDetail` component (reader list popover)** (AC: #7)
+  - [x] 7.1: Create `apps/admin/src/components/documents/ReadTrackerDetail.tsx`. This is a `Popover` (shadcn) that shows the detailed reader list. Accepts props: `documentId: Id<"documents">`, `trigger: ReactNode` (the clickable element).
+  - [x] 7.2: Inside the popover content, call `useQuery(api.documents.queries.getReadersDetail, { documentId })`. Show skeleton while loading (`undefined`).
+  - [x] 7.3: Render two sections:
     - **"Opened" section**: List of users who have opened the document. Each row: user name, role `Badge` (from `components/shared/StatusBadge` or inline), and formatted date/time (e.g., "Mar 25, 2026 at 14:30" using `date-fns format`).
     - **"Not yet opened" section** (collapsible or below a separator): List of users with access who haven't opened. Each row: user name and role badge. Muted text styling.
-  - [ ] 7.4: If there are no readers yet, show "No one has opened this document yet" with the full list of users in the "Not yet opened" section.
-  - [ ] 7.5: Add a header showing the document name and summary (e.g., "3 of 12 users have opened this document").
+  - [x] 7.4: If there are no readers yet, show "No one has opened this document yet" with the full list of users in the "Not yet opened" section.
+  - [x] 7.5: Add a header showing the document name and summary (e.g., "3 of 12 users have opened this document").
 
-- [ ] **Task 8: Integrate read tracking indicators into document list** (AC: #5, #8)
-  - [ ] 8.1: Modify `apps/admin/src/components/documents/DocumentCard.tsx` (from Story 4.1). Add read tracking data display for admin users.
-  - [ ] 8.2: In the parent folder contents view (the page or component that renders the document list), call `useQuery(api.documents.queries.getReadStats, { documentIds })` where `documentIds` is the array of document IDs currently displayed. Only call this query if the user is an admin; skip for non-admin users (use `"skip"` sentinel or conditional query). Also call `getUsersWithAccessCount` for each document (or batch this — see Dev Notes).
-  - [ ] 8.3: Pass the read stats data to each `DocumentCard` as props: `readCount: number` (unique readers) and `totalAccess: number` (total with access).
-  - [ ] 8.4: In `DocumentCard`, render the `ReadTracker` component (from Story 1.4 — `components/shared/` or inline) showing "Opened by X/Y" with a progress visual. Only render for admin users.
-  - [ ] 8.5: Wrap the `ReadTracker` indicator with `ReadTrackerDetail` popover (from Task 7), making the indicator clickable to show the detail view.
-  - [ ] 8.6: Ensure the read tracking data updates in real time via Convex subscription — when a new `documentReads` record is inserted, the `getReadStats` query re-evaluates and the UI updates automatically.
+- [x] **Task 8: Integrate read tracking indicators into document list** (AC: #5, #8)
+  - [x] 8.1: Modify `apps/admin/src/components/documents/DocumentCard.tsx` (from Story 4.1). Add read tracking data display for admin users.
+  - [x] 8.2: In the parent folder contents view (the page or component that renders the document list), call `useQuery(api.documents.queries.getReadStats, { documentIds })` where `documentIds` is the array of document IDs currently displayed. Only call this query if the user is an admin; skip for non-admin users (use `"skip"` sentinel or conditional query). Also call `getUsersWithAccessCount` for each document (or batch this — see Dev Notes).
+  - [x] 8.3: Pass the read stats data to each `DocumentCard` as props: `readCount: number` (unique readers) and `totalAccess: number` (total with access).
+  - [x] 8.4: In `DocumentCard`, render the `ReadTracker` component (from Story 1.4 — `components/shared/` or inline) showing "Opened by X/Y" with a progress visual. Only render for admin users.
+  - [x] 8.5: Wrap the `ReadTracker` indicator with `ReadTrackerDetail` popover (from Task 7), making the indicator clickable to show the detail view.
+  - [x] 8.6: Ensure the read tracking data updates in real time via Convex subscription — when a new `documentReads` record is inserted, the `getReadStats` query re-evaluates and the UI updates automatically.
 
-- [ ] **Task 9: Write backend unit tests** (AC: #1, #2, #3, #4, #6, #9, #10)
-  - [ ] 9.1: Create `packages/backend/convex/documents/__tests__/readTracking.test.ts`.
-  - [ ] 9.2: Test `trackRead`:
+- [x] **Task 9: Write backend unit tests** (AC: #1, #2, #3, #4, #6, #9, #10)
+  - [x] 9.1: Create `packages/backend/convex/documents/__tests__/readTracking.test.ts`.
+  - [x] 9.2: Test `trackRead`:
     - (a) Authenticated user with access can track a read — verify `documentReads` record created with correct `teamId`, `documentId`, `userId`, `readAt`.
     - (b) Second call by same user updates `readAt` instead of creating duplicate — verify only one record exists after two calls.
     - (c) Different user tracking same document creates a separate record — verify two records exist.
     - (d) User without document access receives `NOT_AUTHORIZED` error.
     - (e) Document from different team returns `NOT_FOUND`.
     - (f) Unauthenticated request is rejected.
-  - [ ] 9.3: Test `getReadStats`:
+  - [x] 9.3: Test `getReadStats`:
     - (a) Admin receives correct `uniqueReaders` count for each document.
     - (b) Admin receives correct `reads` array with user details sorted by most recent first.
     - (c) Documents with zero reads return `uniqueReaders: 0` and empty `reads` array.
     - (d) Non-admin receives `NOT_AUTHORIZED`.
-  - [ ] 9.4: Test `getUsersWithAccessCount`:
+  - [x] 9.4: Test `getUsersWithAccessCount`:
     - (a) Unrestricted document returns total active team members count.
     - (b) Restricted document (role-based) returns count of users with matching roles + admins.
     - (c) Document with individual user permissions includes those users in the count.
     - (d) Inherited permissions: document with `permittedRoles: undefined` uses folder permissions for the count.
     - (e) Non-admin receives `NOT_AUTHORIZED`.
-  - [ ] 9.5: Test `getReadersDetail`:
+  - [x] 9.5: Test `getReadersDetail`:
     - (a) Returns `readers` list with correct user info and timestamps.
     - (b) Returns `nonReaders` list (users with access but no read record).
     - (c) Non-admin receives `NOT_AUTHORIZED`.
 
-- [ ] **Task 10: Final validation** (AC: all)
-  - [ ] 10.1: Run `pnpm typecheck` — must pass with zero errors.
-  - [ ] 10.2: Run `pnpm lint` — must pass with zero errors.
-  - [ ] 10.3: Run backend tests (`vitest run` in packages/backend) — all new and existing tests pass.
+- [x] **Task 10: Final validation** (AC: all)
+  - [x] 10.1: Run `pnpm typecheck` — must pass with zero errors.
+  - [x] 10.2: Run `pnpm lint` — must pass with zero errors.
+  - [x] 10.3: Run backend tests (`vitest run` in packages/backend) — all new and existing tests pass.
   - [ ] 10.4: Start the dev server. Navigate to `/documents`. Open a folder with documents.
   - [ ] 10.5: As admin, verify "Opened by 0/Y" indicators appear on each document card (where Y reflects users with access).
   - [ ] 10.6: Switch to a non-admin user account. Verify NO read tracking indicators are visible.
@@ -341,10 +341,33 @@ Documents Page (page.tsx) [MODIFIED]
 
 ### Agent Model Used
 
-(to be filled during implementation)
+Claude Opus 4.6 via Claude Code
 
 ### Debug Log References
 
+None — clean implementation, no debugging required.
+
 ### Completion Notes List
 
+- **Task 1:** `documentReads` table already existed from Story 4.1. Added missing `by_teamId` index per AC #9.
+- **Task 2:** `trackRead` mutation uses `requireAuth` (any authenticated user) + `checkDocumentAccess` (Story 4.3). Upsert pattern via `by_userId_documentId` index.
+- **Tasks 3-5:** Shared helper `_getUsersWithAccess()` extracts access computation logic, reused by `getUsersWithAccessCount`, `getReadersDetail`, and inlined in `getReadStats`. Per dev notes recommendation, `getReadStats` also returns `totalWithAccess` per document to avoid N+1 queries on the frontend.
+- **Task 6:** `trackRead` wired to both `handleOpenDownload` and `handleWatchVideo` in DocumentDetail. Uses `void trackRead({ documentId }).catch(() => {})` fire-and-forget pattern.
+- **Task 7:** `ReadTrackerDetail` uses shadcn Popover with ScrollArea. Shows "Opened" and "Not yet opened" sections with role badges and `date-fns` formatted timestamps.
+- **Task 8:** ReadTracker indicator built inline in DocumentCard using shadcn Progress + "Opened by X/Y" text. Wrapped with ReadTrackerDetail popover. Documents page fetches batched `getReadStats` for all visible documents (admin-only via `"skip"` sentinel).
+- **Task 9:** 18 tests covering all 4 functions: `trackRead` (6 tests), `getReadStats` (4 tests), `getUsersWithAccessCount` (5 tests), `getReadersDetail` (3 tests). All pass.
+- **Task 10:** Typecheck passes (0 errors). Pre-existing lint errors in `apps/native/` and `apps/admin/src/components/ui/sidebar.tsx` unrelated to this story — all changed files lint clean. All 218 backend tests pass (12 test files).
+- **Decision:** ReadTracker component from Story 1.4 did not exist. Built inline in DocumentCard using shadcn Progress bar per the risk mitigation strategy in the story.
+- **Decision:** Per dev notes recommendation, `getReadStats` was extended with `totalWithAccess` field to avoid N+1 `getUsersWithAccessCount` calls. The standalone `getUsersWithAccessCount` query still exists for individual document use cases.
+
 ### File List
+
+- `packages/backend/convex/table/documentReads.ts` — Modified (added `by_teamId` index)
+- `packages/backend/convex/documents/mutations.ts` — Modified (added `trackRead` mutation)
+- `packages/backend/convex/documents/queries.ts` — Modified (added `getReadStats`, `getUsersWithAccessCount`, `getReadersDetail` queries + `_getUsersWithAccess` helper)
+- `apps/admin/src/components/documents/DocumentDetail.tsx` — Modified (wired `trackRead` to open/download/video handlers)
+- `apps/admin/src/components/documents/ReadTrackerDetail.tsx` — **Created** (reader detail popover)
+- `apps/admin/src/components/documents/DocumentCard.tsx` — Modified (added read tracking indicator with progress bar + popover)
+- `apps/admin/src/app/(app)/documents/page.tsx` — Modified (added `getReadStats` query, passes data to DocumentCard)
+- `packages/backend/convex/documents/__tests__/readTracking.test.ts` — **Created** (18 tests)
+- `_bmad-output/implementation-artifacts/4-4-read-tracking.md` — Updated (tasks marked complete, dev record filled)

@@ -60,8 +60,23 @@ type AdminData = {
   name?: string;
   email?: string;
   image?: string;
-  role?: "user" | "admin";
+  role?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
   emailVerificationTime?: number;
+  // Include all optional fields from users table to satisfy ColumnDef type checking
+  teamId?: Id<"teams">;
+  status?: "active" | "invited" | "deactivated";
+  bio?: string;
+  birthDate?: string;
+  hasCompletedOnboarding?: boolean;
+  fullName?: string;
+  avatarUrl?: string;
+  phone?: string;
+  phoneVerificationTime?: number;
+  isAnonymous?: boolean;
+  banned?: boolean;
+  banReason?: string;
+  banExpires?: number;
+  calendarFeedToken?: string;
 };
 
 function getInitials(name: string | undefined): string {

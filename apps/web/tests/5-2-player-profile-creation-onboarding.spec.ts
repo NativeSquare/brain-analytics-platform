@@ -61,41 +61,37 @@ test("add player form: renders all sections, fields, and action buttons (AC #2, 
   const url = page.url();
   if (url.includes("login") || url.includes("sign-in")) return;
 
-  // --- "Add Player" heading (AC #2) ---
+  // --- "Add Player" heading (AC #2) — this is an actual <h1> ---
   const mainHeading = page.getByRole("heading", { name: /Add Player/i });
   await expect(mainHeading).toBeVisible({ timeout: 8000 });
 
+  // Section titles use CardTitle which renders <div data-slot="card-title">,
+  // NOT heading elements, so we use a data-slot locator instead of getByRole.
+  const sectionTitle = (name: RegExp) =>
+    page.locator('[data-slot="card-title"]').filter({ hasText: name });
+
   // --- Basic Info section with first/last name (AC #2) ---
-  const basicInfo = page.getByRole("heading", { name: /Basic Info/i });
-  await expect(basicInfo).toBeVisible({ timeout: 5000 });
+  await expect(sectionTitle(/Basic Info/)).toBeVisible({ timeout: 5000 });
   await expect(page.locator("#firstName")).toBeVisible();
   await expect(page.locator("#lastName")).toBeVisible();
 
   // --- Football Details section with position (AC #2) ---
-  const footballDetails = page.getByRole("heading", {
-    name: /Football Details/i,
-  });
-  await expect(footballDetails).toBeVisible({ timeout: 5000 });
+  await expect(sectionTitle(/Football Details/)).toBeVisible({ timeout: 5000 });
   const positionLabel = page.getByText("Position").first();
   await expect(positionLabel).toBeVisible();
 
   // --- Physical section with height/weight (AC #2) ---
-  const physical = page.getByRole("heading", { name: /Physical/i });
-  await expect(physical).toBeVisible({ timeout: 5000 });
+  await expect(sectionTitle(/Physical/)).toBeVisible({ timeout: 5000 });
   await expect(page.locator("#heightCm")).toBeVisible();
   await expect(page.locator("#weightKg")).toBeVisible();
 
   // --- Contact section with email/phone (AC #2) ---
-  const contact = page.getByRole("heading", { name: /^Contact$/i });
-  await expect(contact).toBeVisible({ timeout: 5000 });
+  await expect(sectionTitle(/^Contact$/)).toBeVisible({ timeout: 5000 });
   await expect(page.locator("#personalEmail")).toBeVisible();
   await expect(page.locator("#phone")).toBeVisible();
 
   // --- Emergency Contact section (AC #2) ---
-  const emergencyContact = page.getByRole("heading", {
-    name: /Emergency Contact/i,
-  });
-  await expect(emergencyContact).toBeVisible({ timeout: 5000 });
+  await expect(sectionTitle(/Emergency Contact/)).toBeVisible({ timeout: 5000 });
   await expect(page.locator("#emergencyContactName")).toBeVisible();
 
   // --- Cancel and Create Player buttons (AC #2 form footer) ---
@@ -112,10 +108,11 @@ test("add player form: renders all sections, fields, and action buttons (AC #2, 
 test("accept-invite with invalid/missing player token shows error UI (AC #11)", async ({
   page,
 }) => {
-  // Navigate with invalid token
-  await page.goto("/accept-invite?token=nonexistent_player_token&type=player");
+  // Test 1: Missing token entirely — the AcceptInviteForm component
+  // short-circuits before any useQuery calls, so this works without a backend.
+  await page.goto("/accept-invite");
 
-  // AC #11: invalid token displays "Invalid Invitation" heading
+  // AC #11: missing token displays "Invalid Invitation" heading
   const heading = page.getByRole("heading", {
     name: /Invalid Invitation/i,
   });
@@ -126,13 +123,18 @@ test("accept-invite with invalid/missing player token shows error UI (AC #11)", 
   await expect(goToLoginBtn).toBeVisible();
   await expect(goToLoginBtn).toBeEnabled();
 
-  // Now test missing token — navigate again
+  // Test 2: Missing token with type=player — also short-circuits before useQuery
   await page.goto("/accept-invite?type=player");
 
   const heading2 = page.getByRole("heading", {
     name: /Invalid Invitation/i,
   });
   await expect(heading2).toBeVisible({ timeout: 12000 });
+
+  // Verify the "Go to Login" button is present on this path too
+  const goToLoginBtn2 = page.getByRole("button", { name: /Go to Login/i });
+  await expect(goToLoginBtn2).toBeVisible();
+  await expect(goToLoginBtn2).toBeEnabled();
 });
 
 // ---------------------------------------------------------------------------

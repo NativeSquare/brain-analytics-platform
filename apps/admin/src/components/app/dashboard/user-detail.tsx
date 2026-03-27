@@ -48,7 +48,7 @@ import { Separator } from "@/components/ui/separator";
 const formSchema = z.object({
   name: z.string().optional(),
   bio: z.string().optional(),
-  role: z.enum(["admin", "coach", "analyst", "physio", "player", "staff"]),
+  role: z.enum(["user", "admin"]),
 });
 
 interface UserDetailProps {
@@ -78,7 +78,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
     defaultValues: {
       name: "",
       bio: "",
-      role: "staff",
+      role: "user",
     },
   });
 
@@ -88,7 +88,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
       form.reset({
         name: user.name ?? "",
         bio: user.bio ?? "",
-        role: user.role ?? "staff",
+        role: user.role ?? "user",
       });
     }
   }, [user, form]);
@@ -232,7 +232,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
             ) : (
               <IconUser className="mr-1 h-3 w-3" />
             )}
-            {user.role || "staff"}
+            {user.role || "user"}
           </Badge>
         </div>
       </div>
@@ -316,12 +316,8 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="coach">Coach</SelectItem>
-                        <SelectItem value="analyst">Analyst</SelectItem>
-                        <SelectItem value="physio">Physio / Medical</SelectItem>
-                        <SelectItem value="player">Player</SelectItem>
-                        <SelectItem value="staff">Staff</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -14,7 +14,7 @@ export default function UsersPage() {
         </div>
       </div>
       <div className="px-4 lg:px-6">
-        <UserTable basePath="/users" />
+        <UserTable basePath="/users" roleFilter="user" />
       </div>
     </div>
   );

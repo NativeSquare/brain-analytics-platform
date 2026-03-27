@@ -79,23 +79,10 @@ type UserData = {
   name?: string;
   email?: string;
   image?: string;
-  role?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
+  role?: "user" | "admin";
   emailVerificationTime?: number;
   banned?: boolean;
   banExpires?: number;
-  // Include all optional fields from users table to satisfy ColumnDef type checking
-  teamId?: Id<"teams">;
-  status?: "active" | "invited" | "deactivated";
-  bio?: string;
-  birthDate?: string;
-  hasCompletedOnboarding?: boolean;
-  fullName?: string;
-  avatarUrl?: string;
-  phone?: string;
-  phoneVerificationTime?: number;
-  isAnonymous?: boolean;
-  banReason?: string;
-  calendarFeedToken?: string;
 };
 
 function getInitials(name: string | undefined): string {
@@ -144,7 +131,7 @@ interface UserTableProps {
   /** Base path for user detail links (e.g. "/users" -> "/users/{id}"). Defaults to "/team" */
   basePath?: string;
   /** Filter users by role. If set, only users with this role are shown */
-  roleFilter?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
+  roleFilter?: "user" | "admin";
 }
 
 export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
@@ -157,7 +144,7 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
   } = usePaginatedQuery(api.table.admin.listUsers, {}, { initialNumItems: 50 });
 
   const users = roleFilter
-    ? allUsers.filter((u) => u.role === roleFilter)
+    ? allUsers.filter((u) => (u.role ?? "user") === roleFilter)
     : allUsers;
 
   const deleteUser = useMutation(api.table.admin.deleteUser);
@@ -185,8 +172,8 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
     }
   };
 
-  const handleToggleRole = async (userId: Id<"users">, currentRole: "admin" | "coach" | "analyst" | "physio" | "player" | "staff" | undefined) => {
-    const newRole = currentRole === "admin" ? "staff" : "admin";
+  const handleToggleRole = async (userId: Id<"users">, currentRole: "user" | "admin" | undefined) => {
+    const newRole = currentRole === "admin" ? "user" : "admin";
     try {
       await updateUser({ userId, updates: { role: newRole } });
       toast.success(`User role updated to ${newRole}`);
@@ -236,7 +223,7 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
         header: "Role",
         cell: ({ row }) => (
           <span className="text-muted-foreground">
-            {row.original.role ? row.original.role.charAt(0).toUpperCase() + row.original.role.slice(1) : "Staff"}
+            {row.original.role === "admin" ? "Administrator" : "User"}
           </span>
         ),
       },

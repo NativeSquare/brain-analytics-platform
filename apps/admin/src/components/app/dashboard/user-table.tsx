@@ -73,17 +73,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
 
-type UserData = {
-  _id: Id<"users">;
-  _creationTime: number;
-  name?: string;
-  email?: string;
-  image?: string;
-  role?: "user" | "admin";
-  emailVerificationTime?: number;
-  banned?: boolean;
-  banExpires?: number;
-};
+import { ROLE_LABELS, type UserRole } from "@packages/shared/roles";
 
 function getInitials(name: string | undefined): string {
   if (!name) return "?";
@@ -131,7 +121,7 @@ interface UserTableProps {
   /** Base path for user detail links (e.g. "/users" -> "/users/{id}"). Defaults to "/team" */
   basePath?: string;
   /** Filter users by role. If set, only users with this role are shown */
-  roleFilter?: "user" | "admin";
+  roleFilter?: UserRole;
 }
 
 export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
@@ -143,8 +133,10 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
     isLoading,
   } = usePaginatedQuery(api.table.admin.listUsers, {}, { initialNumItems: 50 });
 
+  type UserData = (typeof allUsers)[number];
+
   const users = roleFilter
-    ? allUsers.filter((u) => (u.role ?? "user") === roleFilter)
+    ? allUsers.filter((u) => u.role === roleFilter)
     : allUsers;
 
   const deleteUser = useMutation(api.table.admin.deleteUser);
@@ -172,8 +164,8 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
     }
   };
 
-  const handleToggleRole = async (userId: Id<"users">, currentRole: "user" | "admin" | undefined) => {
-    const newRole = currentRole === "admin" ? "user" : "admin";
+  const handleToggleRole = async (userId: Id<"users">, currentRole: UserRole | undefined) => {
+    const newRole: UserRole = currentRole === "admin" ? "staff" : "admin";
     try {
       await updateUser({ userId, updates: { role: newRole } });
       toast.success(`User role updated to ${newRole}`);
@@ -223,7 +215,7 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
         header: "Role",
         cell: ({ row }) => (
           <span className="text-muted-foreground">
-            {row.original.role === "admin" ? "Administrator" : "User"}
+            {row.original.role ? ROLE_LABELS[row.original.role] : "—"}
           </span>
         ),
       },

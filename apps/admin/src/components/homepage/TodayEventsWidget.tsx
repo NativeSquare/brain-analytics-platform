@@ -46,7 +46,7 @@ export function TodayEventsWidget({ events }: TodayEventsWidgetProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <IconCalendarEvent className="size-5 text-muted-foreground" />
+          <IconCalendarEvent className="size-5 text-muted-foreground" aria-hidden="true" />
           Today&apos;s Events
         </CardTitle>
         <CardDescription>{today}</CardDescription>
@@ -74,7 +74,7 @@ export function TodayEventsWidget({ events }: TodayEventsWidgetProps) {
           </ul>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-            <IconCalendarEvent className="size-10 text-muted-foreground/40" />
+            <IconCalendarEvent className="size-10 text-muted-foreground/40" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">No events today</p>
           </div>
         )}

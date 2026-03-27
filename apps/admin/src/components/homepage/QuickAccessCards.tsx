@@ -55,9 +55,9 @@ export function QuickAccessCards() {
         const Icon = mod.icon;
         return (
           <Link key={mod.title} href={mod.href}>
-            <Card className="h-full transition-colors hover:border-primary/50">
+            <Card className="h-full transition-colors hover:border-primary/50 focus-within:border-primary/50">
               <CardHeader>
-                <Icon className="size-8 text-muted-foreground" />
+                <Icon className="size-8 text-muted-foreground" aria-hidden="true" />
                 <CardTitle className="text-base">{mod.title}</CardTitle>
                 <CardDescription>{mod.description}</CardDescription>
               </CardHeader>

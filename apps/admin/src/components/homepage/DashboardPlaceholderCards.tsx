@@ -40,7 +40,7 @@ const placeholders: PlaceholderEntry[] = [
 
 export function DashboardPlaceholderCards() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {placeholders.map((item) => {
         const Icon = item.icon;
         return (
@@ -50,7 +50,7 @@ export function DashboardPlaceholderCards() {
           >
             <CardHeader>
               <div className="flex items-start justify-between">
-                <Icon className="size-8 text-muted-foreground" />
+                <Icon className="size-8 text-muted-foreground" aria-hidden="true" />
                 <Badge variant="secondary">Coming Soon</Badge>
               </div>
               <CardTitle className="text-base">{item.title}</CardTitle>

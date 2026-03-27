@@ -3,7 +3,7 @@
 Status: dev-complete
 Story Type: frontend
 
-> **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
+> **PROJECT SCOPE:** This story targets the admin app at `apps/admin/`. All UI components, pages, layouts, and routes for this story go in `apps/admin/`.
 
 ## Story
 
@@ -223,18 +223,18 @@ apps/admin/src/
 
 ```
 Homepage page.tsx
-  → useQuery(api.table.users.currentUser)  → get user name for welcome heading
-  → <TodayEventsWidget />                  → no events prop → renders empty state
-  → <NextMatchWidget />                    → no match prop → renders placeholder
-  → <QuickAccessCards />                   → static data → renders navigation cards
-  → <DashboardPlaceholderCards />          → static data → renders placeholders
+  → useQuery(api.table.admin.currentAdmin)  → get user name for welcome heading
+  → <TodayEventsWidget />                   → no events prop → renders empty state
+  → <NextMatchWidget />                     → no match prop → renders placeholder
+  → <QuickAccessCards />                    → static data → renders navigation cards
+  → <DashboardPlaceholderCards />           → static data → renders placeholders
 ```
 
 ### Data Flow (Future — After Epic 3)
 
 ```
 Homepage page.tsx
-  → useQuery(api.table.users.currentUser)            → user name
+  → useQuery(api.table.admin.currentAdmin)            → user name
   → useQuery(api.calendar.queries.getTodayEvents)    → CalendarEventSummary[]
   → useQuery(api.calendar.queries.getNextMatch)      → NextMatchData | null
   → <TodayEventsWidget events={todayEvents} />       → renders event list

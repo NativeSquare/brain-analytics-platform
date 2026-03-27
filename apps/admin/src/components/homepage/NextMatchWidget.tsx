@@ -34,7 +34,7 @@ export function NextMatchWidget({ match }: NextMatchWidgetProps) {
     <Card className="border-l-4 border-l-primary">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <IconTrophy className="size-5 text-muted-foreground" />
+          <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
           Next Match
         </CardTitle>
       </CardHeader>
@@ -43,12 +43,12 @@ export function NextMatchWidget({ match }: NextMatchWidgetProps) {
           <div className="flex flex-col gap-2">
             <p className="text-base font-semibold">{match.name}</p>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <IconCalendarEvent className="size-4" />
+              <IconCalendarEvent className="size-4" aria-hidden="true" />
               <span>{format(new Date(match.startsAt), "EEEE, d MMMM yyyy 'at' HH:mm")}</span>
             </div>
             {match.location && (
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <IconMapPin className="size-4" />
+                <IconMapPin className="size-4" aria-hidden="true" />
                 <span>{match.location}</span>
               </div>
             )}
@@ -60,7 +60,7 @@ export function NextMatchWidget({ match }: NextMatchWidgetProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-            <IconCalendarEvent className="size-10 text-muted-foreground/40" />
+            <IconCalendarEvent className="size-10 text-muted-foreground/40" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">
               No upcoming matches
             </p>

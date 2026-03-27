@@ -379,9 +379,19 @@ export const updateEvent = mutation({
       }
     }
 
-    // Notifications
+    // Notifications — if invitedUserIds was not provided, fall back to
+    // the existing individually-invited users so they are still notified.
     const finalRoles = args.invitedRoles ?? event.invitedRoles ?? [];
-    const finalUserIds = args.invitedUserIds ?? [];
+    let finalUserIds: Id<"users">[] = [];
+    if (args.invitedUserIds !== undefined) {
+      finalUserIds = args.invitedUserIds;
+    } else {
+      const existingInvites = await ctx.db
+        .query("calendarEventUsers")
+        .withIndex("by_eventId", (q) => q.eq("eventId", args.eventId))
+        .collect();
+      finalUserIds = existingInvites.map((inv) => inv.userId);
+    }
     const notifyUserIds = await collectInvitedUserIds(
       ctx,
       teamId,
@@ -499,9 +509,27 @@ export const deleteEventSeries = mutation({
       .withIndex("by_seriesId", (q) => q.eq("seriesId", args.seriesId))
       .collect();
 
-    // Collect all invited user IDs across all occurrences for notification
+    // Collect all invited user IDs across all occurrences for notification.
+    // All events in a series share the same invitedRoles, so we only need to
+    // query role-based users once (from the first event) to avoid N+1 queries.
     const allInvitedUserIdSet = new Set<string>();
     let firstName = "";
+
+    // Collect role-based users once from the first event's roles
+    const firstEventRoles = events[0]?.invitedRoles;
+    if (firstEventRoles) {
+      for (const role of firstEventRoles) {
+        const usersWithRole = await ctx.db
+          .query("users")
+          .withIndex("by_teamId_role", (q: any) =>
+            q.eq("teamId", teamId).eq("role", role),
+          )
+          .collect();
+        for (const u of usersWithRole) {
+          allInvitedUserIdSet.add(u._id as string);
+        }
+      }
+    }
 
     for (const event of events) {
       if (!firstName) firstName = event.name;
@@ -514,21 +542,6 @@ export const deleteEventSeries = mutation({
       for (const inv of invites) {
         allInvitedUserIdSet.add(inv.userId as string);
         await ctx.db.delete(inv._id);
-      }
-
-      // Collect role-based users
-      if (event.invitedRoles) {
-        for (const role of event.invitedRoles) {
-          const usersWithRole = await ctx.db
-            .query("users")
-            .withIndex("by_teamId_role", (q: any) =>
-              q.eq("teamId", teamId).eq("role", role),
-            )
-            .collect();
-          for (const u of usersWithRole) {
-            allInvitedUserIdSet.add(u._id as string);
-          }
-        }
       }
 
       // Delete the event

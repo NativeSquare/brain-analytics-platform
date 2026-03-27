@@ -324,7 +324,10 @@ export function EventDetail({
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={handleCancelOccurrence}
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelOccurrence();
+              }}
               disabled={isActionPending}
             >
               {isActionPending ? "Cancelling…" : "Cancel Event"}
@@ -353,7 +356,10 @@ export function EventDetail({
             </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={handleDeleteSeries}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteSeries();
+              }}
               disabled={isActionPending}
             >
               {isActionPending ? "Deleting…" : "Delete Series"}

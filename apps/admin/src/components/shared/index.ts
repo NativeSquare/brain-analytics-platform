@@ -20,7 +20,3 @@ export type {
 } from "./FolderBreadcrumb";
 
 export { NotificationCenter } from "./NotificationCenter";
-export type {
-  NotificationItem,
-  NotificationCenterProps,
-} from "./NotificationCenter";

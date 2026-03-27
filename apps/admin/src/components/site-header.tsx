@@ -3,9 +3,8 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { IconBell } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { NotificationCenter } from "@/components/shared/NotificationCenter"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   Breadcrumb,
@@ -96,9 +95,7 @@ export function SiteHeader() {
 
         {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Notifications">
-            <IconBell className="h-4 w-4" />
-          </Button>
+          <NotificationCenter />
         </div>
       </div>
     </header>

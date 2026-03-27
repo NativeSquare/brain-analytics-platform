@@ -265,7 +265,7 @@ describe("createEvent", () => {
     const notifications = await t.run(async (ctx) =>
       ctx.db
         .query("notifications")
-        .withIndex("by_userId", (q) => q.eq("userId", playerId))
+        .withIndex("by_userId_teamId", (q) => q.eq("userId", playerId))
         .collect(),
     );
 
@@ -304,7 +304,7 @@ describe("createEvent", () => {
     const notifications = await t.run(async (ctx) =>
       ctx.db
         .query("notifications")
-        .withIndex("by_userId", (q) => q.eq("userId", coachId))
+        .withIndex("by_userId_teamId", (q) => q.eq("userId", coachId))
         .collect(),
     );
 

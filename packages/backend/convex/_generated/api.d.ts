@@ -22,6 +22,8 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_auth_ResendOTP from "../lib/auth/ResendOTP.js";
 import type * as lib_auth_ResendOTPPasswordReset from "../lib/auth/ResendOTPPasswordReset.js";
 import type * as lib_notifications from "../lib/notifications.js";
+import type * as notifications_mutations from "../notifications/mutations.js";
+import type * as notifications_queries from "../notifications/queries.js";
 import type * as migrations from "../migrations.js";
 import type * as seed from "../seed.js";
 import type * as storage from "../storage.js";
@@ -60,6 +62,8 @@ declare const fullApi: ApiFromModules<{
   "lib/auth/ResendOTP": typeof lib_auth_ResendOTP;
   "lib/auth/ResendOTPPasswordReset": typeof lib_auth_ResendOTPPasswordReset;
   "lib/notifications": typeof lib_notifications;
+  "notifications/mutations": typeof notifications_mutations;
+  "notifications/queries": typeof notifications_queries;
   migrations: typeof migrations;
   seed: typeof seed;
   storage: typeof storage;

@@ -11,5 +11,5 @@ export const notifications = defineTable({
   createdAt: v.number(),
   relatedEntityId: v.optional(v.string()),
 })
-  .index("by_userId_read", ["userId", "read"])
-  .index("by_userId", ["userId"]);
+  .index("by_userId_teamId", ["userId", "teamId"])
+  .index("by_userId_read", ["userId", "read"]);

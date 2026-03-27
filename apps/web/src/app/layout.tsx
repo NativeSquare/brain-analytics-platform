@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Outfit, Instrument_Sans } from "next/font/google";
-import "./globals.css";
+import "./globals.css"; // test
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import { ThemeProvider } from "next-themes";
 import { cn } from "@/lib/utils";
 
-const instrumentSansHeading = Instrument_Sans({subsets:['latin'],variable:'--font-heading'});
+const instrumentSansHeading = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
 
-const outfit = Outfit({subsets:['latin'],variable:'--font-sans'});
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -33,12 +36,10 @@ export default function RootLayout({
         className={cn(
           "font-sans",
           outfit.variable,
-          instrumentSansHeading.variable
+          instrumentSansHeading.variable,
         )}
       >
-        <body
-          className={`${geistMono.variable} antialiased`}
-        >
+        <body className={`${geistMono.variable} antialiased`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

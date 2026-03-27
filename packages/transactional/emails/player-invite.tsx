@@ -56,7 +56,7 @@ export const PlayerInviteEmail = ({
           </Text>
           <Hr />
           <Text className="text-[#51525C] text-sm my-2">
-            © 2025 {APP_NAME}, {APP_ADDRESS}
+            © {new Date().getFullYear()} {APP_NAME}, {APP_ADDRESS}
           </Text>
         </Container>
       </Body>

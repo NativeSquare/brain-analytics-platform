@@ -90,7 +90,11 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
       });
       const { storageId } = await result.json();
       form.setValue("photo", storageId);
-      setPhotoPreview(URL.createObjectURL(file));
+      // Revoke previous object URL to prevent memory leak
+      setPhotoPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
     } catch {
       toast.error("Failed to upload photo");
     } finally {
@@ -98,10 +102,22 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
     }
   };
 
+  // Keep a ref to the current preview URL for cleanup on unmount
+  const photoPreviewRef = React.useRef(photoPreview);
+  photoPreviewRef.current = photoPreview;
+
   const removePhoto = () => {
     form.setValue("photo", undefined);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoPreview(null);
   };
+
+  // Revoke object URL on unmount to prevent memory leak
+  React.useEffect(() => {
+    return () => {
+      if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
+    };
+  }, []);
 
   const onSubmit = async (data: PlayerFormData) => {
     setIsSubmitting(true);

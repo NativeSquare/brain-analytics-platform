@@ -51,20 +51,39 @@ export const getPlayers = query({
       return a.squadNumber - b.squadNumber;
     });
 
-    // Resolve photo URLs (AC #15)
+    // Resolve photo URLs (AC #15) and invite status (AC #12)
     const results = await Promise.all(
-      players.map(async (player) => ({
-        _id: player._id,
-        firstName: player.firstName,
-        lastName: player.lastName,
-        photoUrl: player.photo
+      players.map(async (player) => {
+        // Resolve photo URL
+        const photoUrl = player.photo
           ? await ctx.storage.getUrl(player.photo as Parameters<typeof ctx.storage.getUrl>[0])
-          : null,
-        position: player.position,
-        squadNumber: player.squadNumber,
-        status: player.status,
-        nationality: player.nationality,
-      }))
+          : null;
+
+        // Resolve invite status for players without a linked account (AC #12)
+        let inviteStatus: string | null = null;
+        if (!player.userId) {
+          const invites = await ctx.db
+            .query("playerInvites")
+            .withIndex("by_playerId", (q) => q.eq("playerId", player._id))
+            .collect();
+          if (invites.length > 0) {
+            const sorted = invites.sort((a, b) => b.createdAt - a.createdAt);
+            inviteStatus = sorted[0].status;
+          }
+        }
+
+        return {
+          _id: player._id,
+          firstName: player.firstName,
+          lastName: player.lastName,
+          photoUrl,
+          position: player.position,
+          squadNumber: player.squadNumber,
+          status: player.status,
+          nationality: player.nationality,
+          inviteStatus,
+        };
+      })
     );
 
     return results;

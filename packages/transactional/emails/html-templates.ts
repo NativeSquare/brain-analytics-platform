@@ -145,7 +145,7 @@ export function renderPlayerInviteHtml(
     <p style="font-size:14px;margin:8px 0;">Thanks,</p>
     <p style="font-size:14px;margin:8px 0;">The ${escapeHtml(appName)} Team</p>
     <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
-    <p style="font-size:14px;margin:8px 0;color:#51525C;">© 2025 ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
+    <p style="font-size:14px;margin:8px 0;color:#51525C;">© ${new Date().getFullYear()} ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
   </div>
 </body>
 </html>`;

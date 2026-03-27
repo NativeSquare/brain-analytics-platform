@@ -94,7 +94,7 @@ function PlayersPageContent() {
       {players === undefined ? (
         <PlayerListSkeleton />
       ) : players.length === 0 ? (
-        <EmptyState />
+        <EmptyState isAdmin={isAdmin} />
       ) : (
         <PlayerTable players={players} onPlayerClick={handlePlayerClick} />
       )}
@@ -119,20 +119,24 @@ function PlayerListSkeleton() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-16">
       <IconShirtSport className="text-muted-foreground mb-4 size-12" />
       <h2 className="text-lg font-medium">No players yet</h2>
       <p className="text-muted-foreground mt-1 text-sm">
-        Add your first player to get started.
+        {isAdmin
+          ? "Add your first player to get started."
+          : "No players have been added to this team yet."}
       </p>
-      <Button className="mt-4" asChild>
-        <Link href="/players/new">
-          <IconUserPlus className="mr-1.5 size-4" />
-          Add your first player
-        </Link>
-      </Button>
+      {isAdmin && (
+        <Button className="mt-4" asChild>
+          <Link href="/players/new">
+            <IconUserPlus className="mr-1.5 size-4" />
+            Add your first player
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }

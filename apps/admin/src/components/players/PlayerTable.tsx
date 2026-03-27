@@ -4,6 +4,7 @@ import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import type { PlayerStatus } from "@packages/shared/players";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ export interface PlayerSummary {
   squadNumber?: number;
   status: string;
   nationality?: string;
+  inviteStatus?: string | null;
 }
 
 interface PlayerTableProps {
@@ -68,7 +70,14 @@ export function PlayerTable({ players, onPlayerClick }: PlayerTableProps) {
               </Avatar>
             </TableCell>
             <TableCell className="font-medium">
-              {player.firstName} {player.lastName}
+              <span className="inline-flex items-center gap-1.5">
+                {player.firstName} {player.lastName}
+                {player.inviteStatus === "pending" && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    Invited
+                  </Badge>
+                )}
+              </span>
             </TableCell>
             <TableCell>{player.position}</TableCell>
             <TableCell className="text-center">

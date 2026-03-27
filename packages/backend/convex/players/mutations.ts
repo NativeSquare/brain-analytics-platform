@@ -234,6 +234,15 @@ export const acceptPlayerInvite = mutation({
       });
     }
 
+    // Verify the authenticated user's email matches the invite email
+    // to prevent token hijacking by a different signed-in user
+    if (user.email !== invite.email) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Your email does not match the invitation email.",
+      });
+    }
+
     // Get the player to obtain teamId
     const player = await ctx.db.get(invite.playerId);
     if (!player) {

@@ -13,6 +13,12 @@ export default defineConfig({
     headless: true,
     screenshot: "on",
   },
+  webServer: {
+    command: "npx next dev -p 4500",
+    url: "http://localhost:4500",
+    reuseExistingServer: true,
+    timeout: 120_000,
+  },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],

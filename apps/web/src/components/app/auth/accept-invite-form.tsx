@@ -43,6 +43,30 @@ export function AcceptInviteForm({
   const token = searchParams.get("token") ?? "";
   const inviteType = searchParams.get("type"); // "player" or null (admin/team)
 
+  // Handle missing token immediately — don't spin forever
+  if (!token) {
+    return (
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card className="overflow-hidden p-0">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <h1 className="text-2xl font-bold text-destructive">
+                Invalid Invitation
+              </h1>
+              <p className="text-muted-foreground">
+                This invitation link is invalid. No invitation token was
+                provided.
+              </p>
+              <Button variant="outline" onClick={() => router.push("/login")}>
+                Go to Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // If type=player, render the player-specific accept flow
   if (inviteType === "player") {
     return <AcceptPlayerInviteForm token={token} className={className} {...props} />;

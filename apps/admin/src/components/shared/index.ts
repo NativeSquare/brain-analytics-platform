@@ -1,5 +1,4 @@
 // Shared reusable components - barrel export
-// All components are pure presentational (no backend dependencies)
 
 export {
   EventTypeBadge,

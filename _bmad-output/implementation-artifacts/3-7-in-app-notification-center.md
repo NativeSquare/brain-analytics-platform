@@ -305,7 +305,7 @@ Claude Opus 4.6 (via Claude Code)
 **New files:**
 - `packages/backend/convex/notifications/queries.ts` — getUnreadCount, getUserNotifications queries
 - `packages/backend/convex/notifications/mutations.ts` — markRead, markAllRead mutations
-- `packages/backend/convex/notifications/__tests__/queries.test.ts` — 8 query tests
+- `packages/backend/convex/notifications/__tests__/queries.test.ts` — 7 query tests
 - `packages/backend/convex/notifications/__tests__/mutations.test.ts` — 7 mutation + utility tests
 
 **Modified files:**

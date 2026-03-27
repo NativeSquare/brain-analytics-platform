@@ -1,13 +1,15 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconBell } from "@tabler/icons-react";
-import { Check, Inbox } from "lucide-react";
+import { Check, Inbox, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useQuery, useMutation } from "convex/react";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
 
+import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { api } from "@packages/backend/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,10 +23,12 @@ import {
 
 function NotificationCenter() {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const unreadCount = useQuery(api.notifications.queries.getUnreadCount);
   const notifications = useQuery(
     api.notifications.queries.getUserNotifications,
+    isOpen ? {} : "skip",
   );
 
   const markRead = useMutation(api.notifications.mutations.markRead);
@@ -32,26 +36,27 @@ function NotificationCenter() {
     api.notifications.mutations.markAllRead,
   );
 
-  const handleNotificationClick = async (
-    notificationId: string,
-    relatedEntityId?: string,
-  ) => {
-    try {
-      await markRead({
-        notificationId: notificationId as any,
-      });
-    } catch (error) {
-      if (error instanceof ConvexError) {
-        toast.error((error.data as { message: string }).message);
+  const handleNotificationClick = useCallback(
+    async (
+      notificationId: Id<"notifications">,
+      relatedEntityId?: string,
+    ) => {
+      try {
+        await markRead({ notificationId });
+      } catch (error) {
+        if (error instanceof ConvexError) {
+          toast.error((error.data as { message: string }).message);
+        }
       }
-    }
 
-    if (relatedEntityId) {
-      router.push("/calendar");
-    }
-  };
+      if (relatedEntityId) {
+        router.push("/calendar");
+      }
+    },
+    [markRead, router],
+  );
 
-  const handleMarkAllRead = async () => {
+  const handleMarkAllRead = useCallback(async () => {
     try {
       await markAllReadMutation();
     } catch (error) {
@@ -59,7 +64,7 @@ function NotificationCenter() {
         toast.error((error.data as { message: string }).message);
       }
     }
-  };
+  }, [markAllReadMutation]);
 
   const displayCount =
     unreadCount === undefined
@@ -69,7 +74,7 @@ function NotificationCenter() {
         : unreadCount;
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -107,7 +112,11 @@ function NotificationCenter() {
 
         {/* Notification list */}
         <ScrollArea className="max-h-80">
-          {!notifications || notifications.length === 0 ? (
+          {notifications === undefined ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="size-5 animate-spin" />
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
               <Inbox className="size-8" />
               <p className="text-sm">No notifications yet</p>

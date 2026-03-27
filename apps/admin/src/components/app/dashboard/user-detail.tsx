@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
-import { USER_ROLES, ROLE_LABELS, type UserRole } from "@packages/shared/roles";
 import {
   IconArrowLeft,
   IconUserShield,
@@ -49,7 +48,7 @@ import { Separator } from "@/components/ui/separator";
 const formSchema = z.object({
   name: z.string().optional(),
   bio: z.string().optional(),
-  role: z.enum(USER_ROLES),
+  role: z.enum(["user", "admin"]),
 });
 
 interface UserDetailProps {
@@ -79,7 +78,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
     defaultValues: {
       name: "",
       bio: "",
-      role: "staff",
+      role: "user",
     },
   });
 
@@ -89,7 +88,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
       form.reset({
         name: user.name ?? "",
         bio: user.bio ?? "",
-        role: user.role ?? "staff",
+        role: user.role ?? "user",
       });
     }
   }, [user, form]);
@@ -317,11 +316,8 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {USER_ROLES.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {ROLE_LABELS[role]}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

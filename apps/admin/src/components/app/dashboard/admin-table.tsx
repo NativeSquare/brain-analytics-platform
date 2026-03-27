@@ -54,6 +54,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
 
+type AdminData = {
+  _id: Id<"users">;
+  _creationTime: number;
+  name?: string;
+  email?: string;
+  image?: string;
+  role?: "user" | "admin";
+  emailVerificationTime?: number;
+};
+
 function getInitials(name: string | undefined): string {
   if (!name) return "?";
   const parts = name.split(" ");
@@ -99,7 +109,6 @@ function formatDate(timestamp: number): string {
 export function AdminTable() {
   const router = useRouter();
   const admins = useQuery(api.table.admin.listAdmins);
-  type AdminData = NonNullable<typeof admins>[number];
   const deleteUser = useMutation(api.table.admin.deleteUser);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);

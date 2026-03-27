@@ -16,7 +16,7 @@ vi.mock("@convex-dev/auth/server", async (importOriginal) => {
 });
 
 const { default: schema } = await import("../../schema");
-const modules = import.meta.glob("../../**/*.ts");
+const modules = import.meta.glob(["../../**/*.ts", "!../../http.ts"]);
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -23,7 +23,7 @@ const { requireAuth, requireRole, requireSelf, requireMedical, requireAdmin } =
   await import("../auth");
 
 // convex-test requires the modules map for function resolution
-const modules = import.meta.glob("../../**/*.ts");
+const modules = import.meta.glob(["../../**/*.ts", "!../../http.ts"]);
 
 // ---------------------------------------------------------------------------
 // Helpers

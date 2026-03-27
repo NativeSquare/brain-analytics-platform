@@ -20,7 +20,7 @@ const { default: schema } = await import("../../schema");
 const { requireRole } = await import("../../lib/auth");
 const { getAuthUserId } = await import("@convex-dev/auth/server");
 
-const modules = import.meta.glob("../../**/*.ts");
+const modules = import.meta.glob(["../../**/*.ts", "!../../http.ts"]);
 
 // ---------------------------------------------------------------------------
 // Helpers

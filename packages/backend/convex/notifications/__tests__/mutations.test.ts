@@ -3,6 +3,13 @@ import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "../../_generated/dataModel";
 
+// Suppress convex-test false-positive warning for ctx.scheduler.runAfter
+const _w = console.warn;
+console.warn = (...a: any[]) => {
+  if (typeof a[0] === "string" && a[0].includes("should not directly call")) return;
+  _w.apply(console, a);
+};
+
 // ---------------------------------------------------------------------------
 // Mock getAuthUserId
 // ---------------------------------------------------------------------------
@@ -17,7 +24,7 @@ vi.mock("@convex-dev/auth/server", async (importOriginal) => {
 });
 
 const { default: schema } = await import("../../schema");
-const modules = import.meta.glob("../../**/*.ts");
+const modules = import.meta.glob(["../../**/*.ts", "!../../http.ts"]);
 
 // ---------------------------------------------------------------------------
 // Helpers

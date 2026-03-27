@@ -16,7 +16,7 @@ vi.mock("@convex-dev/auth/server", async (importOriginal) => {
 });
 
 const { default: schema } = await import("../../schema");
-const modules = import.meta.glob("../../**/*.ts");
+const modules = import.meta.glob(["../../**/*.ts", "!../../http.ts"]);
 
 // Import auth helpers for direct use in t.run()
 const { requireAuth, requireRole } = await import("../../lib/auth");

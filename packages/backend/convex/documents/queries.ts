@@ -404,18 +404,26 @@ async function _getUsersWithAccess(
   // Restricted: users whose role is in permittedRoles + individual grants + admins
   const roleSet = new Set(permittedRoles);
 
-  // Get individual user permissions for this target
+  // Get individual user permissions for this target.
+  // Determine whether to check document-level or folder-level permissions.
   const targetId =
     document.permittedRoles !== undefined
       ? (document._id as string)
       : (document.folderId as string);
+  const targetType: "document" | "folder" =
+    document.permittedRoles !== undefined ? "document" : "folder";
 
   const individualPerms = await ctx.db
     .query("documentUserPermissions")
     .withIndex("by_targetId", (q) => q.eq("targetId", targetId))
     .collect();
 
-  const individualUserIds = new Set(individualPerms.map((p) => p.userId as string));
+  // Defensive: filter by targetType to avoid counting stale or mismatched records
+  const individualUserIds = new Set(
+    individualPerms
+      .filter((p) => p.targetType === targetType)
+      .map((p) => p.userId as string),
+  );
 
   const usersWithAccess = activeUsers.filter((u) => {
     // Admins always have access

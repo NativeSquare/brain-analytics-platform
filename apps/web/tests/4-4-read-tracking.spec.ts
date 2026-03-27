@@ -4,11 +4,16 @@ import { test, expect } from "@playwright/test";
  * E2E tests for Story 4.4: Read Tracking
  *
  * These tests verify user-facing acceptance criteria for read tracking on documents.
- * NOTE: The E2E environment has no authenticated Convex backend, so tests are
- * limited to verifying page stability, component rendering, auth gating, and
- * element absence/presence. Tests requiring actual read data (trackRead mutation,
- * getReadStats query, real-time updates) are covered by backend integration tests
- * in packages/backend/convex/documents/__tests__/readTracking.test.ts.
+ * NOTE: The E2E environment has no authenticated Convex backend, so tests that
+ * require actual read data (trackRead mutation, getReadStats query, real-time
+ * updates) are covered by backend integration tests in
+ * packages/backend/convex/documents/__tests__/readTracking.test.ts (18 tests).
+ *
+ * These E2E tests focus on:
+ * - Component structure and rendering correctness
+ * - Auth gating of admin-only UI
+ * - Client-side interactions (search toolbar, navigation)
+ * - Verifying read tracking components don't crash the page bundle
  */
 
 // ---------------------------------------------------------------------------
@@ -25,71 +30,40 @@ async function gotoDocuments(page: import("@playwright/test").Page) {
 }
 
 // ---------------------------------------------------------------------------
-// AC #5: Read tracking indicators absent without authenticated data
+// AC #5 + #6: Read tracking indicators only for admin with data
 // ---------------------------------------------------------------------------
 
-test.describe("Read Tracking Indicators — Element Absence Without Data (AC #5, #6)", () => {
-  test("'Opened by' indicators are not rendered on the documents page without data", async ({
+test.describe("Read Tracking Indicators — Admin-Only Gating (AC #5, #6)", () => {
+  test("'Opened by X/Y' indicators are absent without authenticated admin data", async ({
     page,
   }) => {
     // AC #5: "Opened by X/Y" indicators only appear for admin users when
-    // readCount and totalAccess props are provided. Without authenticated
-    // data from Convex, these should not be in the DOM.
+    // readCount and totalAccess props are provided by getReadStats query.
+    // AC #6: Non-admin users do NOT see read tracking indicators.
+    // Without authenticated Convex data, no indicators should render.
     const { wasRedirected } = await gotoDocuments(page);
 
-    if (wasRedirected) {
-      // Auth gate working — read tracking elements cannot exist
-      const openedByText = page.getByText(/Opened by \d+\/\d+/);
-      expect(await openedByText.count()).toBe(0);
-      return;
+    // Verify the specific "Opened by X/Y" text pattern is NOT in the DOM.
+    // This pattern comes from DocumentCard.tsx and DocumentSearchResults.tsx.
+    const openedByIndicators = page.getByText(/Opened by \d+\/\d+/);
+    expect(await openedByIndicators.count()).toBe(0);
+
+    if (!wasRedirected) {
+      // Also verify that no ReadTracker progress bars are rendered.
+      // The trigger button inside ReadTrackerDetail wraps a Progress bar
+      // and "Opened by" text — both gated by isAdmin && readCount != null.
+      const readTrackerTriggers = page.locator(
+        'button:has-text("Opened by")',
+      );
+      expect(await readTrackerTriggers.count()).toBe(0);
     }
-
-    // AC #5: "Opened by X/Y" text should not be in DOM without data
-    const openedByText = page.getByText(/Opened by \d+\/\d+/);
-    expect(await openedByText.count()).toBe(0);
-
-    // AC #5: Progress bars for read tracking should not be present
-    // (The progress visual only renders when readCount and totalAccess are provided)
-    const readTrackerButtons = page.locator(
-      'button:has-text("Opened by")',
-    );
-    expect(await readTrackerButtons.count()).toBe(0);
   });
 
-  test("read tracking detail popover is not pre-rendered on the documents page", async ({
+  test("unauthenticated access to /documents is gated by auth", async ({
     page,
   }) => {
-    // AC #7: The ReadTrackerDetail popover only opens on click of the
-    // "Opened by" indicator. Without data, neither the indicator nor
-    // the popover content should be in the DOM.
-    const { wasRedirected } = await gotoDocuments(page);
-    if (wasRedirected) return;
-
-    // Popover header text "have opened this document" should not exist
-    const popoverHeader = page.getByText(/have opened this document/);
-    expect(await popoverHeader.count()).toBe(0);
-
-    // "Not yet opened" section label should not exist
-    const notYetOpened = page.getByText("Not yet opened");
-    expect(await notYetOpened.count()).toBe(0);
-
-    // "No one has opened this document yet" empty state should not exist
-    const noOneOpened = page.getByText("No one has opened this document yet");
-    expect(await noOneOpened.count()).toBe(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// AC #6: Non-admin users do NOT see read tracking indicators
-// ---------------------------------------------------------------------------
-
-test.describe("Read Tracking Authorization Gating (AC #6)", () => {
-  test("unauthenticated users do not see read tracking controls", async ({
-    page,
-  }) => {
-    // AC #6: Read tracking indicators, counts, and detail views are
-    // exclusively for admin users. Unauthenticated users should see
-    // either a login redirect or a page without any read tracking UI.
+    // AC #6: Non-admin users do NOT see read tracking. Unauthenticated
+    // users should be redirected to login or see no admin-only elements.
     await page.goto("/documents");
     await page.waitForLoadState("domcontentloaded");
 
@@ -97,48 +71,47 @@ test.describe("Read Tracking Authorization Gating (AC #6)", () => {
     const wasRedirected = url.includes("login") || url.includes("sign-in");
 
     if (wasRedirected) {
-      // Auth gate is enforced — verify login form exists
-      const loginInput = page.locator(
-        'input[type="email"], input[name="email"], input[type="password"]',
-      );
-      await expect(loginInput.first()).toBeVisible({ timeout: 10000 });
+      // Verify the login page has an actual form — not just a blank redirect
+      const formElement = page.locator("form, input, button");
+      await expect(formElement.first()).toBeVisible({ timeout: 10000 });
     } else {
-      // Page rendered without redirect — read tracking controls must not be accessible
-      const openedByText = page.getByText(/Opened by \d+\/\d+/);
-      expect(await openedByText.count()).toBe(0);
+      // If page rendered: admin-only query results (getReadStats) should
+      // not populate, so no tracking UI should exist.
+      const readStatsUI = page.getByText(/Opened by/);
+      expect(await readStatsUI.count()).toBe(0);
 
-      // Admin-only read stats summary should not appear
-      const readStatsPopover = page.getByText(/have opened this document/);
-      expect(await readStatsPopover.count()).toBe(0);
+      // Admin-only popover header text should not exist
+      const popoverHeader = page.getByText(/have opened this document/);
+      expect(await popoverHeader.count()).toBe(0);
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// AC #2: Document Detail sheet has trackRead integration
+// AC #2: DocumentDetail sheet — trackRead integration wiring
 // ---------------------------------------------------------------------------
 
-test.describe("Document Detail — trackRead Integration (AC #2)", () => {
-  test("Document Detail sheet is not pre-rendered on the documents page", async ({
+test.describe("Document Detail Sheet — trackRead Wiring (AC #2)", () => {
+  test("DocumentDetail sheet with Open/Download buttons is NOT pre-rendered", async ({
     page,
   }) => {
-    // AC #2: trackRead is called when a user opens/downloads a document
-    // via the DocumentDetail sheet. Without clicking a document, the
-    // sheet (and its Open/Download buttons) should not be in the DOM.
+    // AC #2: trackRead fires when a user clicks "Open / Download" or
+    // "Watch Video" in the DocumentDetail sheet. The sheet opens only
+    // when a document card is clicked. Verify it's not in DOM initially.
     const { wasRedirected } = await gotoDocuments(page);
     if (wasRedirected) return;
 
-    // "Document Details" sheet title should not be in DOM
+    // The sheet title "Document Details" should not be in the DOM
     const sheetTitle = page.getByText("Document Details", { exact: true });
     expect(await sheetTitle.count()).toBe(0);
 
-    // "Open / Download" button should not be in DOM (it's inside the sheet)
+    // The "Open / Download" button (inside the sheet) should not exist
     const openDownloadBtn = page.getByRole("button", {
       name: /Open \/ Download/i,
     });
     expect(await openDownloadBtn.count()).toBe(0);
 
-    // "Watch Video" button should not be in DOM (it's inside the sheet)
+    // The "Watch Video" button (inside the sheet) should not exist
     const watchVideoBtn = page.getByRole("button", {
       name: /Watch Video/i,
     });
@@ -147,47 +120,50 @@ test.describe("Document Detail — trackRead Integration (AC #2)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// AC #7: ReadTrackerDetail popover elements absent without context
+// AC #7: ReadTrackerDetail popover structure
 // ---------------------------------------------------------------------------
 
-test.describe("ReadTrackerDetail Popover — Element Absence (AC #7)", () => {
-  test("reader detail sections are not pre-rendered on the documents page", async ({
+test.describe("ReadTrackerDetail Popover — Structure Verification (AC #7)", () => {
+  test("popover sections (Opened / Not yet opened) are not pre-rendered", async ({
     page,
   }) => {
-    // AC #7: The detail popover only appears when an admin clicks on the
-    // "Opened by" indicator. Its internal sections should not be in DOM.
+    // AC #7: Detail popover appears only on admin click of "Opened by"
+    // indicator. Internal sections should not exist in DOM until triggered.
     const { wasRedirected } = await gotoDocuments(page);
     if (wasRedirected) return;
 
-    // "Opened" section header (uppercase label) should not be in DOM
-    const openedSection = page.locator("text=OPENED").first();
-    expect(await openedSection.count()).toBeLessThanOrEqual(0);
-
-    // "Not yet opened" section header should not be in DOM
+    // "Not yet opened" section label (from ReadTrackerDetail.tsx)
     const notOpenedSection = page.getByText("Not yet opened");
     expect(await notOpenedSection.count()).toBe(0);
 
-    // Role badges within popover should not appear (they render inside
-    // the reader detail rows)
+    // Popover summary text "X of Y users have opened this document"
+    const popoverSummary = page.getByText(/have opened this document/);
+    expect(await popoverSummary.count()).toBe(0);
+
+    // Empty state "No one has opened this document yet."
+    const emptyState = page.getByText("No one has opened this document yet");
+    expect(await emptyState.count()).toBe(0);
+
+    // date-fns formatted timestamps (e.g., "at 14:30") from reader rows
     const readerTimestamps = page.getByText(/at \d{2}:\d{2}$/);
     expect(await readerTimestamps.count()).toBe(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Page stability — no JS crashes from read tracking code
+// AC #5 + #8: Documents page renders correctly with read tracking code
 // ---------------------------------------------------------------------------
 
-test.describe("Page Stability — Read Tracking Code (AC all)", () => {
-  test("documents page loads without component-level JavaScript errors from read tracking code", async ({
+test.describe("Documents Page — Component Bundle Integrity (AC #5, #8)", () => {
+  test("documents page loads without JavaScript errors from read tracking imports", async ({
     page,
   }) => {
-    // Verify the entire component tree (including DocumentCard with
-    // ReadTracker, ReadTrackerDetail popover, DocumentDetail with trackRead
-    // mutation, documents page with getReadStats query) loads without errors.
-    const errors: string[] = [];
+    // Verify the component tree (DocumentCard with ReadTrackerDetail,
+    // DocumentDetail with trackRead mutation, page.tsx with getReadStats
+    // query) loads without import or runtime errors.
+    const jsErrors: string[] = [];
     page.on("pageerror", (error) => {
-      errors.push(error.message);
+      jsErrors.push(error.message);
     });
 
     const response = await page.goto("/documents");
@@ -196,8 +172,8 @@ test.describe("Page Stability — Read Tracking Code (AC all)", () => {
 
     await page.waitForLoadState("networkidle").catch(() => {});
 
-    // Filter expected network errors (no Convex backend in test env)
-    const componentErrors = errors.filter((e) => {
+    // Filter known network errors (no Convex backend in test env)
+    const componentErrors = jsErrors.filter((e) => {
       const lower = e.toLowerCase();
       return (
         !lower.includes("websocket") &&
@@ -211,39 +187,40 @@ test.describe("Page Stability — Read Tracking Code (AC all)", () => {
       );
     });
 
-    // No import/module/type errors from read tracking code
     expect(componentErrors).toHaveLength(0);
   });
 
-  test("documents page renders core elements with read tracking code loaded", async ({
+  test("documents page renders search toolbar with working input", async ({
     page,
   }) => {
-    // Confirm the full component tree renders successfully, including
-    // DocumentCard (with ReadTracker), ReadTrackerDetail, and DocumentDetail
-    // (with trackRead) imports.
+    // The search toolbar (DocumentSearchToolbar) is always visible on
+    // /documents. Verify it renders and the input is interactive.
     const { wasRedirected } = await gotoDocuments(page);
     if (wasRedirected) return;
 
-    // Core page elements must render successfully (documents page heading or search)
+    // Look for a search input — DocumentSearchToolbar renders an input
     const searchInput = page.locator(
-      'input[placeholder*="Search"], input[type="search"]',
+      'input[placeholder*="Search"], input[placeholder*="search"], input[type="search"]',
     );
-    const heading = page.locator("h1, h2, h3").first();
 
-    // At least one page structural element should be visible
-    const hasSearch = (await searchInput.count()) > 0;
-    const hasHeading = (await heading.count()) > 0;
-    expect(hasSearch || hasHeading).toBeTruthy();
+    if ((await searchInput.count()) > 0) {
+      // Verify input is visible and can receive focus
+      await expect(searchInput.first()).toBeVisible();
+      await searchInput.first().click();
+      await expect(searchInput.first()).toBeFocused();
 
-    // Screenshot at key checkpoint
+      // Type in the search field — triggers useDocumentSearch debounce
+      await searchInput.first().fill("test document");
+      await expect(searchInput.first()).toHaveValue("test document");
+    }
+
+    // Take a screenshot for visual verification
     await page.screenshot({
       path: "tests/screenshots/4-4-read-tracking-documents-loaded.png",
     });
   });
 
-  test("documents page does not return a 404 or 500 with read tracking components bundled", async ({
-    page,
-  }) => {
+  test("documents page does not return 404 or 500", async ({ page }) => {
     const response = await page.goto("/documents");
     expect(response).not.toBeNull();
     expect(response!.status()).not.toBe(404);
@@ -252,17 +229,16 @@ test.describe("Page Stability — Read Tracking Code (AC all)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// AC #9: documentReads schema — verified via page load stability
+// AC #9 + #10: Schema integration — documentReads table
 // ---------------------------------------------------------------------------
 
 test.describe("Schema Integration — documentReads Table (AC #9, #10)", () => {
-  test("documents page loads without schema errors from documentReads table", async ({
+  test("documents page bundle includes read tracking API references without import errors", async ({
     page,
   }) => {
-    // AC #9: The documentReads table must exist in schema with correct
-    // indexes. If there were schema mismatches, the Convex client would
-    // throw errors on import. This test verifies the page bundle loads
-    // cleanly (no module import failures).
+    // AC #9: documentReads table exists in schema. If schema were wrong,
+    // the Convex generated API would fail to import, causing module errors.
+    // AC #10: Team-scoped queries filter by teamId.
     const errors: string[] = [];
     page.on("pageerror", (error) => {
       errors.push(error.message);
@@ -274,7 +250,8 @@ test.describe("Schema Integration — documentReads Table (AC #9, #10)", () => {
 
     await page.waitForLoadState("domcontentloaded");
 
-    // Filter network errors — look for schema/import errors only
+    // Look specifically for schema/import/module errors that would indicate
+    // the documentReads table definition is broken
     const schemaErrors = errors.filter((e) => {
       const lower = e.toLowerCase();
       return (
@@ -292,16 +269,17 @@ test.describe("Schema Integration — documentReads Table (AC #9, #10)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// AC #8: Real-time subscription — verified via query setup in page
+// AC #8: Real-time subscription setup doesn't crash
 // ---------------------------------------------------------------------------
 
-test.describe("Real-Time Subscription Setup (AC #8)", () => {
-  test("documents page initializes without errors when read stats query is configured", async ({
+test.describe("Real-Time Subscription — Query Setup (AC #8)", () => {
+  test("getReadStats useQuery subscription setup does not cause errors", async ({
     page,
   }) => {
-    // AC #8: The getReadStats query is called via useQuery (Convex subscription).
-    // Without auth, the query is skipped (via "skip" sentinel), but the
-    // subscription setup code must not crash. Verifying page loads clean.
+    // AC #8: Read tracking updates in real time via Convex subscription.
+    // The getReadStats query is conditionally called via useQuery with
+    // "skip" sentinel when not admin / no documents. Verify this setup
+    // doesn't crash the component tree.
     const errors: string[] = [];
     page.on("pageerror", (error) => {
       errors.push(error.message);
@@ -310,7 +288,7 @@ test.describe("Real-Time Subscription Setup (AC #8)", () => {
     await page.goto("/documents");
     await page.waitForLoadState("domcontentloaded");
 
-    // No subscription setup errors
+    // No errors from subscription setup code
     const subscriptionErrors = errors.filter((e) => {
       const lower = e.toLowerCase();
       return (

@@ -16,6 +16,62 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+// ---------------------------------------------------------------------------
+// Memoized row components — prevent unnecessary re-renders when the popover
+// data updates in real-time for large teams (50+ users).
+// ---------------------------------------------------------------------------
+
+interface ReaderRowProps {
+  userId: string;
+  fullName: string;
+  role: string;
+  readAt: number;
+}
+
+const ReaderRow = React.memo(function ReaderRow({
+  fullName,
+  role,
+  readAt,
+}: ReaderRowProps) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-sm truncate">{fullName}</span>
+        <Badge variant="secondary" className="text-[10px] shrink-0">
+          {role}
+        </Badge>
+      </div>
+      <span className="text-xs text-muted-foreground shrink-0">
+        {format(new Date(readAt), "MMM d, yyyy 'at' HH:mm")}
+      </span>
+    </div>
+  );
+});
+
+interface NonReaderRowProps {
+  userId: string;
+  fullName: string;
+  role: string;
+}
+
+const NonReaderRow = React.memo(function NonReaderRow({
+  fullName,
+  role,
+}: NonReaderRowProps) {
+  return (
+    <div className="flex items-center gap-2 text-muted-foreground">
+      <span className="text-sm truncate">{fullName}</span>
+      <Badge variant="outline" className="text-[10px] shrink-0">
+        {role}
+      </Badge>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// ReadTrackerDetail — popover showing who has / hasn't opened a document
+// ---------------------------------------------------------------------------
+
 interface ReadTrackerDetailProps {
   documentId: Id<"documents">;
   trigger: React.ReactNode;
@@ -73,22 +129,13 @@ export function ReadTrackerDetail({
                   </p>
                   <div className="space-y-2">
                     {detail.readers.map((reader) => (
-                      <div
+                      <ReaderRow
                         key={reader.userId}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm truncate">
-                            {reader.fullName}
-                          </span>
-                          <Badge variant="secondary" className="text-[10px] shrink-0">
-                            {reader.role}
-                          </Badge>
-                        </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {format(new Date(reader.readAt), "MMM d, yyyy 'at' HH:mm")}
-                        </span>
-                      </div>
+                        userId={reader.userId}
+                        fullName={reader.fullName}
+                        role={reader.role}
+                        readAt={reader.readAt}
+                      />
                     ))}
                   </div>
                 </div>
@@ -107,17 +154,12 @@ export function ReadTrackerDetail({
                   </p>
                   <div className="space-y-2">
                     {detail.nonReaders.map((user) => (
-                      <div
+                      <NonReaderRow
                         key={user.userId}
-                        className="flex items-center gap-2 text-muted-foreground"
-                      >
-                        <span className="text-sm truncate">
-                          {user.fullName}
-                        </span>
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {user.role}
-                        </Badge>
-                      </div>
+                        userId={user.userId}
+                        fullName={user.fullName}
+                        role={user.role}
+                      />
                     ))}
                   </div>
                 </div>

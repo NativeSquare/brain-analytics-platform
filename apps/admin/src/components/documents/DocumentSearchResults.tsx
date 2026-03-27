@@ -76,7 +76,104 @@ function ResultCardSkeleton() {
   );
 }
 
-export function DocumentSearchResults({
+// ---------------------------------------------------------------------------
+// ResultCard — memoized to prevent unnecessary re-renders in the list
+// Follows the same React.memo pattern as FolderCard and DocumentCard.
+// ---------------------------------------------------------------------------
+
+interface ResultCardProps {
+  result: DocumentSearchResult;
+  searchTerm: string;
+  isAdmin: boolean;
+  stats?: { uniqueReaders: number; totalWithAccess: number };
+  onResultClick: (result: DocumentSearchResult) => void;
+}
+
+const ResultCard = React.memo(function ResultCard({
+  result,
+  searchTerm,
+  isAdmin,
+  stats,
+  onResultClick,
+}: ResultCardProps) {
+  const Icon = getDocumentIcon(result);
+  const progressPct =
+    stats && stats.totalWithAccess > 0
+      ? Math.round((stats.uniqueReaders / stats.totalWithAccess) * 100)
+      : 0;
+
+  const handleClick = React.useCallback(() => {
+    onResultClick(result);
+  }, [onResultClick, result]);
+
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onResultClick(result);
+      }
+    },
+    [onResultClick, result],
+  );
+
+  const handleStopPropagation = React.useCallback(
+    (e: React.MouseEvent) => e.stopPropagation(),
+    [],
+  );
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-accent/50 cursor-pointer group"
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+    >
+      <Icon className="size-4 shrink-0 text-muted-foreground" />
+
+      <div className="flex-1 min-w-0">
+        <div className="truncate text-sm">
+          <HighlightedName name={result.name} searchTerm={searchTerm} />
+        </div>
+        {result.folderPath && (
+          <div className="truncate text-xs text-muted-foreground">
+            {result.folderPath}
+          </div>
+        )}
+      </div>
+
+      {/* Read tracking indicator — admin only */}
+      {isAdmin && stats && (
+        <ReadTrackerDetail
+          documentId={result._id as Id<"documents">}
+          trigger={
+            <button
+              type="button"
+              className="flex items-center gap-1.5 shrink-0 cursor-pointer rounded px-1.5 py-0.5 hover:bg-accent"
+              onClick={handleStopPropagation}
+            >
+              <Progress value={progressPct} className="h-1.5 w-12" />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                Opened by {stats.uniqueReaders}/{stats.totalWithAccess}
+              </span>
+            </button>
+          }
+        />
+      )}
+
+      <span className="shrink-0 text-xs text-muted-foreground">
+        {format(new Date(result.createdAt), "MMM d, yyyy")}
+      </span>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// DocumentSearchResults — memoized to avoid re-rendering when parent state
+// (e.g. dialog open/close) changes without affecting search data.
+// ---------------------------------------------------------------------------
+
+export const DocumentSearchResults = React.memo(function DocumentSearchResults({
   results,
   totalCount,
   searchTerm,
@@ -113,68 +210,16 @@ export function DocumentSearchResults({
 
   return (
     <div className="space-y-1">
-      {results.map((result) => {
-        const Icon = getDocumentIcon(result);
-        const stats = readStats?.[result._id];
-        const progressPct =
-          stats && stats.totalWithAccess > 0
-            ? Math.round(
-                (stats.uniqueReaders / stats.totalWithAccess) * 100,
-              )
-            : 0;
-
-        return (
-          <div
-            key={result._id}
-            role="button"
-            tabIndex={0}
-            className="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-accent/50 cursor-pointer group"
-            onClick={() => onResultClick(result)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onResultClick(result);
-              }
-            }}
-          >
-            <Icon className="size-4 shrink-0 text-muted-foreground" />
-
-            <div className="flex-1 min-w-0">
-              <div className="truncate text-sm">
-                <HighlightedName name={result.name} searchTerm={searchTerm} />
-              </div>
-              {result.folderPath && (
-                <div className="truncate text-xs text-muted-foreground">
-                  {result.folderPath}
-                </div>
-              )}
-            </div>
-
-            {/* Read tracking indicator — admin only */}
-            {isAdmin && stats && (
-              <ReadTrackerDetail
-                documentId={result._id as Id<"documents">}
-                trigger={
-                  <button
-                    type="button"
-                    className="flex items-center gap-1.5 shrink-0 cursor-pointer rounded px-1.5 py-0.5 hover:bg-accent"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Progress value={progressPct} className="h-1.5 w-12" />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      Opened by {stats.uniqueReaders}/{stats.totalWithAccess}
-                    </span>
-                  </button>
-                }
-              />
-            )}
-
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {format(new Date(result.createdAt), "MMM d, yyyy")}
-            </span>
-          </div>
-        );
-      })}
+      {results.map((result) => (
+        <ResultCard
+          key={result._id}
+          result={result}
+          searchTerm={searchTerm}
+          isAdmin={isAdmin}
+          stats={readStats?.[result._id]}
+          onResultClick={onResultClick}
+        />
+      ))}
 
       {/* Cap indicator */}
       {totalCount > results.length && (
@@ -184,4 +229,4 @@ export function DocumentSearchResults({
       )}
     </div>
   );
-}
+});

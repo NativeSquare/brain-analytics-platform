@@ -1,6 +1,7 @@
 /**
- * Role and status constants for the Brain Analytics Platform.
- * Single source of truth for RBAC enum values used across backend and frontend.
+ * Role and status constants for the admin app.
+ * Mirrors @packages/shared/roles — kept local to avoid adding a cross-package
+ * dependency on @packages/shared in the admin app.
  */
 
 export const USER_ROLES = [
@@ -14,7 +15,6 @@ export const USER_ROLES = [
 
 export type UserRole = (typeof USER_ROLES)[number];
 
-/** Human-friendly display labels for each role. */
 export const ROLE_LABELS: Record<UserRole, string> = {
   admin: "Admin",
   coach: "Coach",

@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { USER_ROLES, ROLE_LABELS, type UserRole } from "@/utils/roles";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -54,14 +62,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
 
-type AdminData = {
+type MemberData = {
   _id: Id<"users">;
-  _creationTime: number;
-  name?: string;
-  email?: string;
-  image?: string;
-  role?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
-  emailVerificationTime?: number;
+  type: "member";
+  name: string;
+  email: string;
+  role: string;
+  status: "active" | "invited" | "deactivated";
+  avatarUrl?: string;
+  joinedAt: number;
 };
 
 function getInitials(name: string | undefined): string {
@@ -94,7 +103,9 @@ function getAvatarColor(name: string | undefined): string {
     "bg-pink-500",
     "bg-rose-500",
   ];
-  const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hash = name
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
 }
 
@@ -106,15 +117,80 @@ function formatDate(timestamp: number): string {
   });
 }
 
+function getRoleBadgeVariant(
+  role: string,
+): "default" | "secondary" | "outline" {
+  switch (role) {
+    case "admin":
+      return "default";
+    case "coach":
+    case "analyst":
+    case "physio":
+      return "secondary";
+    case "player":
+    case "staff":
+      return "outline";
+    default:
+      return "outline";
+  }
+}
+
+function StatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "active":
+      return (
+        <Badge
+          variant="outline"
+          className="border-green-200 bg-green-50 text-green-700"
+        >
+          <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
+          Active
+        </Badge>
+      );
+    case "invited":
+      return (
+        <Badge
+          variant="outline"
+          className="border-amber-200 bg-amber-50 text-amber-700"
+        >
+          <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />
+          Invited
+        </Badge>
+      );
+    case "deactivated":
+      return (
+        <Badge
+          variant="outline"
+          className="border-gray-200 bg-gray-50 text-gray-600"
+        >
+          <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-gray-400" />
+          Deactivated
+        </Badge>
+      );
+    default:
+      return (
+        <Badge
+          variant="outline"
+          className="border-gray-200 bg-gray-50 text-gray-600"
+        >
+          {status}
+        </Badge>
+      );
+  }
+}
+
 export function AdminTable() {
   const router = useRouter();
-  const admins = useQuery(api.table.admin.listAdmins);
+  const teamData = useQuery(api.invitations.queries.getTeamMembersWithInvites);
   const deleteUser = useMutation(api.table.admin.deleteUser);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [userToDelete, setUserToDelete] = React.useState<Id<"users"> | null>(null);
+  const [userToDelete, setUserToDelete] = React.useState<Id<"users"> | null>(
+    null,
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [roleFilter, setRoleFilter] = React.useState<string>("all");
 
   const handleDelete = async () => {
     if (!userToDelete) return;
@@ -122,22 +198,42 @@ export function AdminTable() {
       await deleteUser({ userId: userToDelete });
       toast.success("Team member removed successfully");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to remove team member");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to remove team member",
+      );
     } finally {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     }
   };
 
-  const columns: Array<ColumnDef<AdminData>> = React.useMemo(
+  // Only show active members in this table (pending invites are in PendingInvites component)
+  const members: MemberData[] = React.useMemo(() => {
+    if (!teamData) return [];
+    return teamData.members
+      .filter((m) => roleFilter === "all" || m.role === roleFilter)
+      .map((m) => ({
+        ...m,
+        _id: m._id as Id<"users">,
+      }));
+  }, [teamData, roleFilter]);
+
+  const columns: Array<ColumnDef<MemberData>> = React.useMemo(
     () => [
       {
         id: "avatar",
         header: () => null,
         cell: ({ row }) => (
           <Avatar className="h-8 w-8">
-            <AvatarImage src={row.original.image} alt={row.original.name} />
-            <AvatarFallback className={`${getAvatarColor(row.original.name)} text-white text-xs`}>
+            <AvatarImage
+              src={row.original.avatarUrl}
+              alt={row.original.name}
+            />
+            <AvatarFallback
+              className={`${getAvatarColor(row.original.name)} text-white text-xs`}
+            >
               {getInitials(row.original.name)}
             </AvatarFallback>
           </Avatar>
@@ -149,7 +245,7 @@ export function AdminTable() {
         accessorKey: "name",
         header: "Name",
         cell: ({ row }) => (
-          <span className="font-medium">{row.original.name || "—"}</span>
+          <span className="font-medium">{row.original.name || "\u2014"}</span>
         ),
       },
       {
@@ -161,31 +257,31 @@ export function AdminTable() {
             className="text-blue-600 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {row.original.email || "—"}
+            {row.original.email || "\u2014"}
           </Link>
         ),
       },
       {
-        id: "status",
-        header: "Status",
-        cell: ({ row }) =>
-          row.original.emailVerificationTime ? (
-            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
-              Active
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
-              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-gray-400" />
-              Inactive
-            </Badge>
-          ),
+        accessorKey: "role",
+        header: "Role",
+        cell: ({ row }) => {
+          const role = row.original.role as UserRole;
+          const label = ROLE_LABELS[role] ?? role;
+          return <Badge variant={getRoleBadgeVariant(role)}>{label}</Badge>;
+        },
       },
       {
-        accessorKey: "_creationTime",
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      },
+      {
+        accessorKey: "joinedAt",
         header: "Joined",
         cell: ({ row }) => (
-          <span className="text-muted-foreground">{formatDate(row.original._creationTime)}</span>
+          <span className="text-muted-foreground">
+            {formatDate(row.original.joinedAt)}
+          </span>
         ),
       },
       {
@@ -226,11 +322,11 @@ export function AdminTable() {
         ),
       },
     ],
-    []
+    [],
   );
 
   const table = useReactTable({
-    data: admins ?? [],
+    data: members,
     columns,
     state: {
       sorting,
@@ -243,7 +339,7 @@ export function AdminTable() {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  if (admins === undefined) {
+  if (teamData === undefined) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -254,15 +350,30 @@ export function AdminTable() {
   return (
     <>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-2">Team Members</h2>
-        <div className="relative max-w-sm">
-          <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search team members..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="pl-9"
-          />
+        <h2 className="mb-2 text-lg font-semibold">Team Members</h2>
+        <div className="flex items-center gap-3">
+          <div className="relative max-w-sm flex-1">
+            <IconSearch className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+            <Input
+              placeholder="Search team members..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              {USER_ROLES.map((role: string) => (
+                <SelectItem key={role} value={role}>
+                  {ROLE_LABELS[role as UserRole]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -275,7 +386,10 @@ export function AdminTable() {
                   <TableHead key={header.id} colSpan={header.colSpan}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -292,14 +406,20 @@ export function AdminTable() {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No team members found.
                 </TableCell>
               </TableRow>
@@ -308,7 +428,7 @@ export function AdminTable() {
         </Table>
       </div>
 
-      <div className="text-muted-foreground text-sm py-2">
+      <div className="text-muted-foreground py-2 text-sm">
         {table.getFilteredRowModel().rows.length} team member(s)
       </div>
 
@@ -317,8 +437,9 @@ export function AdminTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this team member? This action cannot be undone. They
-              will lose admin access and their account data will be permanently removed.
+              Are you sure you want to remove this team member? This action
+              cannot be undone. They will lose access and their account data will
+              be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

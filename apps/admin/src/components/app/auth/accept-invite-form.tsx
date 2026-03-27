@@ -11,6 +11,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { PasswordInput } from "@/components/custom/password-input";
+import { Badge } from "@/components/ui/badge";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -21,6 +22,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { getConvexErrorMessage } from "@/utils/getConvexErrorMessage";
 import { Spinner } from "@/components/ui/spinner";
+import { ROLE_LABELS } from "@/utils/roles";
 
 const formSchema = z
   .object({
@@ -41,9 +43,20 @@ export function AcceptInviteForm({
   const token = searchParams.get("token") ?? "";
 
   const { signIn } = useAuthActions();
-  const acceptInvite = useMutation(api.table.admin.acceptInvite);
+  const acceptInviteMutation = useMutation(api.invitations.mutations.acceptInvite);
 
-  const invite = useQuery(api.table.admin.getInvite, token ? { token } : "skip");
+  // Query the new invitations table first
+  const inviteData = useQuery(
+    api.invitations.queries.getInviteByToken,
+    token ? { token } : "skip",
+  );
+
+  // Fallback to legacy adminInvites table for backward compatibility
+  const legacyInvite = useQuery(
+    api.table.admin.getInvite,
+    token && inviteData === null ? { token } : "skip",
+  );
+  const legacyAcceptInvite = useMutation(api.table.admin.acceptInvite);
 
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -56,8 +69,32 @@ export function AcceptInviteForm({
     },
   });
 
+  // Determine which invite system to use
+  const isNewInvite = inviteData && inviteData.status === "valid";
+  const isLegacyInvite = !isNewInvite && legacyInvite?.invite;
+
+  const inviteEmail = isNewInvite
+    ? inviteData.email
+    : isLegacyInvite
+      ? legacyInvite.invite.email
+      : "";
+  const inviteName = isNewInvite
+    ? inviteData.name
+    : isLegacyInvite
+      ? legacyInvite.invite.name
+      : "";
+  const inviterName = isNewInvite
+    ? inviteData.inviterName
+    : isLegacyInvite
+      ? legacyInvite.inviterName
+      : undefined;
+  const roleLabel = isNewInvite
+    ? ROLE_LABELS[inviteData.role as keyof typeof ROLE_LABELS] ?? inviteData.role
+    : "Admin";
+  const teamName = isNewInvite ? inviteData.teamName : undefined;
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    if (!invite?.invite) return;
+    if (!isNewInvite && !isLegacyInvite) return;
 
     setIsLoading(true);
     setFormError(null);
@@ -65,13 +102,17 @@ export function AcceptInviteForm({
     try {
       // Sign up with the email from the invite
       await signIn("password", {
-        email: invite.invite.email,
+        email: inviteEmail,
         password: data.password,
         flow: "signUp",
       });
 
-      // Accept the invite (sets role to admin)
-      await acceptInvite({ token });
+      // Accept the invite via the appropriate mutation
+      if (isNewInvite) {
+        await acceptInviteMutation({ token });
+      } else {
+        await legacyAcceptInvite({ token });
+      }
 
       // Redirect to dashboard
       router.replace("/dashboard");
@@ -83,7 +124,7 @@ export function AcceptInviteForm({
   }
 
   // Show loading while fetching invite
-  if (invite === undefined) {
+  if (inviteData === undefined) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Spinner className="h-8 w-8" />
@@ -91,8 +132,52 @@ export function AcceptInviteForm({
     );
   }
 
-  // Show error if invite is invalid
-  if (!invite) {
+  // Handle specific error states from the new invite system
+  if (inviteData && inviteData.status !== "valid") {
+    const errorMessages: Record<string, { title: string; message: string }> = {
+      expired: {
+        title: "Invitation Expired",
+        message:
+          "This invitation has expired. Please contact your admin to send a new one.",
+      },
+      accepted: {
+        title: "Invitation Already Used",
+        message: "This invitation has already been used.",
+      },
+      cancelled: {
+        title: "Invitation Cancelled",
+        message:
+          "This invitation has been cancelled. Please contact your admin.",
+      },
+    };
+
+    const error = errorMessages[inviteData.status];
+    if (error) {
+      return (
+        <div className={cn("flex flex-col gap-6", className)} {...props}>
+          <Card className="overflow-hidden p-0">
+            <CardContent className="p-6 md:p-8">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <h1 className="text-2xl font-bold text-destructive">
+                  {error.title}
+                </h1>
+                <p className="text-muted-foreground">{error.message}</p>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/login")}
+                >
+                  Go to Login
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+  }
+
+  // Show generic error if invite is invalid (no valid invite from either system)
+  if (!isNewInvite && !isLegacyInvite && inviteData === null && legacyInvite !== undefined) {
     return (
       <div className={cn("flex flex-col gap-6", className)} {...props}>
         <Card className="overflow-hidden p-0">
@@ -115,6 +200,15 @@ export function AcceptInviteForm({
     );
   }
 
+  // Still loading legacy fallback
+  if (!isNewInvite && !isLegacyInvite) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden p-0">
@@ -122,10 +216,14 @@ export function AcceptInviteForm({
           <form id="form-accept-invite" onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome, {invite.invite.name}!</h1>
+                <h1 className="text-2xl font-bold">
+                  Welcome, {inviteName}!
+                </h1>
                 <p className="text-muted-foreground text-balance">
-                  You've been invited to join the admin team
-                  {invite.inviterName && ` by ${invite.inviterName}`}.
+                  {inviterName && `${inviterName} has invited you`}
+                  {!inviterName && "You've been invited"}
+                  {teamName && ` to join ${teamName}`} as{" "}
+                  <Badge variant="secondary">{roleLabel}</Badge>
                 </p>
               </div>
 
@@ -138,7 +236,7 @@ export function AcceptInviteForm({
               <Field>
                 <FieldLabel>Email</FieldLabel>
                 <div className="text-muted-foreground text-sm">
-                  {invite.invite.email}
+                  {inviteEmail}
                 </div>
               </Field>
 

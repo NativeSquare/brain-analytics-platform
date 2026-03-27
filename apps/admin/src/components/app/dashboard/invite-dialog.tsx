@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner";
 import { IconUserPlus } from "@tabler/icons-react";
+import { USER_ROLES, ROLE_LABELS, type UserRole } from "@/utils/roles";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,25 +27,39 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { getConvexErrorMessage } from "@/utils/getConvexErrorMessage";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  name: z.string().min(1, "Name is required").min(2, "Name must be at least 2 characters"),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .min(2, "Name must be at least 2 characters"),
+  role: z.enum(USER_ROLES, {
+    message: "Please select a role",
+  }),
 });
 
 export function InviteDialog() {
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const inviteAdmin = useMutation(api.table.admin.inviteAdmin);
+  const createInvite = useMutation(api.invitations.mutations.createInvite);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       name: "",
+      role: undefined,
     },
   });
 
@@ -52,13 +67,16 @@ export function InviteDialog() {
     setIsLoading(true);
 
     try {
-      await inviteAdmin({
+      await createInvite({
         email: data.email,
         name: data.name,
+        role: data.role,
       });
 
+      const roleLabel =
+        ROLE_LABELS[data.role as keyof typeof ROLE_LABELS] ?? data.role;
       toast.success("Invitation sent successfully", {
-        description: `An invitation email has been sent to ${data.email}`,
+        description: `Invitation sent to ${data.email} as ${roleLabel}`,
       });
 
       form.reset();
@@ -84,8 +102,8 @@ export function InviteDialog() {
         <DialogHeader>
           <DialogTitle>Invite Team Member</DialogTitle>
           <DialogDescription>
-            Send an invitation to join the admin team. They will receive an email with a link to
-            create their account.
+            Send an invitation to join your team. They will receive an email with
+            a link to create their account.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,7 +121,9 @@ export function InviteDialog() {
                     placeholder="John Doe"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -121,7 +141,34 @@ export function InviteDialog() {
                     placeholder="john@example.com"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="role"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Role</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USER_ROLES.map((role: string) => (
+                        <SelectItem key={role} value={role}>
+                          {ROLE_LABELS[role as UserRole]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />

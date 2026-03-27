@@ -7,6 +7,7 @@ export { VerifyEmail } from "./emails/verify-email";
 export {
   renderAdminInviteHtml,
   renderForgotPasswordHtml,
+  renderInviteHtml,
   renderVerifyEmailHtml,
   type EmailTemplateOptions,
 } from "./emails/html-templates";

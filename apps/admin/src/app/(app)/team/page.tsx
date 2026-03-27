@@ -12,7 +12,7 @@ export default function TeamPage() {
           <div>
             <h1 className="text-2xl font-bold">Team</h1>
             <p className="text-muted-foreground text-sm">
-              Manage your admin team members here.
+              Manage your team members and invitations.
             </p>
           </div>
           <InviteDialog />

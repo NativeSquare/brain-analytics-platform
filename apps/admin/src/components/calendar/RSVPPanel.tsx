@@ -67,12 +67,7 @@ export function RSVPPanel({ eventId, rsvpEnabled }: RSVPPanelProps) {
   }
 
   function handleNotAttendingClick() {
-    if (myRsvp?.status === "not_attending") {
-      // Already not attending — show reason input to update
-      setShowReasonInput(true);
-    } else {
-      setShowReasonInput(true);
-    }
+    setShowReasonInput(true);
   }
 
   async function handleSubmitNotAttending() {

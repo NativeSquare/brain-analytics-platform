@@ -45,6 +45,8 @@ interface AdminRsvpData {
 
 interface RSVPOverviewProps {
   eventId: Id<"calendarEvents">;
+  /** Whether the current user is an admin. Determines if detailed response list is shown. */
+  isAdmin?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,12 +93,11 @@ function UserRow({ fullName, avatarUrl, reason }: UserRowProps) {
 // Component
 // ---------------------------------------------------------------------------
 
-export function RSVPOverview({ eventId }: RSVPOverviewProps) {
-  const currentUser = useQuery(api.table.users.currentUser);
+export function RSVPOverview({ eventId, isAdmin }: RSVPOverviewProps) {
   const rsvpData = useQuery(api.calendar.queries.getEventRsvps, { eventId });
 
-  // Only show for admins
-  if (currentUser === undefined || rsvpData === undefined) {
+  // Loading state — show skeleton for all users (summary counts are visible to everyone)
+  if (rsvpData === undefined) {
     return (
       <div className="space-y-3 border-t pt-4">
         <Skeleton className="h-5 w-40" />
@@ -109,12 +110,10 @@ export function RSVPOverview({ eventId }: RSVPOverviewProps) {
     );
   }
 
-  if (!currentUser || currentUser.role !== "admin") return null;
-
   const { summary } = rsvpData;
 
   // Check if admin response shape (has responses array)
-  const isAdminData = "responses" in rsvpData;
+  const isAdminData = isAdmin && "responses" in rsvpData;
   const adminData = isAdminData ? (rsvpData as unknown as AdminRsvpData) : null;
   const responses = adminData?.responses ?? [];
   const pendingUsers = adminData?.pending ?? [];

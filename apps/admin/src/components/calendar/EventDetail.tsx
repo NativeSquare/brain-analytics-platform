@@ -270,9 +270,9 @@ export function EventDetail({
                   />
                 )}
 
-                {/* RSVP Overview — admin-only response list */}
+                {/* RSVP Overview — summary counts for all, detailed list for admins */}
                 {event.rsvpEnabled && (
-                  <RSVPOverview eventId={event._id} />
+                  <RSVPOverview eventId={event._id} isAdmin={isAdmin} />
                 )}
 
                 {/* Admin action buttons */}

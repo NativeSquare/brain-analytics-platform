@@ -374,11 +374,15 @@ export const getUserRsvpsByEventIds = query({
     eventIds: v.array(v.id("calendarEvents")),
   },
   handler: async (ctx, { eventIds }) => {
-    const { user } = await requireAuth(ctx);
+    const { user, teamId } = await requireAuth(ctx);
 
     const result: Record<string, string> = {};
 
     for (const eventId of eventIds) {
+      // Team isolation: verify event belongs to user's team before returning RSVP
+      const event = await ctx.db.get(eventId);
+      if (!event || event.teamId !== teamId) continue;
+
       const rsvp = await ctx.db
         .query("eventRsvps")
         .withIndex("by_userId_eventId", (q) =>

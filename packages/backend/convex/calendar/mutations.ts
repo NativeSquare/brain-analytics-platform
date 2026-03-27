@@ -544,6 +544,15 @@ export const deleteEventSeries = mutation({
         await ctx.db.delete(inv._id);
       }
 
+      // Delete all eventRsvps for this event (avoid orphaned data)
+      const rsvps = await ctx.db
+        .query("eventRsvps")
+        .withIndex("by_eventId", (q) => q.eq("eventId", event._id))
+        .collect();
+      for (const rsvp of rsvps) {
+        await ctx.db.delete(rsvp._id);
+      }
+
       // Delete the event
       await ctx.db.delete(event._id);
     }

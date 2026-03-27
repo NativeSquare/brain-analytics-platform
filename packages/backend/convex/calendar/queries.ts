@@ -49,6 +49,21 @@ async function getUserInvitedEventIds(
 }
 
 // ---------------------------------------------------------------------------
+// Calendar Feed Token query (Story 3.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Return the current user's calendarFeedToken, or null if not yet generated.
+ */
+export const getFeedToken = query({
+  args: {},
+  handler: async (ctx) => {
+    const { user } = await requireAuth(ctx);
+    return user.calendarFeedToken ?? null;
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 

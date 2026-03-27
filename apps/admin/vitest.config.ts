@@ -1,0 +1,17 @@
+import { defineConfig } from "vitest/config";
+import path from "path";
+
+export default defineConfig({
+  test: {
+    environment: "jsdom",
+    include: ["src/**/*.test.{ts,tsx}"],
+    globals: true,
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      "@packages/backend": path.resolve(__dirname, "../../packages/backend"),
+      "@packages/shared": path.resolve(__dirname, "../../packages/shared"),
+    },
+  },
+});

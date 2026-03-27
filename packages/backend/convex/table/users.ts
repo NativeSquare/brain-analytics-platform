@@ -45,6 +45,9 @@ const documentSchema = {
   banned: v.optional(v.boolean()),
   banReason: v.optional(v.string()),
   banExpires: v.optional(v.number()), // timestamp in ms, undefined = permanent
+
+  // Calendar feed token for .ics sync (Story 3.5)
+  calendarFeedToken: v.optional(v.string()),
 };
 
 const partialSchema = {
@@ -88,12 +91,16 @@ const partialSchema = {
   banned: v.optional(v.boolean()),
   banReason: v.optional(v.string()),
   banExpires: v.optional(v.number()),
+
+  // Calendar feed token for .ics sync (Story 3.5)
+  calendarFeedToken: v.optional(v.string()),
 };
 
 export const users = defineTable(documentSchema)
   .index("email", ["email"])
   .index("by_teamId", ["teamId"])
-  .index("by_teamId_role", ["teamId", "role"]);
+  .index("by_teamId_role", ["teamId", "role"])
+  .index("by_calendarFeedToken", ["calendarFeedToken"]);
 
 export const {
   get,

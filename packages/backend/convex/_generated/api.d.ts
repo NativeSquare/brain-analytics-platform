@@ -9,6 +9,8 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as calendar_ics from "../calendar/ics.js";
+import type * as calendar_internalQueries from "../calendar/internalQueries.js";
 import type * as calendar_mutations from "../calendar/mutations.js";
 import type * as calendar_queries from "../calendar/queries.js";
 import type * as calendar_utils from "../calendar/utils.js";
@@ -65,6 +67,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  "calendar/ics": typeof calendar_ics;
+  "calendar/internalQueries": typeof calendar_internalQueries;
   "calendar/mutations": typeof calendar_mutations;
   "calendar/queries": typeof calendar_queries;
   "calendar/utils": typeof calendar_utils;

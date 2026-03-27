@@ -7,6 +7,45 @@ import { computeOccurrenceDates } from "./utils";
 
 import type { Id } from "../_generated/dataModel";
 
+// ---------------------------------------------------------------------------
+// Calendar Feed Token mutations (Story 3.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a calendar feed token for the authenticated user.
+ * Idempotent: if a token already exists, return it.
+ */
+export const generateFeedToken = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const { user } = await requireAuth(ctx);
+
+    // Return existing token if present (idempotent)
+    if (user.calendarFeedToken) {
+      return user.calendarFeedToken;
+    }
+
+    // Generate UUID v4
+    const token = crypto.randomUUID();
+    await ctx.db.patch(user._id, { calendarFeedToken: token });
+    return token;
+  },
+});
+
+/**
+ * Regenerate the calendar feed token, invalidating the previous URL.
+ */
+export const regenerateFeedToken = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const { user } = await requireAuth(ctx);
+
+    const token = crypto.randomUUID();
+    await ctx.db.patch(user._id, { calendarFeedToken: token });
+    return token;
+  },
+});
+
 export const createEvent = mutation({
   args: {
     name: v.string(),

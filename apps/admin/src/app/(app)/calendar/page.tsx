@@ -3,12 +3,13 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
-import { Plus } from "lucide-react";
+import { Plus, CalendarSync } from "lucide-react";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CreateEventDialog } from "@/components/calendar/CreateEventDialog";
+import { CalendarSyncDialog } from "@/components/calendar/CalendarSyncDialog";
 import { EventDetail } from "@/components/calendar/EventDetail";
 import { DayEventsPanel } from "@/components/calendar/DayEventsPanel";
 
@@ -28,6 +29,7 @@ function getCurrentMonth() {
 export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
 
   // Panel state — only one panel open at a time
   const [selectedEventId, setSelectedEventId] =
@@ -83,12 +85,21 @@ export default function CalendarPage() {
             View and manage your team&apos;s schedule
           </p>
         </div>
-        {isAdmin && (
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 size-4" />
-            Create Event
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsSyncDialogOpen(true)}
+          >
+            <CalendarSync className="mr-2 size-4" />
+            Sync Calendar
           </Button>
-        )}
+          {isAdmin && (
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 size-4" />
+              Create Event
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Calendar grid */}
@@ -113,6 +124,12 @@ export default function CalendarPage() {
         open={selectedDate !== null}
         onClose={handleCloseDay}
         onEventClick={handleDayEventClick}
+      />
+
+      {/* Calendar sync dialog */}
+      <CalendarSyncDialog
+        open={isSyncDialogOpen}
+        onOpenChange={setIsSyncDialogOpen}
       />
 
       {/* Create event dialog (admin only) */}

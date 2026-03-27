@@ -195,11 +195,9 @@ export function CalendarView({
   }
 
   return (
-    <div className="sx-react-calendar-wrapper">
-      <ScheduleXCalendar
-        calendarApp={calendarApp}
-        customComponents={{ monthGridEvent: MonthGridEvent }}
-      />
-    </div>
+    <ScheduleXCalendar
+      calendarApp={calendarApp}
+      customComponents={{ monthGridEvent: MonthGridEvent }}
+    />
   );
 }

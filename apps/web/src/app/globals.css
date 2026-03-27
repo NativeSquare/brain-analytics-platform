@@ -118,12 +118,10 @@
   --sidebar-ring: oklch(0.56 0.021 213.5);
 }
 
-/* Schedule-X calendar needs explicit height — the library uses height:100% throughout */
-.sx-react-calendar-wrapper,
-.sx__calendar-wrapper,
-.sx__calendar {
-  height: 800px !important;
-  min-height: 800px !important;
+/* Schedule-X calendar requires an explicit height — its internals use height:100% */
+.sx-react-calendar-wrapper {
+  flex: 1;
+  min-height: 600px;
 }
 
 @layer base {

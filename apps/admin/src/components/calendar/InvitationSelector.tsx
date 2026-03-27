@@ -35,8 +35,8 @@ export interface SelectedUser {
 }
 
 interface InvitationSelectorProps {
-  selectedRoles: string[];
-  onRolesChange: (roles: string[]) => void;
+  selectedRoles: UserRole[];
+  onRolesChange: (roles: UserRole[]) => void;
   selectedUsers: SelectedUser[];
   onUsersChange: (users: SelectedUser[]) => void;
 }
@@ -65,11 +65,15 @@ export function InvitationSelector({
 
   const teamUsers = useQuery(
     api.users.queries.searchTeamUsers,
-    debouncedSearch.trim().length > 0 ? { search: debouncedSearch } : {},
+    userSearchOpen
+      ? debouncedSearch.trim().length > 0
+        ? { search: debouncedSearch }
+        : {}
+      : "skip",
   );
 
   const handleRoleToggle = useCallback(
-    (role: string) => {
+    (role: UserRole) => {
       if (selectedRoles.includes(role)) {
         onRolesChange(selectedRoles.filter((r) => r !== role));
       } else {
@@ -112,7 +116,7 @@ export function InvitationSelector({
                 checked={selectedRoles.includes(role)}
                 onCheckedChange={() => handleRoleToggle(role)}
               />
-              {ROLE_LABELS[role as UserRole]}
+              {ROLE_LABELS[role]}
             </label>
           ))}
         </div>

@@ -15,6 +15,7 @@ import {
   type CreateEventFormData,
   type EventType,
 } from "@packages/shared/calendar";
+import type { UserRole } from "@packages/shared/roles";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +78,7 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
   const [endTime, setEndTime] = useState(DEFAULT_END_TIME);
 
   // Invitation state (managed outside RHF since complex)
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([]);
 
   const form = useForm<CreateEventFormData>({
@@ -152,6 +153,13 @@ export function EventForm({ onSuccess, onCancel }: EventFormProps) {
         invitedRoles: data.invitedRoles,
         invitedUserIds: data.invitedUserIds as Id<"users">[],
       });
+      form.reset();
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setStartTime(DEFAULT_START_TIME);
+      setEndTime(DEFAULT_END_TIME);
+      setSelectedRoles([]);
+      setSelectedUsers([]);
       onSuccess();
     } catch (error) {
       toast.error(getConvexErrorMessage(error));

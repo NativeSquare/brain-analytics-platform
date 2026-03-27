@@ -20,7 +20,16 @@ export const createEvent = mutation({
     location: v.optional(v.string()),
     description: v.optional(v.string()),
     rsvpEnabled: v.boolean(),
-    invitedRoles: v.array(v.string()),
+    invitedRoles: v.array(
+      v.union(
+        v.literal("admin"),
+        v.literal("coach"),
+        v.literal("analyst"),
+        v.literal("physio"),
+        v.literal("player"),
+        v.literal("staff"),
+      ),
+    ),
     invitedUserIds: v.array(v.id("users")),
   },
   handler: async (ctx, args) => {
@@ -73,7 +82,7 @@ export const createEvent = mutation({
         const usersWithRole = await ctx.db
           .query("users")
           .withIndex("by_teamId_role", (q) =>
-            q.eq("teamId", teamId).eq("role", role as any),
+            q.eq("teamId", teamId).eq("role", role),
           )
           .collect();
 

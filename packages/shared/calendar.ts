@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { USER_ROLES } from "./roles";
 
 export const EVENT_TYPES = ["match", "training", "meeting", "rehab"] as const;
 
@@ -46,7 +47,7 @@ export const createEventSchema = z
     location: z.string().max(200, "Location must be 200 characters or less").optional(),
     description: z.string().max(2000, "Description must be 2000 characters or less").optional(),
     rsvpEnabled: z.boolean(),
-    invitedRoles: z.array(z.string()),
+    invitedRoles: z.array(z.enum(USER_ROLES)),
     invitedUserIds: z.array(z.string()),
   })
   .refine((data) => data.endsAt > data.startsAt, {

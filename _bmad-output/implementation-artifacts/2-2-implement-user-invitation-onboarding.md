@@ -348,3 +348,5 @@ Claude Opus 4 (via Claude Code)
 - `apps/web/src/components/app/dashboard/admin-table.tsx` — **Modified** — Shows all team members via getTeamMembersWithInvites, role badges, status badges, role filter
 - `apps/web/src/components/app/dashboard/pending-invites.tsx` — **Modified** — Uses listPendingInvites, shows role, resend button, cancelInvite/resendInvite mutations
 - `apps/web/src/app/(app)/team/page.tsx` — **Modified** — Updated description text
+- `apps/web/src/app/(auth)/accept-invite/page.tsx` — **Created** — Accept-invite page route (was missing)
+- `apps/web/tests/2-2-implement-user-invitation-onboarding.spec.ts` — **Created** — Playwright E2E tests for invitation flows

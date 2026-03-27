@@ -18,7 +18,28 @@ const documentSchema = {
   bio: v.optional(v.string()),
   birthDate: v.optional(v.string()),
   hasCompletedOnboarding: v.optional(v.boolean()),
-  role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
+  fullName: v.optional(v.string()),
+  avatarUrl: v.optional(v.string()),
+
+  // Team & role fields
+  teamId: v.optional(v.id("teams")),
+  role: v.optional(
+    v.union(
+      v.literal("admin"),
+      v.literal("coach"),
+      v.literal("analyst"),
+      v.literal("physio"),
+      v.literal("player"),
+      v.literal("staff")
+    )
+  ),
+  status: v.optional(
+    v.union(
+      v.literal("active"),
+      v.literal("invited"),
+      v.literal("deactivated")
+    )
+  ),
 
   // Ban fields
   banned: v.optional(v.boolean()),
@@ -40,7 +61,28 @@ const partialSchema = {
   bio: v.optional(v.string()),
   birthDate: v.optional(v.string()),
   hasCompletedOnboarding: v.optional(v.boolean()),
-  role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
+  fullName: v.optional(v.string()),
+  avatarUrl: v.optional(v.string()),
+
+  // Team & role fields
+  teamId: v.optional(v.id("teams")),
+  role: v.optional(
+    v.union(
+      v.literal("admin"),
+      v.literal("coach"),
+      v.literal("analyst"),
+      v.literal("physio"),
+      v.literal("player"),
+      v.literal("staff")
+    )
+  ),
+  status: v.optional(
+    v.union(
+      v.literal("active"),
+      v.literal("invited"),
+      v.literal("deactivated")
+    )
+  ),
 
   // Ban fields
   banned: v.optional(v.boolean()),
@@ -48,7 +90,10 @@ const partialSchema = {
   banExpires: v.optional(v.number()),
 };
 
-export const users = defineTable(documentSchema).index("email", ["email"]);
+export const users = defineTable(documentSchema)
+  .index("email", ["email"])
+  .index("by_teamId", ["teamId"])
+  .index("by_teamId_role", ["teamId", "role"]);
 
 export const {
   get,

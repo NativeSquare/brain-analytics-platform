@@ -5,6 +5,7 @@
   "main": "constants.js",
   "exports": {
     ".": "./constants.js",
-    "./constants": "./constants.js"
+    "./constants": "./constants.js",
+    "./roles": "./roles.ts"
   }
 }

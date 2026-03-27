@@ -6,8 +6,9 @@ import { internalMutation, mutation, MutationCtx, query, QueryCtx } from "../_ge
 import { adminInviteValidator } from "./adminInvites";
 
 /**
- * Helper function to verify the current user is an admin.
- * Throws an error if not authenticated or not an admin.
+ * Legacy admin check — kept for backward compatibility with this file's
+ * functions. Checks `role === "admin"` directly (does NOT require teamId).
+ * New code should use the shared `requireAdmin` from `convex/lib/auth.ts`.
  */
 export async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   const userId = await getAuthUserId(ctx);
@@ -59,7 +60,26 @@ export const currentAdmin = query({
       bio: v.optional(v.string()),
       birthDate: v.optional(v.string()),
       hasCompletedOnboarding: v.optional(v.boolean()),
-      role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
+      fullName: v.optional(v.string()),
+      avatarUrl: v.optional(v.string()),
+      teamId: v.optional(v.id("teams")),
+      role: v.optional(
+        v.union(
+          v.literal("admin"),
+          v.literal("coach"),
+          v.literal("analyst"),
+          v.literal("physio"),
+          v.literal("player"),
+          v.literal("staff")
+        )
+      ),
+      status: v.optional(
+        v.union(
+          v.literal("active"),
+          v.literal("invited"),
+          v.literal("deactivated")
+        )
+      ),
       banned: v.optional(v.boolean()),
       banReason: v.optional(v.string()),
       banExpires: v.optional(v.number()),
@@ -375,10 +395,11 @@ export const acceptInvite = mutation({
       });
     }
 
-    // Set the user's role to admin
+    // Set the user's role to admin and status to active
     await ctx.db.patch(userId, {
       role: "admin",
       name: invite.name,
+      status: "active",
     });
 
     // Mark the invite as accepted
@@ -407,7 +428,26 @@ const userValidator = v.object({
   bio: v.optional(v.string()),
   birthDate: v.optional(v.string()),
   hasCompletedOnboarding: v.optional(v.boolean()),
-  role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
+  fullName: v.optional(v.string()),
+  avatarUrl: v.optional(v.string()),
+  teamId: v.optional(v.id("teams")),
+  role: v.optional(
+    v.union(
+      v.literal("admin"),
+      v.literal("coach"),
+      v.literal("analyst"),
+      v.literal("physio"),
+      v.literal("player"),
+      v.literal("staff")
+    )
+  ),
+  status: v.optional(
+    v.union(
+      v.literal("active"),
+      v.literal("invited"),
+      v.literal("deactivated")
+    )
+  ),
   banned: v.optional(v.boolean()),
   banReason: v.optional(v.string()),
   banExpires: v.optional(v.number()),
@@ -436,7 +476,16 @@ export const updateUser = mutation({
     updates: v.object({
       name: v.optional(v.string()),
       bio: v.optional(v.string()),
-      role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
+      role: v.optional(
+        v.union(
+          v.literal("admin"),
+          v.literal("coach"),
+          v.literal("analyst"),
+          v.literal("physio"),
+          v.literal("player"),
+          v.literal("staff")
+        )
+      ),
     }),
   },
   returns: v.null(),
@@ -449,7 +498,7 @@ export const updateUser = mutation({
     }
 
     // Prevent admin from demoting themselves
-    if (args.userId === adminId && args.updates.role === "user") {
+    if (args.userId === adminId && args.updates.role && args.updates.role !== "admin") {
       throw new ConvexError({ message: "You cannot demote yourself" });
     }
 

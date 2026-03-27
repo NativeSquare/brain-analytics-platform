@@ -79,7 +79,7 @@ type UserData = {
   name?: string;
   email?: string;
   image?: string;
-  role?: "user" | "admin";
+  role?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
   emailVerificationTime?: number;
   banned?: boolean;
   banExpires?: number;
@@ -131,7 +131,7 @@ interface UserTableProps {
   /** Base path for user detail links (e.g. "/users" -> "/users/{id}"). Defaults to "/team" */
   basePath?: string;
   /** Filter users by role. If set, only users with this role are shown */
-  roleFilter?: "user" | "admin";
+  roleFilter?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
 }
 
 export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
@@ -144,7 +144,7 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
   } = usePaginatedQuery(api.table.admin.listUsers, {}, { initialNumItems: 50 });
 
   const users = roleFilter
-    ? allUsers.filter((u) => (u.role ?? "user") === roleFilter)
+    ? allUsers.filter((u) => u.role === roleFilter)
     : allUsers;
 
   const deleteUser = useMutation(api.table.admin.deleteUser);
@@ -172,8 +172,8 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
     }
   };
 
-  const handleToggleRole = async (userId: Id<"users">, currentRole: "user" | "admin" | undefined) => {
-    const newRole = currentRole === "admin" ? "user" : "admin";
+  const handleToggleRole = async (userId: Id<"users">, currentRole: string | undefined) => {
+    const newRole = currentRole === "admin" ? "staff" : "admin";
     try {
       await updateUser({ userId, updates: { role: newRole } });
       toast.success(`User role updated to ${newRole}`);

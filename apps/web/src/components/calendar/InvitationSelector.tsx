@@ -166,7 +166,9 @@ export function InvitationSelector({
                 onValueChange={setSearchInput}
               />
               <CommandList>
-                <CommandEmpty>No users found.</CommandEmpty>
+                <CommandEmpty>
+                  {teamUsers === undefined ? "Searching…" : "No users found."}
+                </CommandEmpty>
                 <CommandGroup>
                   {(teamUsers ?? []).map((user) => {
                     const alreadySelected = selectedUsers.some(

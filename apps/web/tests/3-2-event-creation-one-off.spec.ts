@@ -4,38 +4,35 @@ import { test, expect } from "@playwright/test";
  * E2E tests for Story 3.2: Event Creation (One-Off)
  *
  * These tests verify user-facing acceptance criteria for event creation.
- * The /calendar route requires authentication, so unauthenticated tests
- * verify auth gates and route integrity. Structure tests confirm key UI
- * elements are present or absent based on auth/role state.
+ * Authentication is not available in this E2E suite, so tests focus on:
+ *  - Route integrity and auth gate enforcement (AC #1)
+ *  - Page structure and content verification (AC #1, #10)
+ *  - Admin-only UI gating (AC #1 — Create Event button hidden for non-admin)
+ *  - Dialog conditional rendering (AC #2 — dialog only exists for admin)
+ *  - Component stability (no JS crashes on render)
  */
 
 // ---------------------------------------------------------------------------
-// AC #1: Calendar route integrity & auth gate
+// AC #1: Route integrity & auth gate enforcement
 // ---------------------------------------------------------------------------
 
-test.describe("Calendar Page — Route & Auth Gate", () => {
-  test("calendar route responds without server error", async ({ page }) => {
-    // AC #1: /calendar route exists and does not return 5xx
+test.describe("Calendar Route & Auth Gate", () => {
+  test("calendar route responds with a valid HTTP status (not 5xx)", async ({
+    page,
+  }) => {
     const response = await page.goto("/calendar");
 
     expect(response).not.toBeNull();
     expect(response!.status()).toBeLessThan(500);
-
-    await page.screenshot({
-      path: "tests/screenshots/calendar-route-check.png",
-    });
   });
 
-  test("prevents unauthenticated access — does not show Create Event button", async ({
+  test("unauthenticated users are redirected to login or see no admin controls", async ({
     page,
   }) => {
-    // AC #1: "Create Event" button visible to admins ONLY — unauthenticated
-    // users must not see admin-only controls
+    // AC #1: "Create Event" button visible to admins ONLY
     await page.goto("/calendar");
 
-    await page.waitForLoadState("networkidle").catch(() => {
-      // networkidle may not fire if SSE/WebSocket connections stay open
-    });
+    await page.waitForLoadState("networkidle").catch(() => {});
 
     const url = page.url();
     const wasRedirected = url.includes("login") || url.includes("sign-in");
@@ -46,125 +43,99 @@ test.describe("Calendar Page — Route & Auth Gate", () => {
         'input[type="email"], input[name="email"], input[type="password"]',
       );
       await expect(loginForm.first()).toBeVisible({ timeout: 10000 });
-
-      await page.screenshot({
-        path: "tests/screenshots/calendar-unauth-redirect.png",
-      });
     } else {
-      // If no redirect, the admin-only "Create Event" button must NOT be visible
+      // No redirect — verify admin-only "Create Event" button is hidden
       const createEventBtn = page.getByRole("button", {
         name: /Create Event/i,
       });
       await expect(createEventBtn).not.toBeVisible({ timeout: 10000 });
 
-      await page.screenshot({
-        path: "tests/screenshots/calendar-unauth-no-create-btn.png",
-      });
+      // Verify calendar heading IS present (page rendered, just without admin controls)
+      const heading = page.locator("h1", { hasText: /Calendar/i });
+      await expect(heading).toBeVisible({ timeout: 15000 });
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// AC #2, #3: Create Event dialog structure
+// AC #1, #10: Calendar page structure & content
 // ---------------------------------------------------------------------------
 
-test.describe("Create Event Dialog — Structure Verification", () => {
-  test("calendar page renders heading and navigation structure", async ({
+test.describe("Calendar Page — Structure & Content", () => {
+  test("calendar page renders 'Calendar' heading and schedule subtitle", async ({
     page,
   }) => {
-    // AC #1: calendar page loads with a heading
+    // AC #1, #10: Calendar page exists and renders recognizable content
     await page.goto("/calendar");
-
     await page.waitForLoadState("domcontentloaded");
 
     const url = page.url();
-    const wasRedirected = url.includes("login") || url.includes("sign-in");
-
-    if (!wasRedirected) {
-      // Wait for the page to hydrate — the heading is rendered unconditionally
-      // but Convex connection issues may delay client-side hydration.
-      // Use a generous timeout and look for any text "Calendar" as fallback.
-      const heading = page.getByRole("heading", { name: /Calendar/i });
-      const headingOrText = page.locator("h1", { hasText: /Calendar/i });
-
-      // Try heading role first, fall back to raw h1 selector
-      const target = (await heading.count()) > 0 ? heading : headingOrText;
-      await expect(target.first()).toBeVisible({ timeout: 30000 });
-
-      await page.screenshot({
-        path: "tests/screenshots/calendar-page-structure.png",
-      });
+    if (url.includes("login") || url.includes("sign-in")) {
+      // Redirected — structure test N/A
+      return;
     }
+
+    // Verify the page heading "Calendar"
+    const heading = page.locator("h1", { hasText: /Calendar/i });
+    await expect(heading).toBeVisible({ timeout: 30000 });
+
+    // Verify the subtitle "View and manage your team's schedule"
+    const subtitle = page.getByText(/schedule/i);
+    await expect(subtitle).toBeVisible({ timeout: 10000 });
   });
 
-  test("Create Event button is not rendered for non-admin users", async ({
+  test("Sync Calendar button is rendered (visible to all authenticated users)", async ({
     page,
   }) => {
-    // AC #1: Non-admin roles do NOT see this button
+    // Sync Calendar is NOT admin-only — should be visible to any authenticated user
     await page.goto("/calendar");
+    await page.waitForLoadState("domcontentloaded");
 
+    const url = page.url();
+    if (url.includes("login") || url.includes("sign-in")) {
+      return;
+    }
+
+    const syncBtn = page.getByRole("button", { name: /Sync Calendar/i });
+    await expect(syncBtn).toBeVisible({ timeout: 15000 });
+  });
+
+  test("Create Event dialog is NOT rendered in DOM for non-admin users", async ({
+    page,
+  }) => {
+    // AC #1: Non-admin roles do NOT see the Create Event button
+    // AC #2: Dialog is conditionally rendered ({isAdmin && <CreateEventDialog>})
+    await page.goto("/calendar");
     await page.waitForLoadState("networkidle").catch(() => {});
 
     const url = page.url();
-    if (!url.includes("login") && !url.includes("sign-in")) {
-      // Without admin auth, the Create Event button should not be visible
-      const createEventBtn = page.getByRole("button", {
-        name: /Create Event/i,
-      });
-      await expect(createEventBtn).not.toBeVisible({ timeout: 10000 });
-
-      await page.screenshot({
-        path: "tests/screenshots/calendar-no-admin-no-create-btn.png",
-      });
+    if (url.includes("login") || url.includes("sign-in")) {
+      return;
     }
+
+    // "Create Event" button must not exist in the DOM
+    const createEventBtn = page.getByRole("button", {
+      name: /Create Event/i,
+    });
+    expect(await createEventBtn.count()).toBe(0);
+
+    // Dialog heading "Create Event" must not be in the DOM either
+    const dialogTitle = page.getByRole("heading", {
+      name: "Create Event",
+      exact: true,
+    });
+    expect(await dialogTitle.count()).toBe(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// AC #6: Form validation — client-side rules
+// Page stability — no JS crashes
 // ---------------------------------------------------------------------------
 
-test.describe("Event Form Validation", () => {
-  test("dialog contains expected form field labels when opened", async ({
+test.describe("Calendar Page — Stability", () => {
+  test("calendar page renders without component-level JavaScript errors", async ({
     page,
   }) => {
-    // AC #2, #3: Verify dialog structure and form fields exist
-    // This test checks that the dialog markup includes all required field labels
-    // by inspecting the CreateEventDialog component output.
-    // Since we cannot auth as admin in this E2E suite, we verify the route
-    // and component files are correctly wired by checking the page DOM.
-    await page.goto("/calendar");
-
-    await page.waitForLoadState("networkidle").catch(() => {});
-
-    const url = page.url();
-    if (!url.includes("login") && !url.includes("sign-in")) {
-      // The dialog is only rendered when isAdmin && isCreateDialogOpen,
-      // so without admin role, the dialog content is not in the DOM.
-      // Verify the dialog is NOT in the DOM for non-admin
-      const dialogTitle = page.getByText("Create Event", { exact: true });
-      // The button text "Create Event" should also not be present for non-admin
-      const createEventBtnCount = await page
-        .getByRole("button", { name: /Create Event/i })
-        .count();
-      expect(createEventBtnCount).toBe(0);
-
-      await page.screenshot({
-        path: "tests/screenshots/calendar-no-dialog-non-admin.png",
-      });
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// AC #11: Error handling — toast feedback (structural)
-// ---------------------------------------------------------------------------
-
-test.describe("Calendar Page — Component Wiring", () => {
-  test("calendar page does not crash on direct navigation", async ({
-    page,
-  }) => {
-    // Verify the page renders without JS errors
     const errors: string[] = [];
     page.on("pageerror", (error) => {
       errors.push(error.message);
@@ -174,11 +145,9 @@ test.describe("Calendar Page — Component Wiring", () => {
     expect(response).not.toBeNull();
     expect(response!.status()).toBeLessThan(500);
 
-    // Wait for client-side hydration
     await page.waitForLoadState("networkidle").catch(() => {});
 
-    // Allow Convex connection errors (expected without backend) but
-    // no component-level crashes
+    // Filter out expected network errors (no Convex backend in test env)
     const componentErrors = errors.filter((e) => {
       const lower = e.toLowerCase();
       return (
@@ -192,25 +161,7 @@ test.describe("Calendar Page — Component Wiring", () => {
       );
     });
 
-    // No unexpected component-level errors
+    // No unexpected component-level errors (import failures, null refs, etc.)
     expect(componentErrors).toHaveLength(0);
-
-    await page.screenshot({
-      path: "tests/screenshots/calendar-no-crash.png",
-    });
-  });
-
-  test("calendar page has correct document title or heading", async ({
-    page,
-  }) => {
-    // AC #10: Calendar view renders — verify the page has content
-    await page.goto("/calendar");
-
-    // Page should not have an empty title (basic render check)
-    await expect(page).not.toHaveTitle("");
-
-    await page.screenshot({
-      path: "tests/screenshots/calendar-title-check.png",
-    });
   });
 });

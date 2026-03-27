@@ -161,12 +161,22 @@ export function EventForm({
   // Auto-set end date to start date + 1 hour when start is first set (create only)
   useEffect(() => {
     if (!isEdit && startDate && !endDate) {
-      setEndDate(startDate);
       const [h, m] = startTime.split(":").map(Number);
-      const endH = Math.min(h + 1, 23);
-      setEndTime(
-        `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
-      );
+      if (h >= 23) {
+        // Wrap to next day when start is 23:xx (avoid endsAt <= startsAt)
+        const nextDay = new Date(startDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setEndDate(nextDay);
+        const endH = (h + 1) % 24;
+        setEndTime(
+          `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+        );
+      } else {
+        setEndDate(startDate);
+        setEndTime(
+          `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+        );
+      }
     }
   }, [startDate, endDate, startTime, isEdit]);
 

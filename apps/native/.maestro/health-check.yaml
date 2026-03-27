@@ -1,0 +1,9 @@
+# .maestro/health-check.yaml
+# Scaffoldé par Mission Control — flow de santé de base
+appId: com.testmonorepo.preview
+---
+- launchApp
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 15000
+- takeScreenshot: ${MAESTRO_TESTS_DIR}/health-check-home

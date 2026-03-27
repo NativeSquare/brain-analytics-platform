@@ -99,9 +99,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   owner: "nativesquare-expo",
   extra: {
+				eas: {
+					projectId: "ad896bd1-7519-4c5e-8d70-b274fbfb2b1f",
+				},
     router: {},
   },
   runtimeVersion: {
-    policy: "appVersion",
-  },
+		policy: "fingerprint",
+	},
 });

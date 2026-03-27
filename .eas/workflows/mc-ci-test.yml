@@ -1,0 +1,113 @@
+# .eas/workflows/mc-ci-test.yml
+# Scaffoldé par Mission Control — NE PAS MODIFIER MANUELLEMENT
+name: MC CI Test Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      story_run_id:
+        type: string
+        required: true
+      platform:
+        type: choice
+        options: ['android', 'ios', 'all']
+        default: 'android'
+
+jobs:
+  fingerprint:
+    type: fingerprint
+    environment: preview
+
+  get_build:
+    needs: [fingerprint]
+    type: get-build
+    params:
+      fingerprint_hash: ${{ needs.fingerprint.outputs.android_fingerprint_hash }}
+      platform: android
+      profile: preview
+
+  # Si build compatible existe → repack (rapide, ~5 min)
+  repack:
+    needs: [get_build]
+    if: ${{ needs.get_build.outputs.build_id }}
+    type: repack
+    params:
+      build_id: ${{ needs.get_build.outputs.build_id }}
+
+  # Si pas de build compatible → full build (~25 min)
+  build:
+    needs: [get_build]
+    if: ${{ !needs.get_build.outputs.build_id }}
+    type: build
+    params:
+      platform: android
+      profile: preview
+
+  # E2E via Maestro (intégré dans EAS — pas besoin de compte Maestro Cloud)
+  # Using 'after' instead of 'needs' because one of repack/build will be skipped
+  e2e_tests:
+    after: [repack, build]
+    type: maestro
+    params:
+      build_id: ${{ after.repack.outputs.build_id || after.build.outputs.build_id }}
+      flow_path: '.maestro/'
+
+  # Notification webhook vers Mission Control
+  # EAS Secrets are exposed as global env vars — no env: mapping needed
+  notify_mc:
+    after: [e2e_tests]
+    name: Notify Mission Control
+    steps:
+      - uses: eas/checkout
+      - name: Collect and notify
+        run: |
+          # Determine e2e status from the Maestro job result
+          # ${{ after.e2e_tests.status }} is "success", "failure", "cancelled", or "skipped"
+          E2E_JOB_STATUS="${{ after.e2e_tests.status }}"
+          echo "Maestro job status: $E2E_JOB_STATUS"
+
+          # Collect Maestro results if available (for detailed feedback to dev agent)
+          MAESTRO_RESULTS="{}"
+          E2E_STATUS="failed"
+          if [ "$E2E_JOB_STATUS" = "success" ]; then
+            E2E_STATUS="success"
+          fi
+
+          # Try to extract details from Maestro XML results
+          if [ -d ".maestro/results" ]; then
+            PASSED=$(find .maestro/results -name "*.xml" -exec grep -l 'failures="0"' {} \; 2>/dev/null | wc -l)
+            FAILED=$(find .maestro/results -name "*.xml" -exec grep -L 'failures="0"' {} \; 2>/dev/null | wc -l)
+            TOTAL=$((PASSED + FAILED))
+            FAILURE_DETAILS=""
+            if [ "$FAILED" -gt 0 ]; then
+              E2E_STATUS="failed"
+              FAILURE_DETAILS=$(find .maestro/results -name "*.xml" -exec grep -l 'failures="[^0]"' {} \; 2>/dev/null | head -5 | while read f; do
+                # Extract flow name and failure message
+                FLOW_NAME=$(basename "$f" .xml)
+                FAIL_MSG=$(grep -oP 'message="[^"]{0,200}"' "$f" 2>/dev/null | head -1 || true)
+                echo "${FLOW_NAME}: ${FAIL_MSG}"
+              done | tr '\n' '; ')
+            fi
+            MAESTRO_RESULTS="{\"total\":$TOTAL,\"passed\":$PASSED,\"failed\":$FAILED,\"failedFlows\":\"$FAILURE_DETAILS\"}"
+          fi
+
+          echo "Final e2eStatus: $E2E_STATUS"
+
+          # EAS Secrets are available as env vars directly
+          STORY_RUN_ID="${{ inputs.story_run_id }}"
+
+          echo "Sending webhook to $MC_WEBHOOK_URL..."
+          HTTP_CODE=$(curl -s -o /tmp/webhook_response -w "%{http_code}" -X POST "$MC_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-eas-webhook-secret: $MC_EAS_WEBHOOK_SECRET" \
+            -d "{
+              \"storyRunId\": \"$STORY_RUN_ID\",
+              \"e2eStatus\": \"$E2E_STATUS\",
+              \"maestroResults\": $MAESTRO_RESULTS
+            }")
+          echo "Webhook response: HTTP $HTTP_CODE"
+          cat /tmp/webhook_response 2>/dev/null || true
+          echo ""
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "WARNING: Webhook returned error $HTTP_CODE"
+          fi

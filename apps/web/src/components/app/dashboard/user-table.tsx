@@ -79,7 +79,7 @@ type UserData = {
   name?: string;
   email?: string;
   image?: string;
-  role?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
+  role?: "user" | "admin";
   emailVerificationTime?: number;
   banned?: boolean;
   banExpires?: number;
@@ -131,7 +131,7 @@ interface UserTableProps {
   /** Base path for user detail links (e.g. "/users" -> "/users/{id}"). Defaults to "/team" */
   basePath?: string;
   /** Filter users by role. If set, only users with this role are shown */
-  roleFilter?: "admin" | "coach" | "analyst" | "physio" | "player" | "staff";
+  roleFilter?: "user" | "admin";
 }
 
 export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
@@ -222,18 +222,10 @@ export function UserTable({ basePath = "/team", roleFilter }: UserTableProps) {
         header: "Role",
         cell: ({ row }) => {
           const role = row.original.role;
-          const roleLabels: Record<string, string> = {
-            admin: "Admin",
-            coach: "Coach",
-            analyst: "Analyst",
-            physio: "Physio",
-            player: "Player",
-            staff: "Staff",
-          };
           return (
-            <Badge variant={role === "admin" ? "default" : "outline"} className="capitalize">
-              {role ? (roleLabels[role] ?? role) : "—"}
-            </Badge>
+            <span className="text-muted-foreground">
+              {role === "admin" ? "Administrator" : "User"}
+            </span>
           );
         },
       },

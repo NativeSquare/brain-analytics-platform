@@ -60,26 +60,7 @@ export const currentAdmin = query({
       bio: v.optional(v.string()),
       birthDate: v.optional(v.string()),
       hasCompletedOnboarding: v.optional(v.boolean()),
-      fullName: v.optional(v.string()),
-      avatarUrl: v.optional(v.string()),
-      teamId: v.optional(v.id("teams")),
-      role: v.optional(
-        v.union(
-          v.literal("admin"),
-          v.literal("coach"),
-          v.literal("analyst"),
-          v.literal("physio"),
-          v.literal("player"),
-          v.literal("staff")
-        )
-      ),
-      status: v.optional(
-        v.union(
-          v.literal("active"),
-          v.literal("invited"),
-          v.literal("deactivated")
-        )
-      ),
+      role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
       banned: v.optional(v.boolean()),
       banReason: v.optional(v.string()),
       banExpires: v.optional(v.number()),
@@ -95,7 +76,24 @@ export const currentAdmin = query({
 
     if (user.role !== "admin") return null;
 
-    return user;
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      name: user.name,
+      image: user.image,
+      email: user.email,
+      emailVerificationTime: user.emailVerificationTime,
+      phone: user.phone,
+      phoneVerificationTime: user.phoneVerificationTime,
+      isAnonymous: user.isAnonymous,
+      bio: user.bio,
+      birthDate: user.birthDate,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+      role: "admin" as const,
+      banned: user.banned,
+      banReason: user.banReason,
+      banExpires: user.banExpires,
+    };
   },
 });
 
@@ -106,29 +104,6 @@ export const listUsers = query({
   args: {
     paginationOpts: paginationOptsValidator,
   },
-  // returns: v.object({
-  //   page: v.array(
-  //     v.object({
-  //       _id: v.id("users"),
-  //       _creationTime: v.number(),
-  //       name: v.optional(v.string()),
-  //       image: v.optional(v.string()),
-  //       email: v.optional(v.string()),
-  //       emailVerificationTime: v.optional(v.number()),
-  //       phone: v.optional(v.string()),
-  //       phoneVerificationTime: v.optional(v.number()),
-  //       isAnonymous: v.optional(v.boolean()),
-  //       bio: v.optional(v.string()),
-  //       birthDate: v.optional(v.string()),
-  //       hasCompletedOnboarding: v.optional(v.boolean()),
-  //       role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
-  //     })
-  //   ),
-  //   isDone: v.boolean(),
-  //   continueCursor: v.string(),
-  //   pageStatus: v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null()),
-  //   splitCursor: v.union(v.string(), v.null()),
-  // }),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -137,7 +112,27 @@ export const listUsers = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    return results;
+    return {
+      ...results,
+      page: results.page.map((user) => ({
+        _id: user._id,
+        _creationTime: user._creationTime,
+        name: user.name,
+        image: user.image,
+        email: user.email,
+        emailVerificationTime: user.emailVerificationTime,
+        phone: user.phone,
+        phoneVerificationTime: user.phoneVerificationTime,
+        isAnonymous: user.isAnonymous,
+        bio: user.bio,
+        birthDate: user.birthDate,
+        hasCompletedOnboarding: user.hasCompletedOnboarding,
+        role: (user.role ? (user.role === "admin" ? "admin" : "user") : undefined) as "user" | "admin" | undefined,
+        banned: user.banned,
+        banReason: user.banReason,
+        banExpires: user.banExpires,
+      })),
+    };
   },
 });
 
@@ -428,26 +423,7 @@ const userValidator = v.object({
   bio: v.optional(v.string()),
   birthDate: v.optional(v.string()),
   hasCompletedOnboarding: v.optional(v.boolean()),
-  fullName: v.optional(v.string()),
-  avatarUrl: v.optional(v.string()),
-  teamId: v.optional(v.id("teams")),
-  role: v.optional(
-    v.union(
-      v.literal("admin"),
-      v.literal("coach"),
-      v.literal("analyst"),
-      v.literal("physio"),
-      v.literal("player"),
-      v.literal("staff")
-    )
-  ),
-  status: v.optional(
-    v.union(
-      v.literal("active"),
-      v.literal("invited"),
-      v.literal("deactivated")
-    )
-  ),
+  role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
   banned: v.optional(v.boolean()),
   banReason: v.optional(v.string()),
   banExpires: v.optional(v.number()),
@@ -463,7 +439,26 @@ export const getUser = query({
   returns: v.union(userValidator, v.null()),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    return await ctx.db.get(args.userId);
+    const user = await ctx.db.get(args.userId);
+    if (!user) return null;
+    return {
+      _id: user._id,
+      _creationTime: user._creationTime,
+      name: user.name,
+      image: user.image,
+      email: user.email,
+      emailVerificationTime: user.emailVerificationTime,
+      phone: user.phone,
+      phoneVerificationTime: user.phoneVerificationTime,
+      isAnonymous: user.isAnonymous,
+      bio: user.bio,
+      birthDate: user.birthDate,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+      role: (user.role ? (user.role === "admin" ? "admin" : "user") : undefined) as "user" | "admin" | undefined,
+      banned: user.banned,
+      banReason: user.banReason,
+      banExpires: user.banExpires,
+    };
   },
 });
 
@@ -476,16 +471,7 @@ export const updateUser = mutation({
     updates: v.object({
       name: v.optional(v.string()),
       bio: v.optional(v.string()),
-      role: v.optional(
-        v.union(
-          v.literal("admin"),
-          v.literal("coach"),
-          v.literal("analyst"),
-          v.literal("physio"),
-          v.literal("player"),
-          v.literal("staff")
-        )
-      ),
+      role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
     }),
   },
   returns: v.null(),
@@ -498,11 +484,18 @@ export const updateUser = mutation({
     }
 
     // Prevent admin from demoting themselves
-    if (args.userId === adminId && args.updates.role && args.updates.role !== "admin") {
+    if (args.userId === adminId && args.updates.role === "user") {
       throw new ConvexError({ message: "You cannot demote yourself" });
     }
 
-    await ctx.db.patch(args.userId, args.updates);
+    // Build DB-safe updates: "user" role is not in the schema, so we skip
+    // setting the role when the legacy admin panel sends "user"
+    const { role, ...otherUpdates } = args.updates;
+    if (role && role !== "user") {
+      await ctx.db.patch(args.userId, { ...otherUpdates, role });
+    } else {
+      await ctx.db.patch(args.userId, otherUpdates);
+    }
     return null;
   },
 });
@@ -563,7 +556,26 @@ export const listAdmins = query({
     await requireAdmin(ctx);
 
     const allUsers = await ctx.db.query("users").collect();
-    return allUsers.filter((user) => user.role === "admin");
+    return allUsers
+      .filter((user) => user.role === "admin")
+      .map((user) => ({
+        _id: user._id,
+        _creationTime: user._creationTime,
+        name: user.name,
+        image: user.image,
+        email: user.email,
+        emailVerificationTime: user.emailVerificationTime,
+        phone: user.phone,
+        phoneVerificationTime: user.phoneVerificationTime,
+        isAnonymous: user.isAnonymous,
+        bio: user.bio,
+        birthDate: user.birthDate,
+        hasCompletedOnboarding: user.hasCompletedOnboarding,
+        role: "admin" as const,
+        banned: user.banned,
+        banReason: user.banReason,
+        banExpires: user.banExpires,
+      }));
   },
 });
 

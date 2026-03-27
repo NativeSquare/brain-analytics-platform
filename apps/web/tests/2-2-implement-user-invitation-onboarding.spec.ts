@@ -6,163 +6,136 @@ import { test, expect } from "@playwright/test";
  * These tests verify the UI structure and user flows for the invitation system.
  * Since the app requires a Convex backend + authentication, tests focus on
  * verifiable UI elements, routing, and unauthenticated accept-invite flows.
+ *
+ * NOTE: Tests are flat (no test.describe) because the gate JSON parser
+ * only reads top-level suites[].specs[].
  */
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:4500";
-
 // ---------------------------------------------------------------------------
-// Accept-Invite Page — unauthenticated flows (no backend session needed)
+// Accept-Invite Page — unauthenticated flows
 // ---------------------------------------------------------------------------
 
-test.describe("Accept Invite Page", () => {
-  test("loads accept-invite page with missing token and shows loading/error state", async ({
-    page,
-  }) => {
-    // Navigate to accept-invite with no token — should show loading then error
-    await page.goto(`${BASE_URL}/accept-invite`);
+test("accept-invite: loads page with missing token and shows loading or error state", async ({
+  page,
+}) => {
+  await page.goto("/accept-invite");
 
-    // The page should render (not 404)
-    await expect(page).not.toHaveTitle("");
+  // The page should render (not 404)
+  await expect(page).not.toHaveTitle("");
 
-    // Wait for the page to settle — either a spinner (role="status", animate-spin) or error card should appear
-    const spinner = page.locator('[role="status"], [class*="animate-spin"]');
-    const errorCard = page.locator("text=Invalid Invitation");
-    const loadingIndicator = page.locator('[aria-label="Loading"]');
+  // Wait for the page to settle — either a spinner or error card should appear
+  const spinner = page.locator('[role="status"], [class*="animate-spin"]');
+  const errorCard = page.locator("text=Invalid Invitation");
+  const loadingIndicator = page.locator('[aria-label="Loading"]');
 
-    // At least one of these states should be visible
-    await expect(
-      spinner.or(errorCard).or(loadingIndicator).first(),
-    ).toBeVisible({ timeout: 15000 });
+  await expect(
+    spinner.or(errorCard).or(loadingIndicator).first(),
+  ).toBeVisible({ timeout: 15000 });
 
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-no-token.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-no-token.png",
+  });
+});
+
+test("accept-invite: shows error state for invalid token", async ({
+  page,
+}) => {
+  await page.goto("/accept-invite?token=invalid_test_token_12345");
+
+  await expect(page).not.toHaveTitle("");
+
+  // After loading, should show an error state since token doesn't exist
+  const errorIndicator = page
+    .locator(
+      "text=/Invalid Invitation|invitation link is invalid|expired|already been used/i",
+    )
+    .first();
+  const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
+
+  await expect(errorIndicator.or(spinner).first()).toBeVisible({
+    timeout: 15000,
   });
 
-  test("loads accept-invite page with invalid token and shows error state", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/accept-invite?token=invalid_test_token_12345`);
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-invalid-token.png",
+  });
+});
 
-    // Wait for the page to process the token
-    await expect(page).not.toHaveTitle("");
+test("accept-invite: shows Go to Login button on error", async ({ page }) => {
+  await page.goto("/accept-invite?token=completely_bogus_token_abc");
 
-    // After loading, should show an error state since token doesn't exist
-    // Possible messages: "Invalid Invitation", "expired", "invalid"
-    const errorIndicator = page
-      .locator(
-        "text=/Invalid Invitation|invitation link is invalid|expired|already been used/i",
-      )
-      .first();
-    const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
+  await page.waitForTimeout(3000);
 
-    // Wait for either error or spinner (backend may not be running)
-    await expect(errorIndicator.or(spinner).first()).toBeVisible({
-      timeout: 15000,
-    });
+  const goToLoginBtn = page.locator(
+    'button:has-text("Go to Login"), a:has-text("Go to Login")',
+  );
+  const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
 
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-invalid-token.png",
-    });
+  const visible = await goToLoginBtn.or(spinner).first().isVisible();
+  expect(visible).toBeTruthy();
+
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-go-to-login.png",
+  });
+});
+
+test("accept-invite: player type param loads player flow", async ({
+  page,
+}) => {
+  await page.goto("/accept-invite?token=test_player_token&type=player");
+
+  await expect(page).not.toHaveTitle("");
+
+  const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
+  const errorState = page.locator(
+    "text=/Invalid Invitation|invitation link|expired/i",
+  );
+
+  await expect(spinner.or(errorState).first()).toBeVisible({
+    timeout: 15000,
   });
 
-  test("accept-invite page shows Go to Login button on error", async ({
-    page,
-  }) => {
-    await page.goto(
-      `${BASE_URL}/accept-invite?token=completely_bogus_token_abc`,
-    );
-
-    // Wait for the page to settle
-    await page.waitForTimeout(3000);
-
-    // If an error state is shown, there should be a "Go to Login" button
-    const goToLoginBtn = page.locator(
-      'button:has-text("Go to Login"), a:has-text("Go to Login")',
-    );
-    const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
-
-    // Either shows error with login button, or is still loading
-    const visible = await goToLoginBtn.or(spinner).first().isVisible();
-    expect(visible).toBeTruthy();
-
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-go-to-login.png",
-    });
-  });
-
-  test("accept-invite page with player type param loads player flow", async ({
-    page,
-  }) => {
-    await page.goto(
-      `${BASE_URL}/accept-invite?token=test_player_token&type=player`,
-    );
-
-    // The page should render (not 404)
-    await expect(page).not.toHaveTitle("");
-
-    // Should show loading spinner or error state for player invite
-    const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
-    const errorState = page.locator(
-      "text=/Invalid Invitation|invitation link|expired/i",
-    );
-
-    await expect(spinner.or(errorState).first()).toBeVisible({
-      timeout: 15000,
-    });
-
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-player-type.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-player-type.png",
   });
 });
 
 // ---------------------------------------------------------------------------
-// Team Management Page — requires auth redirect verification
+// Team Management Page — auth redirect verification
 // ---------------------------------------------------------------------------
 
-test.describe("Team Management Page", () => {
-  test("unauthenticated user visiting /team sees auth gate or error", async ({
-    page,
-  }) => {
-    await page.goto(`${BASE_URL}/team`);
+test("team page: unauthenticated user sees auth gate or redirect", async ({
+  page,
+}) => {
+  await page.goto("/team");
 
-    // Unauthenticated users should be redirected to login, see auth prompt,
-    // or get an Application error (client-side exception from missing auth context)
-    await page.waitForTimeout(5000);
+  await page.waitForTimeout(5000);
 
-    const currentUrl = page.url();
-    const bodyText = await page.textContent("body") ?? "";
+  const currentUrl = page.url();
+  const bodyText = (await page.textContent("body")) ?? "";
 
-    // Verify the page responds with one of these expected states:
-    // 1. Redirected to login page
-    // 2. Shows login/sign-in form
-    // 3. Shows Application error (auth context not available)
-    // 4. Shows team page content (if somehow authenticated)
-    const isExpectedState =
-      currentUrl.includes("login") ||
-      bodyText.includes("Application error") ||
-      bodyText.toLowerCase().includes("sign in") ||
-      bodyText.toLowerCase().includes("log in") ||
-      bodyText.includes("Team");
+  const isExpectedState =
+    currentUrl.includes("login") ||
+    bodyText.includes("Application error") ||
+    bodyText.toLowerCase().includes("sign in") ||
+    bodyText.toLowerCase().includes("log in") ||
+    bodyText.includes("Team");
 
-    expect(isExpectedState).toBeTruthy();
+  expect(isExpectedState).toBeTruthy();
 
-    await page.screenshot({
-      path: "tests/screenshots/team-page-unauth.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/team-page-unauth.png",
   });
+});
 
-  test("team page route exists and responds", async ({ page }) => {
-    const response = await page.goto(`${BASE_URL}/team`);
+test("team page: route exists and responds without 500", async ({ page }) => {
+  const response = await page.goto("/team");
 
-    // Page should load (200 or redirect 3xx, not 404/500)
-    expect(response).not.toBeNull();
-    expect(response!.status()).toBeLessThan(500);
+  expect(response).not.toBeNull();
+  expect(response!.status()).toBeLessThan(500);
 
-    await page.screenshot({
-      path: "tests/screenshots/team-page-response.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/team-page-response.png",
   });
 });
 
@@ -170,90 +143,72 @@ test.describe("Team Management Page", () => {
 // Login Page — baseline verification
 // ---------------------------------------------------------------------------
 
-test.describe("Login Page", () => {
-  test("login page loads with email and password fields", async ({ page }) => {
-    await page.goto(`${BASE_URL}/login`);
+test("login page: loads with email and password fields", async ({ page }) => {
+  await page.goto("/login");
 
-    await expect(page).not.toHaveTitle("");
+  await expect(page).not.toHaveTitle("");
 
-    // Verify login form elements exist
-    const emailInput = page.locator(
-      'input[type="email"], input[name="email"], input[placeholder*="email" i]',
-    );
-    const passwordInput = page.locator(
-      'input[type="password"], input[name="password"]',
-    );
+  const emailInput = page.locator(
+    'input[type="email"], input[name="email"], input[placeholder*="email" i]',
+  );
+  const passwordInput = page.locator(
+    'input[type="password"], input[name="password"]',
+  );
 
-    // Wait for the form to render
-    await expect(emailInput.or(passwordInput).first()).toBeVisible({
-      timeout: 10000,
-    });
-
-    await page.screenshot({ path: "tests/screenshots/login-page.png" });
+  await expect(emailInput.or(passwordInput).first()).toBeVisible({
+    timeout: 10000,
   });
+
+  await page.screenshot({ path: "tests/screenshots/login-page.png" });
 });
 
 // ---------------------------------------------------------------------------
-// Invitation UI Components — structural checks via route responses
+// Invitation Flow Structure — route responses
 // ---------------------------------------------------------------------------
 
-test.describe("Invitation Flow Structure", () => {
-  test("accept-invite route supports token query parameter", async ({
-    page,
-  }) => {
-    // Verify the route handles query parameters without crashing
-    const response = await page.goto(
-      `${BASE_URL}/accept-invite?token=test123`,
-    );
+test("accept-invite: route supports token query parameter without crash", async ({
+  page,
+}) => {
+  const response = await page.goto("/accept-invite?token=test123");
 
-    expect(response).not.toBeNull();
-    // Should not be a 404 or 500
-    expect(response!.status()).toBeLessThan(500);
-    expect(response!.status()).not.toBe(404);
+  expect(response).not.toBeNull();
+  expect(response!.status()).toBeLessThan(500);
+  expect(response!.status()).not.toBe(404);
 
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-route-check.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-route-check.png",
   });
+});
 
-  test("accept-invite page renders a card component", async ({ page }) => {
-    await page.goto(`${BASE_URL}/accept-invite?token=abc123`);
+test("accept-invite: page renders content for card structure", async ({
+  page,
+}) => {
+  await page.goto("/accept-invite?token=abc123");
 
-    // Wait for content to load
-    await page.waitForTimeout(3000);
+  await page.waitForTimeout(3000);
 
-    // The page should contain a card structure (used for both valid and error states)
-    const card = page.locator(
-      '[class*="card"], [class*="Card"], [role="article"]',
-    );
-    const spinner = page.locator('[class*="spinner"], [class*="Spinner"]');
-    const anyContent = page.locator("body");
+  const anyContent = page.locator("body");
+  await expect(anyContent).not.toBeEmpty();
 
-    // Page should have rendered something
-    await expect(anyContent).not.toBeEmpty();
-
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-card-structure.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-card-structure.png",
   });
+});
 
-  test("accept-invite page with expired-like token shows appropriate messaging", async ({
-    page,
-  }) => {
-    await page.goto(
-      `${BASE_URL}/accept-invite?token=expired_token_simulation_test`,
-    );
+test("accept-invite: expired-like token shows appropriate messaging", async ({
+  page,
+}) => {
+  await page.goto(
+    "/accept-invite?token=expired_token_simulation_test",
+  );
 
-    // Wait for backend response
-    await page.waitForTimeout(5000);
+  await page.waitForTimeout(5000);
 
-    // Should eventually show some form of error or loading
-    const pageContent = await page.textContent("body");
-    expect(pageContent).toBeTruthy();
-    expect(pageContent!.length).toBeGreaterThan(0);
+  const pageContent = await page.textContent("body");
+  expect(pageContent).toBeTruthy();
+  expect(pageContent!.length).toBeGreaterThan(0);
 
-    await page.screenshot({
-      path: "tests/screenshots/accept-invite-expired-token.png",
-    });
+  await page.screenshot({
+    path: "tests/screenshots/accept-invite-expired-token.png",
   });
 });

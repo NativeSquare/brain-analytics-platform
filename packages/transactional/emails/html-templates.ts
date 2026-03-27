@@ -123,6 +123,34 @@ export function renderInviteHtml(
 </html>`;
 }
 
+/** Player invite email – plain HTML, no React */
+export function renderPlayerInviteHtml(
+  props: { firstName?: string; inviteUrl: string },
+  options: EmailTemplateOptions
+): string {
+  const { firstName = "there", inviteUrl } = props;
+  const { appName, appAddress } = options;
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;font-family:system-ui,sans-serif;background:#fff;color:#51525C;">
+  <div style="max-width:600px;margin:0 auto;padding:24px 12px;">
+    <p style="font-size:14px;margin:8px 0;">Hi ${escapeHtml(firstName)},</p>
+    <p style="font-size:14px;margin:8px 0;">You've been invited to join ${escapeHtml(appName)}. Click the button below to create your account and get started:</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${escapeHtml(inviteUrl)}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:6px;">Accept Invitation</a>
+    </p>
+    <p style="font-size:14px;margin:8px 0;">This invitation will expire in 7 days.</p>
+    <p style="font-size:14px;margin:8px 0;">If you didn't expect this invitation, you can safely ignore this email.</p>
+    <p style="font-size:14px;margin:8px 0;">Thanks,</p>
+    <p style="font-size:14px;margin:8px 0;">The ${escapeHtml(appName)} Team</p>
+    <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+    <p style="font-size:14px;margin:8px 0;color:#51525C;">© 2025 ${escapeHtml(appName)}, ${escapeHtml(appAddress)}</p>
+  </div>
+</body>
+</html>`;
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

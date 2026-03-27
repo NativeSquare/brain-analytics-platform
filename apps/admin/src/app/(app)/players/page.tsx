@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -18,6 +19,9 @@ function PlayersPageContent() {
 
   const statusFilter = searchParams.get("status") ?? undefined;
   const searchFilter = searchParams.get("search") ?? undefined;
+
+  const currentUser = useQuery(api.table.users.currentUser);
+  const isAdmin = currentUser?.role === "admin";
 
   const players = useQuery(api.players.queries.getPlayers, {
     status: statusFilter,
@@ -68,10 +72,14 @@ function PlayersPageContent() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Players</h1>
-        <Button variant="outline" disabled>
-          <IconUserPlus className="mr-1.5 size-4" />
-          Add Player
-        </Button>
+        {isAdmin && (
+          <Button variant="outline" asChild>
+            <Link href="/players/new">
+              <IconUserPlus className="mr-1.5 size-4" />
+              Add Player
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -119,9 +127,11 @@ function EmptyState() {
       <p className="text-muted-foreground mt-1 text-sm">
         Add your first player to get started.
       </p>
-      <Button className="mt-4" disabled>
-        <IconUserPlus className="mr-1.5 size-4" />
-        Add your first player
+      <Button className="mt-4" asChild>
+        <Link href="/players/new">
+          <IconUserPlus className="mr-1.5 size-4" />
+          Add your first player
+        </Link>
       </Button>
     </div>
   );

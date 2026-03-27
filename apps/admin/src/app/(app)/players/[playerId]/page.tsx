@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { use } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerProfileHeader } from "@/components/players/PlayerProfileHeader";
 import { PlayerProfileTabs } from "@/components/players/PlayerProfileTabs";
+import { InvitePlayerDialog } from "@/components/players/InvitePlayerDialog";
 
 interface PlayerProfilePageProps {
   params: Promise<{ playerId: string }>;
@@ -26,6 +28,18 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
   const tabAccess = useQuery(api.players.queries.getPlayerTabAccess, {
     playerId: typedPlayerId,
   });
+  const currentUser = useQuery(api.table.users.currentUser);
+  const inviteStatus = useQuery(
+    api.players.queries.getPlayerInviteStatus,
+    player ? { playerId: typedPlayerId } : "skip"
+  );
+
+  const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
+
+  const isAdmin = currentUser?.role === "admin";
+  const hasNoAccount = player && !player.userId;
+  const hasEmail = player && player.personalEmail;
+  const showInviteButton = isAdmin && hasNoAccount && hasEmail;
 
   // Loading state (AC #12)
   if (player === undefined || tabAccess === undefined) {
@@ -52,8 +66,24 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-      <PlayerProfileHeader player={player} />
+      <PlayerProfileHeader
+        player={player}
+        inviteStatus={inviteStatus}
+        showInviteButton={!!showInviteButton}
+        onInviteClick={() => setInviteDialogOpen(true)}
+      />
       <PlayerProfileTabs tabAccess={tabAccess} player={player} />
+
+      {showInviteButton && (
+        <InvitePlayerDialog
+          playerId={typedPlayerId}
+          firstName={player.firstName}
+          lastName={player.lastName}
+          personalEmail={player.personalEmail}
+          open={inviteDialogOpen}
+          onClose={() => setInviteDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

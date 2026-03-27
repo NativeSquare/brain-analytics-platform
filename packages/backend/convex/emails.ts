@@ -5,7 +5,10 @@ import { internalAction } from "./_generated/server";
 import { components } from "./_generated/api";
 import { v } from "convex/values";
 import { APP_ADDRESS, APP_DOMAIN, APP_NAME } from "@packages/shared/constants";
-import { renderAdminInviteHtml } from "@packages/transactional";
+import {
+  renderAdminInviteHtml,
+  renderPlayerInviteHtml,
+} from "@packages/transactional";
 
 // Initialize the Resend component
 // Set testMode: false when ready for production
@@ -71,6 +74,43 @@ export const sendAdminInviteEmail = internalAction({
       from: DEFAULT_FROM,
       to: args.to,
       subject: `You're invited to join ${APP_NAME} Admin`,
+      html,
+    });
+
+    return emailId;
+  },
+});
+
+// =============================================================================
+// Player Invite Email (plain HTML – no React rendering in Node)
+// =============================================================================
+
+export const sendPlayerInviteEmail = internalAction({
+  args: {
+    to: v.string(),
+    firstName: v.string(),
+    token: v.string(),
+  },
+  returns: v.string(),
+  handler: async (ctx, args) => {
+    const inviteUrl = `${process.env.ADMIN_URL || "http://localhost:3001"}/accept-invite?token=${args.token}&type=player`;
+
+    const isDev = process.env.IS_DEV === "true";
+    if (isDev) {
+      console.log(`[DEV] Player invite email to ${args.to}`);
+      console.log(`[DEV] Invite URL: ${inviteUrl}`);
+      return "dev-email-id";
+    }
+
+    const html = renderPlayerInviteHtml(
+      { firstName: args.firstName, inviteUrl },
+      { appName: APP_NAME, appAddress: APP_ADDRESS }
+    );
+
+    const emailId = await resend.sendEmail(ctx, {
+      from: DEFAULT_FROM,
+      to: args.to,
+      subject: `You've been invited to join ${APP_NAME}`,
       html,
     });
 

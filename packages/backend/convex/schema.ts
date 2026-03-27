@@ -13,6 +13,7 @@ import { folders } from "./table/folders";
 import { invitations } from "./table/invitations";
 import { notifications } from "./table/notifications";
 import { playerFitness } from "./table/playerFitness";
+import { playerInvites } from "./table/playerInvites";
 import { playerInjuries } from "./table/playerInjuries";
 import { playerStats } from "./table/playerStats";
 import { players } from "./table/players";
@@ -35,6 +36,7 @@ export default defineSchema({
   notifications,
   playerFitness,
   playerInjuries,
+  playerInvites,
   playerStats,
   players,
   teams,

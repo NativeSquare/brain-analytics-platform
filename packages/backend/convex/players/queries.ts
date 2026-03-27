@@ -128,3 +128,70 @@ export const getPlayerTabAccess = query({
     };
   },
 });
+
+/**
+ * Validate a player invitation token. Public query (no auth required).
+ *
+ * AC #11: Used by the accept-invite page to check token validity
+ * and pre-fill the registration form.
+ */
+export const validatePlayerInvite = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    const invite = await ctx.db
+      .query("playerInvites")
+      .withIndex("by_token", (q) => q.eq("token", token))
+      .first();
+
+    if (!invite) {
+      return { valid: false as const, reason: "not_found" as const };
+    }
+
+    if (invite.status !== "pending") {
+      return { valid: false as const, reason: "already_used" as const };
+    }
+
+    if (invite.expiresAt < Date.now()) {
+      return { valid: false as const, reason: "expired" as const };
+    }
+
+    // Fetch associated player
+    const player = await ctx.db.get(invite.playerId);
+    if (!player) {
+      return { valid: false as const, reason: "not_found" as const };
+    }
+
+    return {
+      valid: true as const,
+      firstName: player.firstName,
+      lastName: player.lastName,
+      email: invite.email,
+    };
+  },
+});
+
+/**
+ * Get the invite status for a specific player. Authenticated.
+ *
+ * AC #12: Used by the player list and profile page to show
+ * invite status indicators and re-invite button.
+ */
+export const getPlayerInviteStatus = query({
+  args: { playerId: v.id("players") },
+  handler: async (ctx, { playerId }) => {
+    await requireAuth(ctx);
+
+    const invites = await ctx.db
+      .query("playerInvites")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+
+    if (invites.length === 0) {
+      return null;
+    }
+
+    // Return the most recent invite's status
+    const sorted = invites.sort((a, b) => b.createdAt - a.createdAt);
+    return sorted[0].status;
+  },
+});

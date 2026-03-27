@@ -41,7 +41,223 @@ export function AcceptInviteForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const inviteType = searchParams.get("type"); // "player" or null (admin/team)
 
+  // If type=player, render the player-specific accept flow
+  if (inviteType === "player") {
+    return <AcceptPlayerInviteForm token={token} className={className} {...props} />;
+  }
+
+  // Otherwise, render the existing admin/team invite flow
+  return <AcceptStaffInviteForm token={token} className={className} {...props} />;
+}
+
+// =============================================================================
+// Player Invite Acceptance
+// =============================================================================
+
+function AcceptPlayerInviteForm({
+  token,
+  className,
+  ...props
+}: { token: string } & React.ComponentProps<"div">) {
+  const router = useRouter();
+  const { signIn } = useAuthActions();
+  const acceptPlayerInvite = useMutation(api.players.mutations.acceptPlayerInvite);
+
+  const playerInvite = useQuery(
+    api.players.queries.validatePlayerInvite,
+    token ? { token } : "skip",
+  );
+
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { password: "", confirmPassword: "" },
+  });
+
+  // Loading
+  if (playerInvite === undefined) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
+
+  // Invalid/expired token
+  if (!playerInvite.valid) {
+    const errorMap: Record<string, { title: string; message: string }> = {
+      not_found: {
+        title: "Invalid Invitation",
+        message: "This invitation link is not valid.",
+      },
+      already_used: {
+        title: "Invitation Already Used",
+        message: "This invitation has already been accepted.",
+      },
+      expired: {
+        title: "Invitation Expired",
+        message: "This invitation has expired. Please ask your club admin to send a new one.",
+      },
+    };
+    const err = errorMap[playerInvite.reason] ?? errorMap.not_found;
+
+    return (
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <Card className="overflow-hidden p-0">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <h1 className="text-2xl font-bold text-destructive">{err.title}</h1>
+              <p className="text-muted-foreground">{err.message}</p>
+              <Button variant="outline" onClick={() => router.push("/login")}>
+                Go to Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Valid invite — show registration form
+  const { firstName, lastName, email } = playerInvite;
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    setFormError(null);
+
+    try {
+      // Create the user account via @convex-dev/auth
+      await signIn("password", {
+        email,
+        password: data.password,
+        flow: "signUp",
+      });
+
+      // Accept the invite — links user to player profile
+      await acceptPlayerInvite({ token });
+
+      router.replace("/");
+    } catch (error) {
+      setFormError(getConvexErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <Card className="overflow-hidden p-0">
+        <CardContent className="p-6 md:p-8">
+          <form id="form-accept-player-invite" onSubmit={form.handleSubmit(onSubmit)}>
+            <FieldGroup>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h1 className="text-2xl font-bold">
+                  Welcome, {firstName}!
+                </h1>
+                <p className="text-muted-foreground text-balance">
+                  You've been invited to create your player account.
+                  {" "}
+                  <Badge variant="secondary">Player</Badge>
+                </p>
+              </div>
+
+              {formError && (
+                <div className="text-destructive self-center text-sm">
+                  {formError}
+                </div>
+              )}
+
+              <Field>
+                <FieldLabel>Name</FieldLabel>
+                <div className="text-muted-foreground text-sm">
+                  {firstName} {lastName}
+                </div>
+              </Field>
+
+              <Field>
+                <FieldLabel>Email</FieldLabel>
+                <div className="text-muted-foreground text-sm">{email}</div>
+              </Field>
+
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <PasswordInput
+                      {...field}
+                      id="password"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Create a password"
+                      required
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="confirmPassword"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="confirmPassword">
+                      Confirm Password
+                    </FieldLabel>
+                    <PasswordInput
+                      {...field}
+                      id="confirmPassword"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="Confirm your password"
+                      required
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Field>
+                <Button
+                  type="submit"
+                  form="form-accept-player-invite"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Spinner /> : "Create Account"}
+                </Button>
+              </Field>
+
+              <FieldDescription className="text-center">
+                By creating an account, you agree to our{" "}
+                <a href="#">Terms of Service</a> and{" "}
+                <a href="#">Privacy Policy</a>.
+              </FieldDescription>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// =============================================================================
+// Staff/Admin Invite Acceptance (existing flow, extracted)
+// =============================================================================
+
+function AcceptStaffInviteForm({
+  token,
+  className,
+  ...props
+}: { token: string } & React.ComponentProps<"div">) {
+  const router = useRouter();
   const { signIn } = useAuthActions();
   const acceptInviteMutation = useMutation(api.invitations.mutations.acceptInvite);
 

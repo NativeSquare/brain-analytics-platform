@@ -53,8 +53,15 @@ function getBreadcrumbs(pathname: string): BreadcrumbEntry[] {
     return [{ label: rootLabel, href: `/${root}`, isCurrentPage: true }]
   }
 
-  // Nested route: e.g. /players/abc123 or /calendar/today
-  const nestedLabel = nestedLabelMap[root] ?? segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
+  // Known nested route labels (e.g. /players/new → "Add Player")
+  const knownNestedRoutes: Record<string, string> = {
+    "players/new": "Add Player",
+  }
+
+  const nestedKey = segments.slice(0, 2).join("/")
+  const nestedLabel = knownNestedRoutes[nestedKey]
+    ?? nestedLabelMap[root]
+    ?? segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
 
   return [
     { label: rootLabel, href: `/${root}`, isCurrentPage: false },

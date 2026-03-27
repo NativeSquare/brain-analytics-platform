@@ -849,3 +849,122 @@ describe("getEventRsvps", () => {
     expect(pending).toHaveLength(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// getUserRsvpsByEventIds (batch query for calendar view)
+// ---------------------------------------------------------------------------
+
+describe("getUserRsvpsByEventIds", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  it("returns a map of eventId → status for events the user has RSVPed to", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    // Create two events
+    const event1Id = await seedEvent(t, teamId, userId, {
+      name: "Event 1",
+      rsvpEnabled: true,
+      invitedRoles: ["coach"],
+    });
+    const event2Id = await seedEvent(t, teamId, userId, {
+      name: "Event 2",
+      rsvpEnabled: true,
+      invitedRoles: ["coach"],
+      startsAt: new Date(2026, 2, 16, 10, 0).getTime(),
+      endsAt: new Date(2026, 2, 16, 12, 0).getTime(),
+    });
+
+    // RSVP to event 1 only
+    await t.run(async (ctx) => {
+      await ctx.db.insert("eventRsvps", {
+        eventId: event1Id,
+        userId,
+        teamId,
+        status: "attending",
+        respondedAt: Date.now(),
+      });
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getUserRsvpsByEventIds,
+      { eventIds: [event1Id, event2Id] },
+    );
+
+    // Event 1 should have status, Event 2 should not be in the map
+    expect(result[event1Id as string]).toBe("attending");
+    expect(result[event2Id as string]).toBeUndefined();
+  });
+
+  it("returns empty map when user has no RSVPs", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const eventId = await seedEvent(t, teamId, userId, {
+      name: "No RSVP Event",
+      rsvpEnabled: true,
+      invitedRoles: ["coach"],
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getUserRsvpsByEventIds,
+      { eventIds: [eventId] },
+    );
+
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  it("excludes events from other teams (team isolation)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    // Create event on user's team with RSVP
+    const ownEventId = await seedEvent(t, teamId, userId, {
+      name: "Own Team Event",
+      rsvpEnabled: true,
+      invitedRoles: ["coach"],
+    });
+    await t.run(async (ctx) => {
+      await ctx.db.insert("eventRsvps", {
+        eventId: ownEventId,
+        userId,
+        teamId,
+        status: "attending",
+        respondedAt: Date.now(),
+      });
+    });
+
+    // Create event on other team
+    const otherTeamId = await t.run(async (ctx) =>
+      ctx.db.insert("teams", { name: "Other Team", slug: "other-team" }),
+    );
+    const otherOwnerId = await t.run(async (ctx) =>
+      ctx.db.insert("users", {
+        name: "Other Owner",
+        email: "other@example.com",
+        role: "admin",
+        status: "active",
+        teamId: otherTeamId,
+      }),
+    );
+    const otherEventId = await seedEvent(t, otherTeamId, otherOwnerId, {
+      name: "Other Team Event",
+      rsvpEnabled: true,
+      invitedRoles: ["coach"],
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getUserRsvpsByEventIds,
+      { eventIds: [ownEventId, otherEventId] },
+    );
+
+    // Only own team event should be in results
+    expect(result[ownEventId as string]).toBe("attending");
+    expect(result[otherEventId as string]).toBeUndefined();
+  });
+});

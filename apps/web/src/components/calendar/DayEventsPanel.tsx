@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { format } from "date-fns";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -108,8 +108,6 @@ export function DayEventsPanel({
 // ---------------------------------------------------------------------------
 // Memoized list item to avoid inline closures per event
 // ---------------------------------------------------------------------------
-
-import { memo } from "react";
 
 interface DayEventItemProps {
   event: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useQuery } from "convex/react";
 import { ChevronDown } from "lucide-react";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -68,7 +69,7 @@ interface UserRowProps {
   reason?: string;
 }
 
-function UserRow({ fullName, avatarUrl, reason }: UserRowProps) {
+const UserRow = memo(function UserRow({ fullName, avatarUrl, reason }: UserRowProps) {
   return (
     <div className="flex items-center gap-3 py-1.5">
       <Avatar className="size-7">
@@ -87,7 +88,7 @@ function UserRow({ fullName, avatarUrl, reason }: UserRowProps) {
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Component

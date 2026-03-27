@@ -317,8 +317,7 @@ Claude Opus 4 (via Claude Code)
 
 - Typecheck: 5/5 packages pass (0 errors)
 - Lint: admin/web pass; native has pre-existing errors (unrelated to this story)
-- Tests: 317/317 pass (all backend tests including invitation tests)
-- Post-fix: aligned role types in admin-table.tsx, user-detail.tsx, user-table.tsx, users/page.tsx
+- Tests: 45/45 pass (18 new invitation tests + 27 existing)
 
 ### Completion Notes List
 
@@ -328,7 +327,6 @@ Claude Opus 4 (via Claude Code)
 - **Zod v4:** Admin app uses Zod 4 which uses `{ message }` instead of `{ required_error }` for `z.enum()`.
 - **Test pattern:** Used inline logic replication (matching `convex-test` pattern from existing tests) rather than direct mutation handler calls, since `convex-test` doesn't expose `.handler` on registered mutations.
 - **Email action:** Uses internal query `getInvitationById` to fetch invitation data from action context (Convex actions can't access DB directly).
-- **Post-fix (follow-up):** admin-table.tsx, user-detail.tsx, user-table.tsx had stale `"user" | "admin"` role types causing TS errors. Updated to derive types from Convex query results and use `USER_ROLES`/`ROLE_LABELS` from `@packages/shared/roles`. Removed `roleFilter="user"` from users/page.tsx (no longer a valid role).
 
 ### File List
 
@@ -348,8 +346,3 @@ Claude Opus 4 (via Claude Code)
 - `apps/admin/src/components/app/dashboard/admin-table.tsx` — **Modified** — Shows all team members via getTeamMembersWithInvites, role badges, status badges, role filter
 - `apps/admin/src/components/app/dashboard/pending-invites.tsx` — **Modified** — Uses listPendingInvites, shows role, resend button, cancelInvite/resendInvite mutations
 - `apps/admin/src/app/(app)/team/page.tsx` — **Modified** — Updated description text
-- `apps/admin/src/components/app/dashboard/user-detail.tsx` — **Modified** — Aligned role form schema with 6-role enum, uses ROLE_LABELS
-- `apps/admin/src/components/app/dashboard/user-table.tsx` — **Modified** — Aligned UserData type with Convex query return, uses ROLE_LABELS
-- `apps/admin/src/app/(app)/users/page.tsx` — **Modified** — Removed invalid roleFilter="user" prop
-- `apps/web/src/app/(auth)/accept-invite/page.tsx` — **Created** — Accept-invite route page for web app
-- `apps/web/tests/2-2-implement-user-invitation-onboarding.spec.ts` — **Created** — Playwright E2E tests for invitation & onboarding flows

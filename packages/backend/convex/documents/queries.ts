@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { requireAuth } from "../lib/auth";
@@ -180,5 +180,75 @@ export const getFolderItemCounts = query({
     }
 
     return counts;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Document queries (Story 4.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a signed URL for downloading a file-type document.
+ * Returns null for video link documents (no storageId).
+ */
+export const getDocumentUrl = query({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, { documentId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const document = await ctx.db.get(documentId);
+    if (!document || document.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Document not found.",
+      });
+    }
+
+    if (!document.storageId) {
+      return null;
+    }
+
+    const url = await ctx.storage.getUrl(document.storageId as Id<"_storage">);
+    return url;
+  },
+});
+
+/**
+ * Returns full document details including owner name.
+ */
+export const getDocument = query({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, { documentId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const document = await ctx.db.get(documentId);
+    if (!document || document.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Document not found.",
+      });
+    }
+
+    // Fetch owner user record
+    const owner = await ctx.db.get(document.ownerId);
+    const ownerName = owner?.name ?? owner?.email ?? "Unknown";
+
+    return {
+      _id: document._id,
+      teamId: document.teamId,
+      folderId: document.folderId,
+      name: document.name,
+      filename: document.filename,
+      extension: document.extension,
+      storageId: document.storageId,
+      videoUrl: document.videoUrl,
+      mimeType: document.mimeType,
+      fileSize: document.fileSize,
+      ownerId: document.ownerId,
+      ownerName,
+      permittedRoles: document.permittedRoles,
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt,
+    };
   },
 });

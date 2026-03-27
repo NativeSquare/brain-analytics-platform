@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
-import { IconFolderPlus, IconFolders, IconFile } from "@tabler/icons-react";
-import { format } from "date-fns";
+import { IconFolderPlus, IconFolders } from "@tabler/icons-react";
+import { Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +15,11 @@ import { FolderCreateDialog } from "@/components/documents/FolderCreateDialog";
 import { FolderRenameDialog } from "@/components/documents/FolderRenameDialog";
 import { FolderDeleteDialog } from "@/components/documents/FolderDeleteDialog";
 import { DocumentFolderBreadcrumb } from "@/components/documents/DocumentFolderBreadcrumb";
+import { DocumentCard } from "@/components/documents/DocumentCard";
+import { UploadDialog } from "@/components/documents/UploadDialog";
+import { DocumentDetail } from "@/components/documents/DocumentDetail";
+import { ReplaceFileDialog } from "@/components/documents/ReplaceFileDialog";
+import { DocumentDeleteDialog } from "@/components/documents/DocumentDeleteDialog";
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
@@ -25,7 +30,7 @@ export default function DocumentsPage() {
   const currentUser = useQuery(api.table.users.currentUser);
   const isAdmin = currentUser?.role === "admin";
 
-  // Dialog states
+  // --- Folder dialog states ---
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
   const [renameTarget, setRenameTarget] = React.useState<{
     id: Id<"folders">;
@@ -36,7 +41,21 @@ export default function DocumentsPage() {
     name: string;
   } | null>(null);
 
-  // Data queries
+  // --- Document dialog states ---
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = React.useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] =
+    React.useState<Id<"documents"> | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = React.useState(false);
+  const [replaceTarget, setReplaceTarget] = React.useState<{
+    id: Id<"documents">;
+    name: string;
+  } | null>(null);
+  const [docDeleteTarget, setDocDeleteTarget] = React.useState<{
+    id: Id<"documents">;
+    name: string;
+  } | null>(null);
+
+  // --- Data queries ---
   const topLevelFolders = useQuery(
     api.documents.queries.getFolders,
     !currentFolderId ? {} : "skip",
@@ -63,7 +82,7 @@ export default function DocumentsPage() {
     visibleFolderIds.length > 0 ? { folderIds: visibleFolderIds } : "skip",
   );
 
-  // Stable callbacks for FolderCard (memoized to avoid re-renders)
+  // --- Folder callbacks ---
   const handleFolderClick = React.useCallback(
     (folderId: Id<"folders">) => {
       router.push(`/documents?folder=${folderId}`);
@@ -91,13 +110,42 @@ export default function DocumentsPage() {
     return counts ? counts.subfolders + counts.documents : 0;
   }
 
+  // --- Document action handlers ---
+  function handleViewDetails(docId: Id<"documents">) {
+    setSelectedDocumentId(docId);
+    setIsDetailOpen(true);
+  }
+
+  function handleReplaceFromCard(docId: Id<"documents">, docName: string) {
+    setReplaceTarget({ id: docId, name: docName });
+  }
+
+  function handleDeleteFromCard(docId: Id<"documents">, docName: string) {
+    setDocDeleteTarget({ id: docId, name: docName });
+  }
+
+  function handleReplaceFromDetail(docId: Id<"documents">, docName: string) {
+    setReplaceTarget({ id: docId, name: docName });
+  }
+
+  function handleDeleteFromDetail(docId: Id<"documents">, docName: string) {
+    setDocDeleteTarget({ id: docId, name: docName });
+  }
+
+  function handleDocumentDeleted() {
+    setIsDetailOpen(false);
+    setSelectedDocumentId(null);
+  }
+
   // Determine if we can show "New Subfolder" button
-  // Only show when inside a top-level category (folder's parentId is undefined)
   const canCreateSubfolder =
     isAdmin &&
     currentFolderId &&
     folderContents?.folder &&
     folderContents.folder.parentId === undefined;
+
+  // Current folder name (for upload dialog)
+  const currentFolderName = folderContents?.folder?.name ?? "";
 
   // Top-level view
   if (!currentFolderId) {
@@ -168,12 +216,27 @@ export default function DocumentsPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <DocumentFolderBreadcrumb folderId={currentFolderId} />
-        {canCreateSubfolder && (
-          <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-            <IconFolderPlus className="mr-2 size-4" />
-            New Subfolder
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAdmin && currentFolderId && (
+            <Button
+              size="sm"
+              onClick={() => setIsUploadDialogOpen(true)}
+            >
+              <Upload className="mr-2 size-4" />
+              Upload
+            </Button>
+          )}
+          {canCreateSubfolder && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <IconFolderPlus className="mr-2 size-4" />
+              New Subfolder
+            </Button>
+          )}
+        </div>
       </div>
 
       {folderContents === undefined ? (
@@ -202,21 +265,26 @@ export default function DocumentsPage() {
           {folderContents.documents.length > 0 && (
             <div className="space-y-1">
               {folderContents.documents.map((doc) => (
-                <div
+                <DocumentCard
                   key={doc._id}
-                  className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/50"
-                >
-                  <IconFile className="size-4 text-muted-foreground" />
-                  <span className="flex-1 truncate text-sm">{doc.name}</span>
-                  {doc.extension && (
-                    <span className="text-xs uppercase text-muted-foreground">
-                      {doc.extension}
-                    </span>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(doc.createdAt), "MMM d, yyyy")}
-                  </span>
-                </div>
+                  document={doc}
+                  isAdmin={isAdmin}
+                  onViewDetails={() =>
+                    handleViewDetails(doc._id as Id<"documents">)
+                  }
+                  onReplace={() =>
+                    handleReplaceFromCard(
+                      doc._id as Id<"documents">,
+                      doc.name,
+                    )
+                  }
+                  onDelete={() =>
+                    handleDeleteFromCard(
+                      doc._id as Id<"documents">,
+                      doc.name,
+                    )
+                  }
+                />
               ))}
             </div>
           )}
@@ -229,11 +297,22 @@ export default function DocumentsPage() {
                 <p className="text-sm text-muted-foreground">
                   This folder is empty.
                 </p>
+                {isAdmin && (
+                  <Button
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => setIsUploadDialogOpen(true)}
+                  >
+                    <Upload className="mr-2 size-4" />
+                    Upload Document
+                  </Button>
+                )}
               </div>
             )}
         </>
       )}
 
+      {/* Folder dialogs */}
       <FolderCreateDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
@@ -255,6 +334,44 @@ export default function DocumentsPage() {
           onOpenChange={(open) => !open && setDeleteTarget(null)}
           folderId={deleteTarget.id}
           folderName={deleteTarget.name}
+        />
+      )}
+
+      {/* Document dialogs */}
+      {currentFolderId && (
+        <UploadDialog
+          open={isUploadDialogOpen}
+          onOpenChange={setIsUploadDialogOpen}
+          folderId={currentFolderId}
+          folderName={currentFolderName}
+        />
+      )}
+
+      <DocumentDetail
+        documentId={selectedDocumentId}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        isAdmin={isAdmin}
+        onReplace={handleReplaceFromDetail}
+        onDelete={handleDeleteFromDetail}
+      />
+
+      {replaceTarget && (
+        <ReplaceFileDialog
+          open={!!replaceTarget}
+          onOpenChange={(open) => !open && setReplaceTarget(null)}
+          documentId={replaceTarget.id}
+          documentName={replaceTarget.name}
+        />
+      )}
+
+      {docDeleteTarget && (
+        <DocumentDeleteDialog
+          open={!!docDeleteTarget}
+          onOpenChange={(open) => !open && setDocDeleteTarget(null)}
+          documentId={docDeleteTarget.id}
+          documentName={docDeleteTarget.name}
+          onDeleted={handleDocumentDeleted}
         />
       )}
     </div>

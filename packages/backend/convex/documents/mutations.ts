@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
 import { requireRole } from "../lib/auth";
 
 /**
@@ -137,6 +138,198 @@ export const deleteFolder = mutation({
     }
 
     await ctx.db.delete(folderId);
+
+    return { success: true };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Document mutations (Story 4.2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Uploads a document record after file is stored via Convex storage. Admin-only.
+ */
+export const uploadDocument = mutation({
+  args: {
+    folderId: v.id("folders"),
+    name: v.string(),
+    filename: v.string(),
+    extension: v.string(),
+    storageId: v.string(),
+    mimeType: v.string(),
+    fileSize: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    // Validate folder exists and belongs to team
+    const folder = await ctx.db.get(args.folderId);
+    if (!folder || folder.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Folder not found.",
+      });
+    }
+
+    const documentId = await ctx.db.insert("documents", {
+      teamId,
+      folderId: args.folderId,
+      name: args.name,
+      filename: args.filename,
+      extension: args.extension,
+      storageId: args.storageId,
+      mimeType: args.mimeType,
+      fileSize: args.fileSize,
+      videoUrl: undefined,
+      ownerId: user._id,
+      permittedRoles: undefined,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return documentId;
+  },
+});
+
+/**
+ * Adds a video link document. Admin-only.
+ */
+export const addVideoLink = mutation({
+  args: {
+    folderId: v.id("folders"),
+    name: v.string(),
+    videoUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    // Validate folder exists and belongs to team
+    const folder = await ctx.db.get(args.folderId);
+    if (!folder || folder.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Folder not found.",
+      });
+    }
+
+    // Validate URL prefix
+    if (
+      !args.videoUrl.startsWith("http://") &&
+      !args.videoUrl.startsWith("https://")
+    ) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Video URL must start with http:// or https://.",
+      });
+    }
+
+    const documentId = await ctx.db.insert("documents", {
+      teamId,
+      folderId: args.folderId,
+      name: args.name,
+      filename: undefined,
+      extension: undefined,
+      storageId: undefined,
+      mimeType: undefined,
+      fileSize: undefined,
+      videoUrl: args.videoUrl,
+      ownerId: user._id,
+      permittedRoles: undefined,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return documentId;
+  },
+});
+
+/**
+ * Replaces the file on an existing file-type document. Admin-only.
+ * Deletes the old file from Convex storage.
+ */
+export const replaceFile = mutation({
+  args: {
+    documentId: v.id("documents"),
+    storageId: v.string(),
+    filename: v.string(),
+    extension: v.string(),
+    mimeType: v.string(),
+    fileSize: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    const document = await ctx.db.get(args.documentId);
+    if (!document || document.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Document not found.",
+      });
+    }
+
+    // Must be a file document, not a video link
+    if (!document.storageId && document.videoUrl) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Cannot replace file on a video link document.",
+      });
+    }
+
+    // Delete old file from storage
+    if (document.storageId) {
+      await ctx.storage.delete(document.storageId as Id<"_storage">);
+    }
+
+    await ctx.db.patch(args.documentId, {
+      storageId: args.storageId,
+      filename: args.filename,
+      extension: args.extension,
+      mimeType: args.mimeType,
+      fileSize: args.fileSize,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Deletes a document and its file from storage. Admin-only.
+ * Also cascades to delete related documentReads records.
+ */
+export const deleteDocument = mutation({
+  args: {
+    documentId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    const document = await ctx.db.get(args.documentId);
+    if (!document || document.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Document not found.",
+      });
+    }
+
+    // Delete file from storage if it exists
+    if (document.storageId) {
+      await ctx.storage.delete(document.storageId as Id<"_storage">);
+    }
+
+    // Cascade delete related documentReads
+    const reads = await ctx.db
+      .query("documentReads")
+      .withIndex("by_documentId", (q) => q.eq("documentId", args.documentId))
+      .collect();
+
+    for (const read of reads) {
+      await ctx.db.delete(read._id);
+    }
+
+    // Delete the document record
+    await ctx.db.delete(args.documentId);
 
     return { success: true };
   },

@@ -522,3 +522,158 @@ describe("getFolderItemCounts", () => {
     expect(result[parentId].subfolders).toBe(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// getDocumentUrl
+// ---------------------------------------------------------------------------
+
+describe("getDocumentUrl", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  it("returns null for video link documents (no storageId)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const folderId = await insertFolder(t, teamId, userId, {
+      name: "Videos",
+    });
+    const docId = await insertDocument(t, teamId, folderId, userId, {
+      name: "Training Video",
+      videoUrl: "https://youtube.com/watch?v=abc",
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDocumentUrl,
+      { documentId: docId },
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("rejects wrong team access", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const otherTeamId = await t.run(async (ctx) =>
+      ctx.db.insert("teams", { name: "Other Team", slug: "other-team" }),
+    );
+    const folderId = await insertFolder(t, otherTeamId, userId, {
+      name: "Other Folder",
+    });
+    const docId = await insertDocument(t, otherTeamId, folderId, userId, {
+      name: "Other Doc",
+      storageId: "s1",
+    });
+
+    let caughtError: unknown;
+    try {
+      await t.query(
+        (await import("../queries")).getDocumentUrl,
+        { documentId: docId },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getDocument
+// ---------------------------------------------------------------------------
+
+describe("getDocument", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  it("returns document with owner name", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const folderId = await insertFolder(t, teamId, userId, {
+      name: "Docs",
+    });
+    const docId = await insertDocument(t, teamId, folderId, userId, {
+      name: "My Report",
+      filename: "report.pdf",
+      extension: "pdf",
+      storageId: "storage_abc",
+      mimeType: "application/pdf",
+      fileSize: 2048,
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDocument,
+      { documentId: docId },
+    );
+
+    expect(result).toBeDefined();
+    expect(result!.name).toBe("My Report");
+    expect(result!.filename).toBe("report.pdf");
+    expect(result!.extension).toBe("pdf");
+    expect(result!.storageId).toBe("storage_abc");
+    expect(result!.fileSize).toBe(2048);
+    expect(result!.ownerName).toBe("Test User");
+    expect(result!.createdAt).toBeDefined();
+    expect(result!.updatedAt).toBeDefined();
+  });
+
+  it("returns video link document with correct fields", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const folderId = await insertFolder(t, teamId, userId, {
+      name: "Videos",
+    });
+    const docId = await insertDocument(t, teamId, folderId, userId, {
+      name: "Video Doc",
+      videoUrl: "https://youtube.com/watch?v=xyz",
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDocument,
+      { documentId: docId },
+    );
+
+    expect(result).toBeDefined();
+    expect(result!.name).toBe("Video Doc");
+    expect(result!.videoUrl).toBe("https://youtube.com/watch?v=xyz");
+    expect(result!.storageId).toBeUndefined();
+  });
+
+  it("rejects wrong team", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const otherTeamId = await t.run(async (ctx) =>
+      ctx.db.insert("teams", { name: "Other Team", slug: "other-team" }),
+    );
+    const folderId = await insertFolder(t, otherTeamId, userId, {
+      name: "Other Folder",
+    });
+    const docId = await insertDocument(t, otherTeamId, folderId, userId, {
+      name: "Other Doc",
+    });
+
+    let caughtError: unknown;
+    try {
+      await t.query(
+        (await import("../queries")).getDocument,
+        { documentId: docId },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeDefined();
+  });
+});

@@ -18,5 +18,10 @@
   "engines": {
     "node": ">=20.19.4"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@9.0.0",
+  "pnpm": {
+    "overrides": {
+      "preact": "^10.25.0"
+    }
+  }
 }

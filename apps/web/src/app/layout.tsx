@@ -6,15 +6,9 @@ import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import { ThemeProvider } from "next-themes";
 import { cn } from "@/lib/utils";
 
-const instrumentSansHeading = Instrument_Sans({
-  subsets: ["latin"],
-  variable: "--font-heading",
-});
+const instrumentSansHeading = Instrument_Sans({subsets:['latin'],variable:'--font-heading'});
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+const outfit = Outfit({subsets:['latin'],variable:'--font-sans'});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",

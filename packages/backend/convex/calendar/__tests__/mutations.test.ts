@@ -878,3 +878,358 @@ describe("getSeriesInfo", () => {
     expect(updatedInfo!.activeOccurrences).toBe(3);
   });
 });
+
+// ---------------------------------------------------------------------------
+// submitRsvp
+// ---------------------------------------------------------------------------
+
+describe("submitRsvp", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  /** Helper: create an RSVP-enabled event as admin, then switch to a given user */
+  async function setupRsvpEvent(
+    t: ReturnType<typeof convexTest>,
+    overrides: {
+      rsvpEnabled?: boolean;
+      invitedRoles?: string[];
+      isCancelled?: boolean;
+    } = {},
+  ) {
+    // Create admin + team
+    const { userId: adminId, teamId } = await seedTeamAndUser(t, {
+      role: "admin",
+      name: "Admin RSVP",
+      email: "admin-rsvp@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(adminId);
+
+    const eventId = await t.mutation(
+      (await import("../mutations")).createEvent,
+      defaultEventArgs({
+        rsvpEnabled: overrides.rsvpEnabled ?? true,
+        invitedRoles: overrides.invitedRoles ?? ["coach", "player"],
+        invitedUserIds: [],
+      }),
+    );
+
+    // Optionally cancel the event
+    if (overrides.isCancelled) {
+      await t.mutation(
+        (await import("../mutations")).cancelEvent,
+        { eventId },
+      );
+    }
+
+    return { adminId, teamId, eventId };
+  }
+
+  it("creates an 'attending' RSVP record for an invited user", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t);
+
+    // Create a coach (invited by role)
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach-rsvp@example.com",
+      name: "Coach RSVP",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    const rsvpId = await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      { eventId, status: "attending" as const },
+    );
+
+    expect(rsvpId).toBeTruthy();
+
+    const rsvp = await t.run(async (ctx) => ctx.db.get(rsvpId));
+    expect(rsvp).not.toBeNull();
+    expect(rsvp!.status).toBe("attending");
+    expect(rsvp!.reason).toBeUndefined();
+    expect(rsvp!.userId).toBe(coachId);
+    expect(rsvp!.eventId).toBe(eventId);
+    expect(rsvp!.teamId).toBe(teamId);
+    expect(rsvp!.respondedAt).toBeGreaterThan(0);
+  });
+
+  it("creates a 'not_attending' RSVP with reason", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t);
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    const rsvpId = await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      {
+        eventId,
+        status: "not_attending" as const,
+        reason: "Family commitment",
+      },
+    );
+
+    const rsvp = await t.run(async (ctx) => ctx.db.get(rsvpId));
+    expect(rsvp!.status).toBe("not_attending");
+    expect(rsvp!.reason).toBe("Family commitment");
+  });
+
+  it("creates a 'not_attending' RSVP without reason", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t);
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    const rsvpId = await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      { eventId, status: "not_attending" as const },
+    );
+
+    const rsvp = await t.run(async (ctx) => ctx.db.get(rsvpId));
+    expect(rsvp!.status).toBe("not_attending");
+    expect(rsvp!.reason).toBeUndefined();
+  });
+
+  it("upserts: updating 'attending' to 'not_attending' keeps only one record", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t);
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    // First: attending
+    await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      { eventId, status: "attending" as const },
+    );
+
+    // Second: change to not_attending
+    await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      {
+        eventId,
+        status: "not_attending" as const,
+        reason: "Changed plans",
+      },
+    );
+
+    // Verify only one record exists
+    const rsvps = await t.run(async (ctx) =>
+      ctx.db
+        .query("eventRsvps")
+        .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+        .collect(),
+    );
+    expect(rsvps).toHaveLength(1);
+    expect(rsvps[0].status).toBe("not_attending");
+    expect(rsvps[0].reason).toBe("Changed plans");
+  });
+
+  it("clears reason when changing from 'not_attending' to 'attending'", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t);
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    // First: not_attending with reason
+    await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      {
+        eventId,
+        status: "not_attending" as const,
+        reason: "Busy",
+      },
+    );
+
+    // Second: switch to attending
+    await t.mutation(
+      (await import("../mutations")).submitRsvp,
+      { eventId, status: "attending" as const },
+    );
+
+    const rsvps = await t.run(async (ctx) =>
+      ctx.db
+        .query("eventRsvps")
+        .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+        .collect(),
+    );
+    expect(rsvps).toHaveLength(1);
+    expect(rsvps[0].status).toBe("attending");
+    expect(rsvps[0].reason).toBeUndefined();
+  });
+
+  it("rejects RSVP when rsvpEnabled is false", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t, {
+      rsvpEnabled: false,
+    });
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    let caughtError: unknown;
+    try {
+      await t.mutation(
+        (await import("../mutations")).submitRsvp,
+        { eventId, status: "attending" as const },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(ConvexError);
+    const rawData = (caughtError as ConvexError<any>).data;
+    const errData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+    expect(errData.code).toBe("VALIDATION_ERROR");
+    expect(errData.message).toContain("RSVP is not enabled");
+  });
+
+  it("rejects RSVP on a cancelled event", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t, {
+      isCancelled: true,
+    });
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    let caughtError: unknown;
+    try {
+      await t.mutation(
+        (await import("../mutations")).submitRsvp,
+        { eventId, status: "attending" as const },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(ConvexError);
+    const rawData = (caughtError as ConvexError<any>).data;
+    const errData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+    expect(errData.code).toBe("VALIDATION_ERROR");
+    expect(errData.message).toContain("cancelled");
+  });
+
+  it("rejects RSVP from a non-invited user", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t, {
+      invitedRoles: ["coach"], // only coaches invited
+    });
+
+    // Create a player (NOT in invitedRoles, NOT individually invited)
+    const { userId: playerId } = await seedTeamAndUser(t, {
+      role: "player",
+      teamId,
+      email: "player@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(playerId);
+
+    let caughtError: unknown;
+    try {
+      await t.mutation(
+        (await import("../mutations")).submitRsvp,
+        { eventId, status: "attending" as const },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(ConvexError);
+    const rawData = (caughtError as ConvexError<any>).data;
+    const errData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+    expect(errData.code).toBe("NOT_AUTHORIZED");
+    expect(errData.message).toContain("not invited");
+  });
+
+  it("rejects RSVP from user on a different team (team isolation)", async () => {
+    const t = convexTest(schema, modules);
+    const { eventId } = await setupRsvpEvent(t);
+
+    // Create user on different team
+    const otherTeamId = await t.run(async (ctx) =>
+      ctx.db.insert("teams", { name: "Other Team", slug: "other-team" }),
+    );
+    const { userId: otherUserId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId: otherTeamId,
+      email: "other-coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(otherUserId);
+
+    let caughtError: unknown;
+    try {
+      await t.mutation(
+        (await import("../mutations")).submitRsvp,
+        { eventId, status: "attending" as const },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(ConvexError);
+    const rawData = (caughtError as ConvexError<any>).data;
+    const errData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+    expect(errData.code).toBe("NOT_AUTHORIZED");
+  });
+
+  it("rejects reason exceeding 500 characters", async () => {
+    const t = convexTest(schema, modules);
+    const { teamId, eventId } = await setupRsvpEvent(t);
+
+    const { userId: coachId } = await seedTeamAndUser(t, {
+      role: "coach",
+      teamId,
+      email: "coach@example.com",
+    });
+    mockGetAuthUserId.mockResolvedValue(coachId);
+
+    const longReason = "x".repeat(501);
+    let caughtError: unknown;
+    try {
+      await t.mutation(
+        (await import("../mutations")).submitRsvp,
+        {
+          eventId,
+          status: "not_attending" as const,
+          reason: longReason,
+        },
+      );
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(caughtError).toBeInstanceOf(ConvexError);
+    const rawData = (caughtError as ConvexError<any>).data;
+    const errData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+    expect(errData.code).toBe("VALIDATION_ERROR");
+    expect(errData.message).toContain("500");
+  });
+});

@@ -40,6 +40,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventTypeBadge } from "@/components/shared/EventTypeBadge";
 import type { EventType } from "@/components/shared/EventTypeBadge";
 import { EventForm } from "@/components/calendar/EventForm";
+import { RSVPPanel } from "@/components/calendar/RSVPPanel";
+import { RSVPOverview } from "@/components/calendar/RSVPOverview";
 import { getConvexErrorMessage } from "@/utils/getConvexErrorMessage";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
@@ -259,6 +261,19 @@ export function EventDetail({
                     {event.rsvpEnabled ? "Enabled" : "Disabled"}
                   </span>
                 </div>
+
+                {/* RSVP Panel — user-facing buttons */}
+                {event.rsvpEnabled && (
+                  <RSVPPanel
+                    eventId={event._id}
+                    rsvpEnabled={event.rsvpEnabled}
+                  />
+                )}
+
+                {/* RSVP Overview — admin-only response list */}
+                {event.rsvpEnabled && (
+                  <RSVPOverview eventId={event._id} />
+                )}
 
                 {/* Admin action buttons */}
                 {isAdmin && (

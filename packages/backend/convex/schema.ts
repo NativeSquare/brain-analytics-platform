@@ -4,6 +4,7 @@ import { adminInvites } from "./table/adminInvites";
 import { calendarEvents } from "./table/calendarEvents";
 import { calendarEventSeries } from "./table/calendarEventSeries";
 import { calendarEventUsers } from "./table/calendarEventUsers";
+import { eventRsvps } from "./table/eventRsvps";
 import { feedback } from "./table/feedback";
 import { invitations } from "./table/invitations";
 import { notifications } from "./table/notifications";
@@ -16,6 +17,7 @@ export default defineSchema({
   calendarEvents,
   calendarEventSeries,
   calendarEventUsers,
+  eventRsvps,
   feedback,
   invitations,
   notifications,

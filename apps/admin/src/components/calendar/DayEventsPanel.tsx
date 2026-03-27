@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { format } from "date-fns";
 import { api } from "@packages/backend/convex/_generated/api";
+import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import {
   Sheet,
@@ -42,6 +44,21 @@ export function DayEventsPanel({
     date !== null ? { date } : "skip",
   );
 
+  // Batch-fetch RSVP statuses for all RSVP-enabled events
+  const rsvpEnabledEventIds = useMemo(() => {
+    if (!events) return [];
+    return events
+      .filter((e) => e.rsvpEnabled)
+      .map((e) => e._id as Id<"calendarEvents">);
+  }, [events]);
+
+  const rsvpStatuses = useQuery(
+    api.calendar.queries.getUserRsvpsByEventIds,
+    rsvpEnabledEventIds.length > 0
+      ? { eventIds: rsvpEnabledEventIds }
+      : "skip",
+  );
+
   const dayLabel = date !== null ? format(new Date(date), "EEEE, d MMMM yyyy") : "";
 
   return (
@@ -67,6 +84,12 @@ export function DayEventsPanel({
                 eventType={event.eventType as EventType}
                 startsAt={event.startsAt}
                 isRecurring={event.isRecurring}
+                rsvpStatus={
+                  rsvpStatuses?.[event._id] as
+                    | "attending"
+                    | "not_attending"
+                    | undefined
+                }
                 onClick={() => onEventClick(event._id)}
               />
             ))

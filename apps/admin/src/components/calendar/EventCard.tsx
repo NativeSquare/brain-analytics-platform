@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Repeat } from "lucide-react";
+import { CheckCircle, Repeat, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EventTypeBadge } from "@/components/shared/EventTypeBadge";
 import type { EventType } from "@/components/shared/EventTypeBadge";
@@ -26,6 +26,8 @@ export interface EventCardProps {
   eventType: EventType;
   startsAt: number;
   isRecurring?: boolean;
+  /** User's RSVP status for this event (from batch query) */
+  rsvpStatus?: "attending" | "not_attending";
   onClick?: () => void;
   className?: string;
 }
@@ -35,6 +37,7 @@ export function EventCard({
   eventType,
   startsAt,
   isRecurring,
+  rsvpStatus,
   onClick,
   className,
 }: EventCardProps) {
@@ -53,9 +56,17 @@ export function EventCard({
       <EventTypeBadge type={eventType} size="sm" className="shrink-0" />
       <span className="text-muted-foreground shrink-0 text-sm">{startTime}</span>
       <span className="truncate text-sm font-medium">{name}</span>
-      {isRecurring && (
-        <Repeat className="text-muted-foreground ml-auto size-3.5 shrink-0" />
-      )}
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        {rsvpStatus === "attending" && (
+          <CheckCircle className="size-3.5 text-green-600 dark:text-green-400" />
+        )}
+        {rsvpStatus === "not_attending" && (
+          <XCircle className="size-3.5 text-red-600 dark:text-red-400" />
+        )}
+        {isRecurring && (
+          <Repeat className="text-muted-foreground size-3.5" />
+        )}
+      </div>
     </button>
   );
 }

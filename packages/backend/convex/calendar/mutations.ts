@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { requireRole } from "../lib/auth";
+import { requireAuth, requireRole } from "../lib/auth";
 import { createNotification } from "../lib/notifications";
 import { EVENT_TYPE_LABELS, RECURRENCE_FREQUENCY_LABELS } from "@packages/shared/calendar";
 import { computeOccurrenceDates } from "./utils";
@@ -567,5 +567,117 @@ export const deleteEventSeries = mutation({
     await ctx.db.delete(args.seriesId);
 
     return { deletedCount: events.length };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// submitRsvp — user submits RSVP for an event (AC #2, #3, #4, #7, #12)
+// ---------------------------------------------------------------------------
+
+const RSVP_REASON_MAX_LENGTH = 500;
+
+export const submitRsvp = mutation({
+  args: {
+    eventId: v.id("calendarEvents"),
+    status: v.union(v.literal("attending"), v.literal("not_attending")),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    // Fetch event
+    const event = await ctx.db.get(args.eventId);
+    if (!event) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Event not found",
+      });
+    }
+
+    // Team isolation
+    if (event.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_AUTHORIZED" as const,
+        message: "Event not found",
+      });
+    }
+
+    // RSVP must be enabled
+    if (!event.rsvpEnabled) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "RSVP is not enabled for this event",
+      });
+    }
+
+    // Cannot RSVP to cancelled event
+    if (event.isCancelled) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Cannot RSVP to a cancelled event",
+      });
+    }
+
+    // Check invitation: user role in invitedRoles OR individual invitation
+    const isRoleInvited =
+      user.role && event.invitedRoles?.includes(user.role);
+    let isIndividuallyInvited = false;
+
+    if (!isRoleInvited) {
+      const invite = await ctx.db
+        .query("calendarEventUsers")
+        .withIndex("by_eventId", (q) => q.eq("eventId", args.eventId))
+        .filter((q) => q.eq(q.field("userId"), user._id))
+        .first();
+      isIndividuallyInvited = !!invite;
+    }
+
+    // Admin bypass: admins can always access team events
+    if (!isRoleInvited && !isIndividuallyInvited && user.role !== "admin") {
+      throw new ConvexError({
+        code: "NOT_AUTHORIZED" as const,
+        message: "You are not invited to this event",
+      });
+    }
+
+    // Validate reason length
+    if (args.reason && args.reason.length > RSVP_REASON_MAX_LENGTH) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: `Reason must be ${RSVP_REASON_MAX_LENGTH} characters or less`,
+      });
+    }
+
+    // Clear reason when attending
+    const reason =
+      args.status === "attending" ? undefined : args.reason;
+
+    // Upsert: check for existing RSVP
+    const existing = await ctx.db
+      .query("eventRsvps")
+      .withIndex("by_userId_eventId", (q) =>
+        q.eq("userId", user._id).eq("eventId", args.eventId),
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        status: args.status,
+        reason,
+        respondedAt: Date.now(),
+      });
+      return existing._id;
+    }
+
+    const rsvpId = await ctx.db.insert("eventRsvps", {
+      eventId: args.eventId,
+      userId: user._id,
+      teamId,
+      status: args.status,
+      reason,
+      respondedAt: Date.now(),
+    });
+
+    return rsvpId;
   },
 });

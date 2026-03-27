@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
 
@@ -150,6 +150,40 @@ export const getDayEvents = query({
 });
 
 // ---------------------------------------------------------------------------
+// getUserEventRsvp (AC #5, #9, #12)
+// ---------------------------------------------------------------------------
+
+/**
+ * Return the current user's RSVP record for a specific event, or null.
+ */
+export const getUserEventRsvp = query({
+  args: {
+    eventId: v.id("calendarEvents"),
+  },
+  handler: async (ctx, { eventId }) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    const event = await ctx.db.get(eventId);
+    if (!event || event.teamId !== teamId) return null;
+
+    const rsvp = await ctx.db
+      .query("eventRsvps")
+      .withIndex("by_userId_eventId", (q) =>
+        q.eq("userId", user._id).eq("eventId", eventId),
+      )
+      .first();
+
+    if (!rsvp) return null;
+
+    return {
+      status: rsvp.status,
+      reason: rsvp.reason,
+      respondedAt: rsvp.respondedAt,
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------
 // getSeriesInfo (AC #11)
 // ---------------------------------------------------------------------------
 
@@ -180,5 +214,183 @@ export const getSeriesInfo = query({
       totalOccurrences,
       activeOccurrences,
     };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// getEventRsvps (AC #6, #8, #11, #12)
+// ---------------------------------------------------------------------------
+
+/**
+ * Return RSVP data for an event. Admin sees full details + pending users.
+ * Non-admin sees only own RSVP + summary counts.
+ */
+export const getEventRsvps = query({
+  args: {
+    eventId: v.id("calendarEvents"),
+  },
+  handler: async (ctx, { eventId }) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    const event = await ctx.db.get(eventId);
+    if (!event) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Event not found",
+      });
+    }
+    if (event.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_AUTHORIZED" as const,
+        message: "Event not found",
+      });
+    }
+
+    // Fetch all RSVP records for this event
+    const rsvps = await ctx.db
+      .query("eventRsvps")
+      .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+      .collect();
+
+    const attendingCount = rsvps.filter(
+      (r) => r.status === "attending",
+    ).length;
+    const notAttendingCount = rsvps.filter(
+      (r) => r.status === "not_attending",
+    ).length;
+
+    // Compute total invited users
+    const invitedUserIdSet = new Set<string>();
+
+    // Role-based invitations
+    if (event.invitedRoles && event.invitedRoles.length > 0) {
+      for (const role of event.invitedRoles) {
+        const usersWithRole = await ctx.db
+          .query("users")
+          .withIndex("by_teamId_role", (q: any) =>
+            q.eq("teamId", teamId).eq("role", role),
+          )
+          .collect();
+        for (const u of usersWithRole) {
+          invitedUserIdSet.add(u._id as string);
+        }
+      }
+    }
+
+    // Individual invitations
+    const individualInvites = await ctx.db
+      .query("calendarEventUsers")
+      .withIndex("by_eventId", (q) => q.eq("eventId", eventId))
+      .collect();
+    for (const inv of individualInvites) {
+      invitedUserIdSet.add(inv.userId as string);
+    }
+
+    const totalInvited = invitedUserIdSet.size;
+    const respondedUserIds = new Set(
+      rsvps.map((r) => r.userId as string),
+    );
+    const pendingCount = Math.max(
+      0,
+      totalInvited - attendingCount - notAttendingCount,
+    );
+
+    const summary = {
+      attending: attendingCount,
+      notAttending: notAttendingCount,
+      pending: pendingCount,
+      total: totalInvited,
+    };
+
+    // Admin: full details
+    if (user.role === "admin") {
+      const responses = await Promise.all(
+        rsvps.map(async (rsvp) => {
+          const rsvpUser = await ctx.db.get(rsvp.userId);
+          return {
+            userId: rsvp.userId,
+            status: rsvp.status,
+            reason: rsvp.reason,
+            respondedAt: rsvp.respondedAt,
+            fullName:
+              rsvpUser?.fullName ?? rsvpUser?.name ?? rsvpUser?.email ?? "Unknown",
+            avatarUrl: rsvpUser?.avatarUrl ?? null,
+          };
+        }),
+      );
+
+      // Build pending users list
+      const pendingUserIds = [...invitedUserIdSet].filter(
+        (id) => !respondedUserIds.has(id),
+      );
+      const pending = await Promise.all(
+        pendingUserIds.map(async (id) => {
+          const pendingUser = await ctx.db.get(
+            id as Id<"users">,
+          );
+          return {
+            userId: id as Id<"users">,
+            fullName:
+              pendingUser?.fullName ??
+              pendingUser?.name ??
+              pendingUser?.email ??
+              "Unknown",
+            avatarUrl: pendingUser?.avatarUrl ?? null,
+          };
+        }),
+      );
+
+      return { responses, pending, summary };
+    }
+
+    // Non-admin: own RSVP + summary counts only
+    const myRsvp = rsvps.find(
+      (r) => (r.userId as string) === (user._id as string),
+    );
+
+    return {
+      myRsvp: myRsvp
+        ? {
+            status: myRsvp.status,
+            reason: myRsvp.reason,
+            respondedAt: myRsvp.respondedAt,
+          }
+        : null,
+      summary,
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// getUserRsvpsByEventIds — batch query for calendar view (AC #1, #11)
+// ---------------------------------------------------------------------------
+
+/**
+ * Return the current user's RSVP status for multiple events at once.
+ * Returns a map of eventId → status.
+ */
+export const getUserRsvpsByEventIds = query({
+  args: {
+    eventIds: v.array(v.id("calendarEvents")),
+  },
+  handler: async (ctx, { eventIds }) => {
+    const { user } = await requireAuth(ctx);
+
+    const result: Record<string, string> = {};
+
+    for (const eventId of eventIds) {
+      const rsvp = await ctx.db
+        .query("eventRsvps")
+        .withIndex("by_userId_eventId", (q) =>
+          q.eq("userId", user._id).eq("eventId", eventId),
+        )
+        .first();
+
+      if (rsvp) {
+        result[eventId as string] = rsvp.status;
+      }
+    }
+
+    return result;
   },
 });

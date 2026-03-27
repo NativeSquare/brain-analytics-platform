@@ -1,52 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
+import { canUserAccessEvent, getUserInvitedEventIds } from "./accessControl";
 
-import type { Doc, Id } from "../_generated/dataModel";
-import type { QueryCtx } from "../_generated/server";
-
-// ---------------------------------------------------------------------------
-// Access-control helper
-// ---------------------------------------------------------------------------
-
-/**
- * Determine whether the given user can see the event.
- *
- * A user can see an event when ANY of these conditions hold:
- *  1. User role is "admin"
- *  2. User role is listed in event.invitedRoles
- *  3. User is individually invited (eventId is in the invitedEventIds set)
- */
-function canUserAccessEvent(
-  user: Doc<"users">,
-  event: Doc<"calendarEvents">,
-  invitedEventIds: Set<Id<"calendarEvents">>,
-): boolean {
-  const role = user.role;
-  if (role === "admin") return true;
-  if (role && event.invitedRoles?.includes(role)) return true;
-  if (invitedEventIds.has(event._id)) return true;
-  return false;
-}
-
-/**
- * Fetch the set of calendarEvent IDs for which the user has an individual
- * invitation via the calendarEventUsers junction table.
- */
-async function getUserInvitedEventIds(
-  ctx: QueryCtx,
-  userId: Id<"users">,
-  teamId: Id<"teams">,
-): Promise<Set<Id<"calendarEvents">>> {
-  const invites = await ctx.db
-    .query("calendarEventUsers")
-    .withIndex("by_userId_teamId", (q) =>
-      q.eq("userId", userId).eq("teamId", teamId),
-    )
-    .collect();
-
-  return new Set(invites.map((i) => i.eventId));
-}
+import type { Id } from "../_generated/dataModel";
 
 // ---------------------------------------------------------------------------
 // Calendar Feed Token query (Story 3.5)

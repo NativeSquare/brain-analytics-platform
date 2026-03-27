@@ -65,6 +65,24 @@ export function escapeIcsText(text: string): string {
 }
 
 /**
+ * Fold a content line per RFC 5545 §3.1.
+ * Lines longer than 75 octets are split with CRLF followed by a single
+ * whitespace character (linear white space).
+ */
+export function foldLine(line: string): string {
+  if (line.length <= 75) return line;
+  const parts: string[] = [];
+  parts.push(line.slice(0, 75));
+  let remaining = line.slice(75);
+  while (remaining.length > 0) {
+    // 74 chars because the leading space counts as 1 octet
+    parts.push(remaining.slice(0, 74));
+    remaining = remaining.slice(74);
+  }
+  return parts.join("\r\n ");
+}
+
+/**
  * Map event type to a human-readable CATEGORIES value.
  */
 const EVENT_TYPE_CATEGORY: Record<string, string> = {
@@ -84,23 +102,23 @@ const EVENT_TYPE_CATEGORY: Record<string, string> = {
 export function formatVEvent(event: IcsEvent): string {
   const lines: string[] = [
     "BEGIN:VEVENT",
-    `UID:${event.uid}`,
-    `DTSTAMP:${formatIcsDate(event.createdAt)}`,
-    `DTSTART:${formatIcsDate(event.startsAt)}`,
-    `DTEND:${formatIcsDate(event.endsAt)}`,
-    `SUMMARY:${escapeIcsText(event.summary)}`,
+    foldLine(`UID:${event.uid}`),
+    foldLine(`DTSTAMP:${formatIcsDate(event.createdAt)}`),
+    foldLine(`DTSTART:${formatIcsDate(event.startsAt)}`),
+    foldLine(`DTEND:${formatIcsDate(event.endsAt)}`),
+    foldLine(`SUMMARY:${escapeIcsText(event.summary)}`),
   ];
 
   if (event.description) {
-    lines.push(`DESCRIPTION:${escapeIcsText(event.description)}`);
+    lines.push(foldLine(`DESCRIPTION:${escapeIcsText(event.description)}`));
   }
 
   if (event.location) {
-    lines.push(`LOCATION:${escapeIcsText(event.location)}`);
+    lines.push(foldLine(`LOCATION:${escapeIcsText(event.location)}`));
   }
 
   const category = EVENT_TYPE_CATEGORY[event.eventType] ?? event.eventType;
-  lines.push(`CATEGORIES:${escapeIcsText(category)}`);
+  lines.push(foldLine(`CATEGORIES:${escapeIcsText(category)}`));
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
@@ -125,9 +143,9 @@ export function generateIcsCalendar(
   const header = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//BrainAnalytics//Calendar Feed//EN",
+    foldLine("PRODID:-//BrainAnalytics//Calendar Feed//EN"),
     "CALSCALE:GREGORIAN",
-    `X-WR-CALNAME:${escapeIcsText(calendarName)}`,
+    foldLine(`X-WR-CALNAME:${escapeIcsText(calendarName)}`),
   ].join("\r\n");
 
   const vevents = events.map(formatVEvent).join("\r\n");

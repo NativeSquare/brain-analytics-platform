@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { toast } from "sonner";
@@ -62,24 +62,13 @@ export function CalendarSyncDialog({
     api.calendar.mutations.regenerateFeedToken,
   );
 
-  // Auto-generate token on dialog open if the user has none
-  const [generating, setGenerating] = useState(false);
-
-  async function ensureToken() {
-    if (feedToken === null && !generating) {
-      setGenerating(true);
-      try {
-        await generateToken();
-      } finally {
-        setGenerating(false);
-      }
+  // Auto-generate token on dialog open if the user has none.
+  // Uses useEffect to avoid side-effects during render (React rules violation).
+  useEffect(() => {
+    if (open && feedToken === null) {
+      generateToken();
     }
-  }
-
-  // Trigger token generation when dialog opens and token is null
-  if (open && feedToken === null && !generating) {
-    ensureToken();
-  }
+  }, [open, feedToken, generateToken]);
 
   const feedUrl = feedToken
     ? `${getSiteUrl()}/api/calendar/${feedToken}`

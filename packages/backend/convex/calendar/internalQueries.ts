@@ -1,39 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery } from "../_generated/server";
-
-import type { Doc, Id } from "../_generated/dataModel";
-import type { QueryCtx } from "../_generated/server";
-
-// ---------------------------------------------------------------------------
-// Internal access-control helpers (mirrored from queries.ts)
-// ---------------------------------------------------------------------------
-
-function canUserAccessEvent(
-  user: Doc<"users">,
-  event: Doc<"calendarEvents">,
-  invitedEventIds: Set<Id<"calendarEvents">>,
-): boolean {
-  const role = user.role;
-  if (role === "admin") return true;
-  if (role && event.invitedRoles?.includes(role)) return true;
-  if (invitedEventIds.has(event._id)) return true;
-  return false;
-}
-
-async function getUserInvitedEventIds(
-  ctx: QueryCtx,
-  userId: Id<"users">,
-  teamId: Id<"teams">,
-): Promise<Set<Id<"calendarEvents">>> {
-  const invites = await ctx.db
-    .query("calendarEventUsers")
-    .withIndex("by_userId_teamId", (q) =>
-      q.eq("userId", userId).eq("teamId", teamId),
-    )
-    .collect();
-
-  return new Set(invites.map((i) => i.eventId));
-}
+import { canUserAccessEvent, getUserInvitedEventIds } from "./accessControl";
 
 // ---------------------------------------------------------------------------
 // getUserByFeedToken — look up user via calendar feed token

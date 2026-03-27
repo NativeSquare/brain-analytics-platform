@@ -347,7 +347,7 @@ export const deleteDocument = mutation({
 export const setFolderPermissions = mutation({
   args: {
     folderId: v.id("folders"),
-    permittedRoles: v.array(v.string()),
+    permittedRoles: v.optional(v.array(v.string())),
     userIds: v.array(v.id("users")),
   },
   handler: async (ctx, { folderId, permittedRoles, userIds }) => {
@@ -362,13 +362,15 @@ export const setFolderPermissions = mutation({
       });
     }
 
-    // Validate role values
-    for (const role of permittedRoles) {
-      if (!(VALID_PERMISSION_ROLES as readonly string[]).includes(role)) {
-        throw new ConvexError({
-          code: "VALIDATION_ERROR" as const,
-          message: `Invalid role: "${role}". Must be one of: ${VALID_PERMISSION_ROLES.join(", ")}.`,
-        });
+    // Validate role values (skip when undefined = unrestricted)
+    if (permittedRoles !== undefined) {
+      for (const role of permittedRoles) {
+        if (!(VALID_PERMISSION_ROLES as readonly string[]).includes(role)) {
+          throw new ConvexError({
+            code: "VALIDATION_ERROR" as const,
+            message: `Invalid role: "${role}". Must be one of: ${VALID_PERMISSION_ROLES.join(", ")}.`,
+          });
+        }
       }
     }
 
@@ -383,7 +385,7 @@ export const setFolderPermissions = mutation({
       }
     }
 
-    // Patch folder permittedRoles
+    // Patch folder permittedRoles (undefined removes the field = unrestricted)
     await ctx.db.patch(folderId, { permittedRoles });
 
     // Sync documentUserPermissions — delete existing, insert new

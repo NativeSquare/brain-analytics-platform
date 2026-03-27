@@ -164,38 +164,26 @@ export function PermissionsPanel({
     setIsSaving(true);
     try {
       if (targetType === "folder") {
-        // Determine permittedRoles
         const isUnrestricted = selectedRoles.size === ALL_ROLES.length;
-        const roles = isUnrestricted
-          ? [] // We'll pass empty to clear; but per AC, empty means no role access
-          : Array.from(selectedRoles).filter((r) => r !== "admin"); // Admin always has access
 
-        // Actually: unrestricted = all roles checked → set permittedRoles = undefined
-        // Restricted = subset → set permittedRoles = selected (always include "admin")
-        let permittedRoles: string[];
         if (isUnrestricted) {
-          // Pass all roles as "unrestricted" signal.
-          // BUT per AC, undefined/null means unrestricted, array means restricted.
-          // We need to differentiate: Convex mutation expects an array.
-          // We'll handle "all roles selected" as a signal to clear restrictions.
-          // The mutation takes an array, so passing all 6 roles means "all roles".
-          // For truly unrestricted, we'd need undefined, but the mutation arg is non-optional.
-          // Per AC #1: "empty array [] means no role-based access; undefined/null means unrestricted"
-          // Since our mutation arg is v.array(v.string()), we can't pass undefined.
-          // Solution: pass all 6 roles as the array → effectively unrestricted.
-          permittedRoles = [...ALL_ROLES];
+          // All roles selected → unrestricted: pass undefined to clear permittedRoles
+          // Per AC #1: undefined/null means unrestricted — all roles have access
+          await setFolderPermissions({
+            folderId: targetId as Id<"folders">,
+            permittedRoles: undefined,
+            userIds: selectedUsers.map((u) => u.userId),
+          });
         } else {
-          // Always include admin
+          // Restricted: always include admin in the permitted roles
           const roles = new Set(selectedRoles);
           roles.add("admin");
-          permittedRoles = Array.from(roles);
+          await setFolderPermissions({
+            folderId: targetId as Id<"folders">,
+            permittedRoles: Array.from(roles),
+            userIds: selectedUsers.map((u) => u.userId),
+          });
         }
-
-        await setFolderPermissions({
-          folderId: targetId as Id<"folders">,
-          permittedRoles,
-          userIds: selectedUsers.map((u) => u.userId),
-        });
       } else {
         // Document
         if (inheritFromFolder) {
@@ -209,6 +197,7 @@ export function PermissionsPanel({
           const isUnrestricted = selectedRoles.size === ALL_ROLES.length;
           let permittedRoles: string[];
           if (isUnrestricted) {
+            // For documents, all roles = override with all roles (not inheritance)
             permittedRoles = [...ALL_ROLES];
           } else {
             const roles = new Set(selectedRoles);

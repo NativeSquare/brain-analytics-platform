@@ -3,23 +3,25 @@ import path from 'path';
 const emailsDirRelativePath = path.normalize('./emails');
 const userProjectLocation = 'C:/Users/alexp/OneDrive/Bureau/projects/brain-analytics-platform/packages/transactional';
 const previewServerLocation = 'C:/Users/alexp/OneDrive/Bureau/projects/brain-analytics-platform/packages/transactional/.react-email';
+const rootDir = previewServerLocation;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
     NEXT_PUBLIC_IS_BUILDING: 'true',
-    EMAILS_DIR_RELATIVE_PATH: emailsDirRelativePath,
-    EMAILS_DIR_ABSOLUTE_PATH: path.resolve(userProjectLocation, emailsDirRelativePath),
-    PREVIEW_SERVER_LOCATION: previewServerLocation,
-    USER_PROJECT_LOCATION: userProjectLocation
+    REACT_EMAIL_INTERNAL_EMAILS_DIR_RELATIVE_PATH: emailsDirRelativePath,
+    REACT_EMAIL_INTERNAL_EMAILS_DIR_ABSOLUTE_PATH: path.resolve(userProjectLocation, emailsDirRelativePath),
+    REACT_EMAIL_INTERNAL_PREVIEW_SERVER_LOCATION: previewServerLocation,
+    REACT_EMAIL_INTERNAL_USER_PROJECT_LOCATION: userProjectLocation
   },
-  outputFileTracingRoot: previewServerLocation,
+  turbopack: {
+    root: rootDir,
+  },
+  outputFileTracingRoot: rootDir,
   serverExternalPackages: ['esbuild'],
   typescript: {
     ignoreBuildErrors: true
   },
-  experimental: {
-    webpackBuildWorker: true
-  },
+  staticPageGenerationTimeout: 600,
 }
 
 export default nextConfig

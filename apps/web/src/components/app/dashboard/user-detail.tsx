@@ -48,7 +48,7 @@ import { Separator } from "@/components/ui/separator";
 const formSchema = z.object({
   name: z.string().optional(),
   bio: z.string().optional(),
-  role: z.enum(["user", "admin"]),
+  role: z.enum(["admin", "coach", "analyst", "physio", "player", "staff"]),
 });
 
 interface UserDetailProps {
@@ -78,7 +78,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
     defaultValues: {
       name: "",
       bio: "",
-      role: "user",
+      role: "staff",
     },
   });
 
@@ -88,7 +88,7 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
       form.reset({
         name: user.name ?? "",
         bio: user.bio ?? "",
-        role: user.role ?? "user",
+        role: user.role ?? "staff",
       });
     }
   }, [user, form]);
@@ -316,8 +316,12 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="coach">Coach</SelectItem>
+                        <SelectItem value="analyst">Analyst</SelectItem>
+                        <SelectItem value="physio">Physio</SelectItem>
+                        <SelectItem value="player">Player</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

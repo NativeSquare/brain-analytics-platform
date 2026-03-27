@@ -1,10 +1,8 @@
 "use client"
 
-import * as React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
-import { NotificationCenter } from "@/components/shared/NotificationCenter"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   Breadcrumb,
@@ -15,63 +13,44 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
-// --- Data-driven breadcrumb config ---
-
-const routeLabelMap: Record<string, string> = {
-  calendar: "Calendar",
-  documents: "Documents",
-  players: "Players",
-  dashboards: "Dashboards",
-  settings: "Settings",
-  team: "Team",
-  users: "Users",
-}
-
-const nestedLabelMap: Record<string, string> = {
-  players: "Player Profile",
-  team: "Member Details",
-  users: "User Details",
-}
-
-type BreadcrumbEntry = {
-  label: string
-  href: string
-  isCurrentPage: boolean
-}
-
-function getBreadcrumbs(pathname: string): BreadcrumbEntry[] {
-  const segments = pathname.split("/").filter(Boolean)
-
-  if (segments.length === 0) {
-    return [{ label: "Home", href: "/", isCurrentPage: true }]
-  }
-
-  const root = segments[0]
-  const rootLabel = routeLabelMap[root] ?? root.charAt(0).toUpperCase() + root.slice(1)
-
-  if (segments.length === 1) {
-    return [{ label: rootLabel, href: `/${root}`, isCurrentPage: true }]
-  }
-
-  // Known nested route labels (e.g. /players/new → "Add Player")
-  const knownNestedRoutes: Record<string, string> = {
-    "players/new": "Add Player",
-  }
-
-  const nestedKey = segments.slice(0, 2).join("/")
-  const nestedLabel = knownNestedRoutes[nestedKey]
-    ?? nestedLabelMap[root]
-    ?? segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
-
-  return [
-    { label: rootLabel, href: `/${root}`, isCurrentPage: false },
-    { label: nestedLabel, href: pathname, isCurrentPage: true },
-  ]
-}
-
 export function SiteHeader() {
   const pathname = usePathname()
-  const breadcrumbs = getBreadcrumbs(pathname)
+
+  const getBreadcrumbs = () => {
+    const segments = pathname.split("/").filter(Boolean)
+
+    if (segments.length === 0) {
+      return [{ label: "General", href: "/", isCurrentPage: true }]
+    }
+
+    if (segments[0] === "team") {
+      if (segments.length === 1) {
+        return [{ label: "Team", href: "/team", isCurrentPage: true }]
+      }
+      if (segments.length === 2) {
+        return [
+          { label: "Team", href: "/team", isCurrentPage: false },
+          { label: "Member Details", href: pathname, isCurrentPage: true },
+        ]
+      }
+    }
+
+    if (segments[0] === "users") {
+      if (segments.length === 1) {
+        return [{ label: "Users", href: "/users", isCurrentPage: true }]
+      }
+      if (segments.length === 2) {
+        return [
+          { label: "Users", href: "/users", isCurrentPage: false },
+          { label: "User Details", href: pathname, isCurrentPage: true },
+        ]
+      }
+    }
+
+    return [{ label: "General", href: "/", isCurrentPage: true }]
+  }
+
+  const breadcrumbs = getBreadcrumbs()
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
@@ -83,9 +62,14 @@ export function SiteHeader() {
         />
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/team">General</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
             {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.href}>
-                {index > 0 && <BreadcrumbSeparator />}
+              <span key={crumb.href} className="flex items-center gap-1.5">
+                <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   {crumb.isCurrentPage ? (
                     <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
@@ -95,15 +79,10 @@ export function SiteHeader() {
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
-              </React.Fragment>
+              </span>
             ))}
           </BreadcrumbList>
         </Breadcrumb>
-
-        {/* Right-side actions */}
-        <div className="ml-auto flex items-center gap-2">
-          <NotificationCenter />
-        </div>
       </div>
     </header>
   )

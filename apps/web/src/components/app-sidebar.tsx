@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  IconCalendar,
   IconCamera,
   IconChartBar,
   IconDashboard,
@@ -17,6 +18,7 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconUsersGroup,
 } from "@tabler/icons-react"
 import { useQuery } from "convex/react"
 import { api } from "@packages/backend/convex/_generated/api"
@@ -40,27 +42,32 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Players",
+      url: "/players",
+      icon: IconUsersGroup,
     },
     {
-      title: "Analytics",
-      url: "#",
+      title: "Calendar",
+      url: "/calendar",
+      icon: IconCalendar,
+    },
+    {
+      title: "Documents",
+      url: "/documents",
+      icon: IconFileDescription,
+    },
+    {
+      title: "Dashboards",
+      url: "/dashboards",
       icon: IconChartBar,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
       title: "Team",
-      url: "#",
+      url: "/team",
       icon: IconUsers,
     },
   ],
@@ -115,7 +122,7 @@ const data = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: IconSettings,
     },
     {

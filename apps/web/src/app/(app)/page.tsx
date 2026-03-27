@@ -10,7 +10,7 @@ import { QuickAccessCards } from "@/components/homepage/QuickAccessCards";
 import { DashboardPlaceholderCards } from "@/components/homepage/DashboardPlaceholderCards";
 
 export default function HomePage() {
-  const user = useQuery(api.table.admin.currentAdmin);
+  const user = useQuery(api.table.users.currentUser);
 
   // Loading state
   if (user === undefined) {

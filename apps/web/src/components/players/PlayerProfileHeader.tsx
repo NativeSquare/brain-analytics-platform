@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import type { PlayerStatus } from "@packages/shared/players";
@@ -34,7 +35,7 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 }
 
-export function PlayerProfileHeader({
+export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
   player,
   inviteStatus,
   showInviteButton,
@@ -98,4 +99,4 @@ export function PlayerProfileHeader({
       </div>
     </div>
   );
-}
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useCallback } from "react";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import type { PlayerStatus } from "@packages/shared/players";
 
@@ -36,6 +37,57 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 }
 
+/** Memoized table row to prevent re-renders when sibling rows change. */
+const PlayerRow = React.memo(function PlayerRow({
+  player,
+  onPlayerClick,
+}: {
+  player: PlayerSummary;
+  onPlayerClick: (playerId: Id<"players">) => void;
+}) {
+  const handleClick = useCallback(() => {
+    onPlayerClick(player._id);
+  }, [onPlayerClick, player._id]);
+
+  return (
+    <TableRow className="cursor-pointer" onClick={handleClick}>
+      <TableCell>
+        <Avatar className="size-8">
+          {player.photoUrl ? (
+            <AvatarImage
+              src={player.photoUrl}
+              alt={`${player.firstName} ${player.lastName}`}
+            />
+          ) : null}
+          <AvatarFallback className="text-xs">
+            {getInitials(player.firstName, player.lastName)}
+          </AvatarFallback>
+        </Avatar>
+      </TableCell>
+      <TableCell className="font-medium">
+        <span className="inline-flex items-center gap-1.5">
+          {player.firstName} {player.lastName}
+          {player.inviteStatus === "pending" && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              Invited
+            </Badge>
+          )}
+        </span>
+      </TableCell>
+      <TableCell>{player.position}</TableCell>
+      <TableCell className="text-center">
+        {player.squadNumber ?? "—"}
+      </TableCell>
+      <TableCell>
+        <PlayerStatusBadge
+          status={player.status as PlayerStatus}
+        />
+      </TableCell>
+      <TableCell>{player.nationality ?? "—"}</TableCell>
+    </TableRow>
+  );
+});
+
 export function PlayerTable({ players, onPlayerClick }: PlayerTableProps) {
   return (
     <Table>
@@ -51,45 +103,11 @@ export function PlayerTable({ players, onPlayerClick }: PlayerTableProps) {
       </TableHeader>
       <TableBody>
         {players.map((player) => (
-          <TableRow
+          <PlayerRow
             key={player._id}
-            className="cursor-pointer"
-            onClick={() => onPlayerClick(player._id)}
-          >
-            <TableCell>
-              <Avatar className="size-8">
-                {player.photoUrl ? (
-                  <AvatarImage
-                    src={player.photoUrl}
-                    alt={`${player.firstName} ${player.lastName}`}
-                  />
-                ) : null}
-                <AvatarFallback className="text-xs">
-                  {getInitials(player.firstName, player.lastName)}
-                </AvatarFallback>
-              </Avatar>
-            </TableCell>
-            <TableCell className="font-medium">
-              <span className="inline-flex items-center gap-1.5">
-                {player.firstName} {player.lastName}
-                {player.inviteStatus === "pending" && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    Invited
-                  </Badge>
-                )}
-              </span>
-            </TableCell>
-            <TableCell>{player.position}</TableCell>
-            <TableCell className="text-center">
-              {player.squadNumber ?? "—"}
-            </TableCell>
-            <TableCell>
-              <PlayerStatusBadge
-                status={player.status as PlayerStatus}
-              />
-            </TableCell>
-            <TableCell>{player.nationality ?? "—"}</TableCell>
-          </TableRow>
+            player={player}
+            onPlayerClick={onPlayerClick}
+          />
         ))}
       </TableBody>
     </Table>

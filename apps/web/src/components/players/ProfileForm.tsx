@@ -49,6 +49,7 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
+  const uploadAbortRef = React.useRef<AbortController | null>(null);
 
   const router = useRouter();
 
@@ -81,12 +82,17 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
     }
 
     setIsUploading(true);
+    // Abort any previous in-flight upload
+    uploadAbortRef.current?.abort();
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
     try {
       const uploadUrl = await generateUploadUrl();
       const result = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: file,
+        signal: controller.signal,
       });
       const { storageId } = await result.json();
       form.setValue("photo", storageId);
@@ -95,8 +101,10 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
         if (prev) URL.revokeObjectURL(prev);
         return URL.createObjectURL(file);
       });
-    } catch {
-      toast.error("Failed to upload photo");
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        toast.error("Failed to upload photo");
+      }
     } finally {
       setIsUploading(false);
     }
@@ -112,9 +120,10 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
     setPhotoPreview(null);
   };
 
-  // Revoke object URL on unmount to prevent memory leak
+  // Revoke object URL and abort in-flight uploads on unmount
   React.useEffect(() => {
     return () => {
+      uploadAbortRef.current?.abort();
       if (photoPreviewRef.current) URL.revokeObjectURL(photoPreviewRef.current);
     };
   }, []);

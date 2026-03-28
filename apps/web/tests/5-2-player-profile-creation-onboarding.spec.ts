@@ -42,6 +42,8 @@ test("players page: route responds, renders heading, hides Add Player for unauth
   // AC #1: only admin role sees the button — unauthenticated user should not
   const addPlayerLink = page.getByRole("link", { name: /Add Player/i });
   await expect(addPlayerLink).not.toBeVisible({ timeout: 3000 });
+
+  await page.screenshot({ path: "tests/screenshots/5-2-players-list-unauth.png" });
 });
 
 // ---------------------------------------------------------------------------
@@ -99,6 +101,8 @@ test("add player form: renders all sections, fields, and action buttons (AC #2, 
   await expect(cancelBtn).toBeVisible();
   const createBtn = page.getByRole("button", { name: /Create Player/i });
   await expect(createBtn).toBeVisible();
+
+  await page.screenshot({ path: "tests/screenshots/5-2-add-player-form.png" });
 });
 
 // ---------------------------------------------------------------------------
@@ -135,6 +139,8 @@ test("accept-invite with invalid/missing player token shows error UI (AC #11)", 
   const goToLoginBtn2 = page.getByRole("button", { name: /Go to Login/i });
   await expect(goToLoginBtn2).toBeVisible();
   await expect(goToLoginBtn2).toBeEnabled();
+
+  await page.screenshot({ path: "tests/screenshots/5-2-accept-invite-error.png" });
 });
 
 // ---------------------------------------------------------------------------
@@ -172,4 +178,6 @@ test("player pages render without JS component errors", async ({ page }) => {
   });
 
   expect(componentErrors).toHaveLength(0);
+
+  await page.screenshot({ path: "tests/screenshots/5-2-stability-check.png" });
 });

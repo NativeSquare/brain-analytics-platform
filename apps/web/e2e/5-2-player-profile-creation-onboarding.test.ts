@@ -88,6 +88,104 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     });
   });
 
+  // ─── AC2: "Add Player" opens a multi-section profile creation form ───
+  describe("AC2: 'Add Player' opens a multi-section profile creation form with all specified fields", () => {
+    it("AC2 — clicking 'Add Player' on /players opens a multi-section profile creation form with Basic Info, Football Details, Physical, Contact, and Emergency Contact sections and all specified fields", async () => {
+      await ctx.auth.signInAs({ role: "admin" });
+
+      // Step 1: Navigate to the players list page
+      await ctx.goto("/players");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Step 2: Click the "Add Player" button to open the form
+      await ctx.stagehand.page.act("click the 'Add Player' button");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Step 3: Verify the multi-section profile creation form is now open at /players/new
+      const url = ctx.stagehand.page.url();
+      expect(url).toContain("/players/new");
+
+      // Step 4: Verify the form page heading indicates profile creation
+      const pageHeading = await ctx.stagehand.page.extract({
+        instruction:
+          "Extract the main page heading or title on this form page. It should say something like 'Add Player', 'Create Player', or 'New Player'.",
+        schema: z.object({
+          heading: z.string(),
+          formIsVisible: z.boolean(),
+        }),
+      });
+      expect(pageHeading.formIsVisible).toBe(true);
+
+      // Step 5: Verify the form has ALL five specified sections
+      const formSections = await ctx.stagehand.page.extract({
+        instruction:
+          "Extract every section heading visible in this player profile creation form. The expected sections are: 'Basic Info', 'Football Details', 'Physical', 'Contact', and 'Emergency Contact'. Return each section heading text you find.",
+        schema: z.object({
+          sectionHeadings: z.array(z.string()),
+        }),
+      });
+
+      const headings = formSections.sectionHeadings.map((h) =>
+        h.toLowerCase()
+      );
+      // Must have at least 5 sections
+      expect(headings.length).toBeGreaterThanOrEqual(5);
+      // Must include Basic Info
+      expect(headings).toEqual(
+        expect.arrayContaining([expect.stringContaining("basic")])
+      );
+      // Must include Football Details
+      expect(headings).toEqual(
+        expect.arrayContaining([expect.stringContaining("football")])
+      );
+      // Must include Physical
+      expect(headings).toEqual(
+        expect.arrayContaining([expect.stringContaining("physical")])
+      );
+      // Must include Contact
+      expect(headings).toEqual(
+        expect.arrayContaining([expect.stringContaining("contact")])
+      );
+      // Must include Emergency Contact
+      expect(headings).toEqual(
+        expect.arrayContaining([expect.stringContaining("emergency")])
+      );
+
+      // Step 6: Verify all specified fields exist in the form
+      const allFields = await ctx.stagehand.page.extract({
+        instruction:
+          "Extract ALL form field labels visible on this entire player creation form page. Include fields from every section: Basic Info (First Name, Last Name, Photo, Date of Birth, Nationality), Football Details (Position, Squad Number, Preferred Foot), Physical (Height, Weight), Contact (Phone, Personal Email, Address), Emergency Contact (Name, Relationship, Phone). Return every label you can find.",
+        schema: z.object({
+          allFieldLabels: z.array(z.string()),
+        }),
+      });
+
+      const labels = allFields.allFieldLabels.map((l) => l.toLowerCase());
+      const allLabelsText = labels.join(" | ");
+
+      // Basic Info fields
+      expect(allLabelsText).toMatch(/first.*name|first name/);
+      expect(allLabelsText).toMatch(/last.*name|last name/);
+      expect(allLabelsText).toMatch(/photo|upload|image/);
+      expect(allLabelsText).toMatch(/date.*birth|dob|birth/);
+      expect(allLabelsText).toMatch(/national/);
+
+      // Football Details fields
+      expect(allLabelsText).toMatch(/position/);
+      expect(allLabelsText).toMatch(/squad|number/);
+      expect(allLabelsText).toMatch(/foot|prefer/);
+
+      // Physical fields
+      expect(allLabelsText).toMatch(/height/);
+      expect(allLabelsText).toMatch(/weight/);
+
+      // Contact fields
+      expect(allLabelsText).toMatch(/phone/);
+      expect(allLabelsText).toMatch(/email/);
+      expect(allLabelsText).toMatch(/address/);
+    });
+  });
+
   // ─── AC3: Form validation prevents invalid submissions with inline error messages ───
   describe("AC3: Form validation prevents invalid submissions", () => {
     it("submitting the form without filling required fields shows inline error messages for validation", async () => {

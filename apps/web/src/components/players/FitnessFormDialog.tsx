@@ -194,7 +194,10 @@ export function FitnessFormDialog({
                     value={field.value ?? ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      field.onChange(val === "" ? undefined : Number(val));
+                      // Normalize to 1 decimal place (AC #5, risk mitigation)
+                      field.onChange(
+                        val === "" ? undefined : Math.round(Number(val) * 10) / 10
+                      );
                     }}
                     aria-invalid={fieldState.invalid}
                   />
@@ -224,7 +227,10 @@ export function FitnessFormDialog({
                     value={field.value ?? ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      field.onChange(val === "" ? undefined : Number(val));
+                      // Normalize to 1 decimal place (AC #5, risk mitigation)
+                      field.onChange(
+                        val === "" ? undefined : Math.round(Number(val) * 10) / 10
+                      );
                     }}
                     aria-invalid={fieldState.invalid}
                   />

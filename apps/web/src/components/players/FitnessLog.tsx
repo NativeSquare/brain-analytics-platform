@@ -215,6 +215,7 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
       </div>
 
       {/* AC #3: Fitness data table */}
+      <TooltipProvider>
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -282,6 +283,7 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
           </Table>
         </CardContent>
       </Card>
+      </TooltipProvider>
 
       {/* Dialogs */}
       {canEdit && (
@@ -352,15 +354,13 @@ function NotesCell({ notes }: { notes?: string }) {
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="cursor-help">{notes.slice(0, 60)}…</span>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-sm">
-          <p>{notes}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="cursor-help">{notes.slice(0, 60)}…</span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm">
+        <p>{notes}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }

@@ -6,6 +6,35 @@ import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { NotificationCenter } from "@/components/shared/NotificationCenter"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+
+/**
+ * Error boundary that silently swallows NotificationCenter errors
+ * (e.g. when the user has no teamId yet) so they don't crash the whole page.
+ */
+class NotificationErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) return null
+    return this.props.children
+  }
+}
+
+function NotificationCenterSafe() {
+  return (
+    <NotificationErrorBoundary>
+      <NotificationCenter />
+    </NotificationErrorBoundary>
+  )
+}
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -101,7 +130,7 @@ export function SiteHeader() {
 
         {/* Right-side actions */}
         <div className="ml-auto flex items-center gap-2">
-          <NotificationCenter />
+          <NotificationCenterSafe />
         </div>
       </div>
     </header>

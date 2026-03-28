@@ -514,3 +514,20 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 |------|--------|
 | `apps/web/src/app/layout.tsx` | Modified — added `<Toaster />` import and mount |
 | `apps/web/tests/5-2-player-profile-creation-onboarding.spec.ts` | Rewritten — `page.routeWebSocket()` mock for AC4-AC8 |
+
+### Gate Retry 2: Fix E2E auth — users had no teamId
+
+**Root Cause:** `test-auth` page called `signIn("password", ...)` which creates a user via Convex Auth, but the created user has **no `teamId` and no `role`**. All `requireAuth()` calls throw `ConvexError("You are not assigned to a team.")`, crashing the entire layout via `NotificationCenter.getUnreadCount` query.
+
+**Fixes Applied:**
+1. **Added `bootstrapTestUser` mutation** (`packages/backend/convex/testing.ts`) — after Password auth, patches the authenticated user with `role`, `teamId` (creates default test team), and `status: "active"` so `requireAuth()` passes.
+2. **Updated test-auth page** (`apps/web/src/app/(auth)/test-auth/page.tsx`) — calls `bootstrapTestUser({ role })` after successful sign-in/sign-up.
+3. **Added error boundary around `NotificationCenter`** (`apps/web/src/components/site-header.tsx`) — defense in depth so notification query errors don't crash the whole page layout.
+
+**File List (Gate Retry 2):**
+
+| File | Change |
+|------|--------|
+| `packages/backend/convex/testing.ts` | Modified — added `bootstrapTestUser` mutation |
+| `apps/web/src/app/(auth)/test-auth/page.tsx` | Modified — calls `bootstrapTestUser` after auth |
+| `apps/web/src/components/site-header.tsx` | Modified — added `NotificationErrorBoundary` around `NotificationCenter` |

@@ -2,6 +2,7 @@
  * Test-only mutations and queries. Guarded by IS_TEST env var.
  * Used by E2E tests to create test users and seed data.
  */
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -64,5 +65,57 @@ export const createTestUser = mutation({
     });
 
     return userId;
+  },
+});
+
+/**
+ * Bootstrap the currently authenticated user for E2E testing.
+ * Sets role, teamId, status on the user record so that requireAuth()
+ * and requireRole() pass in subsequent queries/mutations.
+ */
+export const bootstrapTestUser = mutation({
+  args: {
+    role: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertTestMode();
+
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("bootstrapTestUser: not authenticated");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("bootstrapTestUser: user record not found");
+    }
+
+    // If user already has a teamId and role, skip
+    if (user.teamId && user.role === args.role) {
+      return { userId, teamId: user.teamId };
+    }
+
+    // Ensure default test team exists
+    let team = await ctx.db
+      .query("teams")
+      .withIndex("by_slug", (q) => q.eq("slug", "default-club"))
+      .first();
+
+    if (!team) {
+      const teamId = await ctx.db.insert("teams", {
+        name: "Default Club",
+        slug: "default-club",
+      });
+      team = await ctx.db.get(teamId);
+    }
+
+    // Patch user with role, team, and active status
+    await ctx.db.patch(userId, {
+      role: args.role as any,
+      teamId: team!._id,
+      status: "active" as const,
+    });
+
+    return { userId, teamId: team!._id };
   },
 });

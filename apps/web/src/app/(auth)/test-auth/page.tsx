@@ -1,15 +1,19 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useMutation } from "convex/react";
+import { api } from "@packages/backend/convex/_generated/api";
 import { useState } from "react";
 
 /**
  * Test-only auth page for E2E tests.
  * Signs up/in with Password provider (OTP skipped when IS_TEST=true).
+ * After auth, bootstraps the user with role + teamId so requireAuth() passes.
  * All inputs have data-testid attributes for deterministic E2E access.
  */
 export default function TestAuthPage() {
   const { signIn } = useAuthActions();
+  const bootstrapTestUser = useMutation(api.testing.bootstrapTestUser);
   const [email, setEmail] = useState("admin@test.com");
   const [name, setName] = useState("Test Admin");
   const [role, setRole] = useState("admin");
@@ -29,6 +33,10 @@ export default function TestAuthPage() {
       } catch {
         await signIn("password", { email, password: TEST_PASSWORD, flow: "signIn" });
       }
+
+      // Bootstrap the user with role + teamId so protected queries work
+      await bootstrapTestUser({ role });
+
       setStatus("authenticated");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

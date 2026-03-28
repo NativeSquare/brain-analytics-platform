@@ -161,6 +161,117 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }
 
   // ============================================================================
+  // HELPER: Mock Convex WebSocket with role-based query responses for /players
+  // ============================================================================
+
+  async function setupConvexMockWithRole(
+    page: Page,
+    role: "admin" | "player" | "coach"
+  ) {
+    await page.route(/convex\.cloud/, (route) => route.abort());
+
+    let tsCounter = 1;
+    let curQS = 0;
+    let curId = 0;
+    let curTs = encodeTs(0);
+
+    function makeTransitionWithQueryData(
+      newQS: number,
+      newId: number,
+      modifications: unknown[] = []
+    ): string {
+      const startTs = curTs;
+      const endTs = encodeTs(tsCounter++);
+      const msg = {
+        type: "Transition",
+        startVersion: { querySet: curQS, identity: curId, ts: startTs },
+        endVersion: { querySet: newQS, identity: newId, ts: endTs },
+        modifications,
+      };
+      curQS = newQS;
+      curId = newId;
+      curTs = endTs;
+      return JSON.stringify(msg);
+    }
+
+    await page.routeWebSocket(/convex/, (ws) => {
+      ws.onMessage((message) => {
+        const data =
+          typeof message === "string" ? message : message.toString();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let msg: any;
+        try {
+          msg = JSON.parse(data);
+        } catch {
+          return;
+        }
+
+        if (msg.type === "Authenticate") {
+          setTimeout(
+            () => ws.send(makeTransitionWithQueryData(curQS, 1)),
+            20
+          );
+        }
+
+        if (msg.type === "ModifyQuerySet") {
+          const queryMods: unknown[] = [];
+          if (msg.modifications) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            for (const mod of msg.modifications as any[]) {
+              if (mod.type === "Add") {
+                if (mod.udfPath.includes("currentUser")) {
+                  queryMods.push({
+                    type: "QueryUpdated",
+                    queryId: mod.queryId,
+                    value: {
+                      _id: "mock_user_001",
+                      _creationTime: 1700000000000,
+                      clerkId: "clerk_mock",
+                      email: `${role}@test.com`,
+                      name: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+                      role,
+                      teamId: "mock_team_001",
+                    },
+                    logLines: [],
+                  });
+                } else if (
+                  mod.udfPath.includes("getPlayers") ||
+                  mod.udfPath.includes("players")
+                ) {
+                  queryMods.push({
+                    type: "QueryUpdated",
+                    queryId: mod.queryId,
+                    value: [],
+                    logLines: [],
+                  });
+                } else {
+                  queryMods.push({
+                    type: "QueryUpdated",
+                    queryId: mod.queryId,
+                    value: null,
+                    logLines: [],
+                  });
+                }
+              }
+            }
+          }
+          setTimeout(
+            () =>
+              ws.send(
+                makeTransitionWithQueryData(
+                  msg.newVersion,
+                  curId,
+                  queryMods
+                )
+              ),
+            20
+          );
+        }
+      });
+    });
+  }
+
+  // ============================================================================
   // HELPER: Wait for page to be fully interactive (Next.js compilation done)
   // ============================================================================
 
@@ -280,7 +391,8 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   test("AC1: Add Player button visible to admins on players list page", async ({
     page,
   }) => {
-    await blockConvex(page);
+    // Mock Convex to return an admin-role user so the button renders
+    await setupConvexMockWithRole(page, "admin");
     const response = await page.goto("/players", {
       waitUntil: "domcontentloaded",
       timeout: 20000,
@@ -288,31 +400,20 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     expect(response).not.toBeNull();
     expect(response!.status()).toBeLessThan(500);
 
-    if (page.url().includes("login") || page.url().includes("sign-in")) {
-      // Auth redirect confirms the page exists and requires authentication
-      // The Add Player button is admin-only gated by role check
-      expect(page.url()).toContain("/");
-      await page.screenshot({
-        path: "tests/screenshots/5-2-ac1-auth-redirect.png",
-      });
-      return;
-    }
-
+    // Wait for the Players heading — confirms page loaded and rendered
     await expect(
       page.getByRole("heading", { name: /Players/i })
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 15000 });
 
-    // The "Add Player" button/link should be visible on /players for admin users
-    // It links to /players/new and is only rendered when user.role === "admin"
+    await waitForHydration(page);
+
+    // AC1: "Add Player" link MUST be visible for admin users on /players page
     const addPlayerLink = page.getByRole("link", { name: /Add Player/i });
-    const linkVisible = await addPlayerLink
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    await expect(addPlayerLink).toBeVisible({ timeout: 10000 });
 
-    if (linkVisible) {
-      const href = await addPlayerLink.getAttribute("href");
-      expect(href).toContain("/players/new");
-    }
+    // Verify the link navigates to /players/new
+    const href = await addPlayerLink.getAttribute("href");
+    expect(href).toContain("/players/new");
 
     await page.screenshot({
       path: "tests/screenshots/5-2-ac1-players-list-add-button.png",
@@ -322,23 +423,26 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   test("AC1: non-admin users do not see Add Player button on players page", async ({
     page,
   }) => {
-    await blockConvex(page);
-    const response = await page.goto("/players");
+    // Mock Convex to return a non-admin (player role) user
+    await setupConvexMockWithRole(page, "player");
+    const response = await page.goto("/players", {
+      waitUntil: "domcontentloaded",
+      timeout: 20000,
+    });
     expect(response).not.toBeNull();
     expect(response!.status()).toBeLessThan(500);
-    await page.waitForLoadState("domcontentloaded");
 
-    if (page.url().includes("login") || page.url().includes("sign-in"))
-      return;
-
+    // Wait for the Players heading — confirms page loaded and rendered
     await expect(
       page.getByRole("heading", { name: /Players/i })
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 15000 });
 
-    // Non-admin users should NOT see the Add Player button
+    await waitForHydration(page);
+
+    // AC1: Non-admin users MUST NOT see the Add Player button
     await expect(
       page.getByRole("link", { name: /Add Player/i })
-    ).not.toBeVisible({ timeout: 3000 });
+    ).not.toBeVisible({ timeout: 5000 });
 
     await page.screenshot({
       path: "tests/screenshots/5-2-ac1-no-button-non-admin.png",
@@ -463,6 +567,52 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       timeout: 3000,
     });
 
+    // Positive number validation — negative height must show inline error
+    const heightInput = page.locator("#heightCm");
+    await heightInput.scrollIntoViewIfNeeded();
+    await heightInput.fill("-5");
+    await createBtn.scrollIntoViewIfNeeded();
+    await createBtn.click();
+    await expect(page.getByText("Height must be positive")).toBeVisible({
+      timeout: 5000,
+    });
+
+    await page.screenshot({
+      path: "tests/screenshots/5-2-ac3-height-positive-error.png",
+    });
+
+    // Positive number validation — negative weight must show inline error
+    const weightInput = page.locator("#weightKg");
+    await weightInput.scrollIntoViewIfNeeded();
+    await weightInput.fill("-10");
+    await createBtn.scrollIntoViewIfNeeded();
+    await createBtn.click();
+    await expect(page.getByText("Weight must be positive")).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Squad number validation — must be a positive integer
+    const squadInput = page.locator("#squadNumber");
+    await squadInput.scrollIntoViewIfNeeded();
+    await squadInput.fill("-1");
+    await createBtn.scrollIntoViewIfNeeded();
+    await createBtn.click();
+    await expect(
+      page.getByText("Squad number must be a positive integer")
+    ).toBeVisible({ timeout: 5000 });
+
+    await page.screenshot({
+      path: "tests/screenshots/5-2-ac3-positive-number-errors.png",
+    });
+
+    // Clear invalid numeric values to restore form state
+    await heightInput.scrollIntoViewIfNeeded();
+    await heightInput.fill("");
+    await weightInput.scrollIntoViewIfNeeded();
+    await weightInput.fill("");
+    await squadInput.scrollIntoViewIfNeeded();
+    await squadInput.fill("");
+
     await page.screenshot({
       path: "tests/screenshots/5-2-ac3-validation-fixed.png",
     });
@@ -553,11 +703,12 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   // AC #6: Success feedback after player creation — toast + navigation to profile
   // ============================================================================
 
-  test("AC6: Success feedback after player creation — success toast and navigation to player profile page", async ({
+  test("AC6: Success feedback after player creation — success toast message displayed and navigation to player profile page", async ({
     page,
   }) => {
     const { ok } = await goToFormWithMock(page);
-    if (!ok) return;
+    // Form must load — no auth middleware blocking
+    expect(ok).toBe(true);
 
     await fillRequiredFields(page);
 
@@ -565,13 +716,17 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     await createBtn.scrollIntoViewIfNeeded();
     await createBtn.click();
 
-    // Verify success toast notification is displayed
+    // AC6: Verify success toast notification is displayed after form submission
     const successToast = page.getByText("Player created successfully");
     await expect(successToast).toBeVisible({ timeout: 20000 });
 
-    // Form exits loading state
+    // Form exits loading state (button no longer shows "Creating...")
     await expect(page.getByText("Creating...")).not.toBeVisible({
       timeout: 5000,
+    });
+
+    await page.screenshot({
+      path: "tests/screenshots/5-2-ac6-success-toast.png",
     });
 
     // Dismiss the post-creation invite dialog to trigger navigation
@@ -591,9 +746,9 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       await skipBtn.click();
     }
 
-    // After dismissing, admin is navigated to the player profile page
+    // AC6: After dismissal, admin is navigated to the player profile page
     await page.waitForTimeout(2000);
-    // URL should contain /players/ (navigated to /players/[newPlayerId])
+    // URL must contain /players/ — navigated to /players/[newPlayerId]
     expect(page.url()).toContain("/players/");
 
     await page.screenshot({

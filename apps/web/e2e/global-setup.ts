@@ -10,18 +10,18 @@ const STARTUP_TIMEOUT = 120_000; // 2 min, same as playwright
 
 let server: ChildProcess | null = null;
 
-async function waitForServer(url: string, timeout: number): Promise<void> {
+async function waitForServer(url: string, timeout: number): Promise<boolean> {
   const t0 = Date.now();
   while (Date.now() - t0 < timeout) {
     try {
       const res = await fetch(url);
-      if (res.status < 500) return; // 2xx/3xx/4xx all mean the server is up
+      if (res.status < 500) return true; // 2xx/3xx/4xx all mean the server is up
     } catch {
       /* not ready */
     }
     await new Promise((r) => setTimeout(r, 1_000));
   }
-  throw new Error(`Dev server at ${url} did not start within ${timeout}ms`);
+  return false;
 }
 
 export async function setup(): Promise<void> {
@@ -52,8 +52,12 @@ export async function setup(): Promise<void> {
     if (msg) console.error(`[next-dev:err] ${msg}`);
   });
 
-  await waitForServer(BASE, STARTUP_TIMEOUT);
-  console.log(`[e2e-setup] Dev server ready at ${BASE}`);
+  const ready = await waitForServer(BASE, STARTUP_TIMEOUT);
+  if (ready) {
+    console.log(`[e2e-setup] Dev server ready at ${BASE}`);
+  } else {
+    console.warn(`[e2e-setup] Dev server failed to start within ${STARTUP_TIMEOUT}ms — tests will run but may fail`);
+  }
 }
 
 export async function teardown(): Promise<void> {

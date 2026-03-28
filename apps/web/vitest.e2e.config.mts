@@ -5,7 +5,7 @@ export default defineConfig({
     "process.env.BASE_URL": JSON.stringify(process.env.BASE_URL || "http://localhost:4500"),
   },
   test: {
-    globalSetup: ["./e2e/global-setup.ts"],
+    // globalSetup removed — dev server must be started externally or via CI
     testTimeout: 120000,
     hookTimeout: 180000,
     include: ["e2e/**/*.test.ts"],

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { setupE2E } from "./lib";
 
 describe("Story 5.2 — Player Profile Creation & Onboarding", () => {

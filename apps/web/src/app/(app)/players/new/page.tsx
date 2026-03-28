@@ -33,12 +33,8 @@ export default function AddPlayerPage() {
   const playerIdRef = useRef(inviteDialogState.playerId);
   playerIdRef.current = inviteDialogState.playerId;
 
-  // Auth guard: redirect non-admin users
-  if (currentUser !== undefined && currentUser?.role !== "admin") {
-    router.replace("/players");
-    return null;
-  }
-
+  // Hooks MUST be called unconditionally (React Rules of Hooks).
+  // Define callbacks before any conditional returns.
   const handleSuccess = useCallback((playerId: string, data: PlayerFormData) => {
     setInviteDialogState({
       open: true,
@@ -56,6 +52,12 @@ export default function AddPlayerPage() {
       router.push(`/players/${playerIdRef.current}`);
     }
   }, [router]);
+
+  // Auth guard: redirect non-admin users (placed after all hooks)
+  if (currentUser !== undefined && currentUser?.role !== "admin") {
+    router.replace("/players");
+    return null;
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">

@@ -5,7 +5,7 @@ describe("Smoke", () => {
   const ctx = setupE2E();
 
   it("login page loads without errors", async () => {
-    await ctx.goto("http://localhost:4500/login");
+    await ctx.goto("/login");
     const title = await ctx.stagehand.page.title();
     expect(title).toBeTruthy();
   });
@@ -13,7 +13,7 @@ describe("Smoke", () => {
   it("can authenticate as admin via test-auth", async () => {
     await ctx.auth.signInAs({ role: "admin" });
     // After auth, navigate to a protected page
-    await ctx.goto("http://localhost:4500/players");
+    await ctx.goto("/players");
     // Verify we're not redirected to login
     const url = ctx.stagehand.page.url();
     expect(url).toContain("/players");

@@ -35,7 +35,8 @@ export default function RootLayout() {
   return (
     <KeyboardProvider>
       <ConvexAuthProvider
-        client={convex}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- convex version mismatch between native/node_modules and root/node_modules
+        client={convex as any}
         storage={
           Platform.OS === "android" || Platform.OS === "ios"
             ? secureStorage

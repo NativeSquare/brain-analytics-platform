@@ -300,6 +300,101 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       expect(dbCheck.playerFound).toBe(true);
       expect(dbCheck.playerDisplayName).toContain(playerLast);
     });
+
+    it("createPlayer mutation creates a player profile and persists it in the database with correct fields", async () => {
+      await ctx.auth.signInAs({ role: "admin" });
+
+      const firstName = `CrMut${Date.now()}`;
+      const lastName = "DbPersist";
+      const position = "Goalkeeper";
+
+      // Step 1: Navigate to the player creation form
+      await ctx.goto("/players/new");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Step 2: Fill in form fields — triggers createPlayer mutation on submit
+      await ctx.stagehand.page.act(
+        `type '${firstName}' into the First Name input field`
+      );
+      await ctx.stagehand.page.act(
+        `type '${lastName}' into the Last Name input field`
+      );
+      await ctx.stagehand.page.act(
+        "click on the Position select/dropdown to open it"
+      );
+      await ctx.stagehand.page.waitForTimeout(500);
+      await ctx.stagehand.page.act(
+        `select the '${position}' option from the position dropdown`
+      );
+      await ctx.stagehand.page.waitForTimeout(500);
+
+      // Step 3: Submit the form — this calls the createPlayer mutation
+      await ctx.stagehand.page.act("click the 'Create Player' button");
+      await ctx.stagehand.page.waitForTimeout(5000);
+
+      // Step 4: Verify createPlayer mutation succeeded — toast confirms creation
+      const toast = await ctx.stagehand.page.extract({
+        instruction:
+          "Look for a toast notification or success message that indicates the player was created successfully. Return the message text and whether it is visible.",
+        schema: z.object({
+          visible: z.boolean(),
+          text: z.string(),
+        }),
+      });
+      expect(toast.visible).toBe(true);
+
+      // Step 5: Dismiss invite dialog if present
+      try {
+        await ctx.stagehand.page.act(
+          "if a dialog or modal is visible, click the 'Got it' or 'Skip' button"
+        );
+        await ctx.stagehand.page.waitForTimeout(1000);
+      } catch {
+        // No dialog
+      }
+
+      // Step 6: Verify mutation returned a new player _id — we are redirected to /players/[id]
+      await ctx.stagehand.page.waitForTimeout(2000);
+      const url = ctx.stagehand.page.url();
+      expect(url).toMatch(/\/players\/[a-z0-9]+/i);
+      expect(url).not.toContain("/players/new");
+
+      // Step 7: On the profile page, verify the mutation persisted all submitted fields
+      const profile = await ctx.stagehand.page.extract({
+        instruction: `Extract the player's full displayed name, position, and status from this player profile page. The player should be '${firstName} ${lastName}' with position '${position}' and status 'active'.`,
+        schema: z.object({
+          name: z.string(),
+          position: z.string(),
+          status: z.string(),
+        }),
+      });
+
+      // Verify createPlayer mutation persisted firstName, lastName correctly
+      expect(profile.name.toLowerCase()).toContain(firstName.toLowerCase());
+      expect(profile.name.toLowerCase()).toContain(lastName.toLowerCase());
+      // Verify createPlayer mutation persisted position correctly
+      expect(profile.position.toLowerCase()).toContain(position.toLowerCase());
+      // Verify createPlayer mutation set status to "active"
+      expect(profile.status.toLowerCase()).toContain("active");
+
+      // Step 8: Navigate to the players list to verify database persistence
+      await ctx.goto("/players");
+      await ctx.stagehand.page.waitForTimeout(3000);
+
+      const listCheck = await ctx.stagehand.page.extract({
+        instruction: `Search the players list for a player with name containing '${firstName}' or '${lastName}'. Is this player visible in the list?`,
+        schema: z.object({
+          found: z.boolean(),
+          displayName: z.string(),
+        }),
+      });
+
+      // Confirm the createPlayer mutation persisted the player in the database
+      expect(listCheck.found).toBe(true);
+      expect(listCheck.displayName.toLowerCase()).toContain(
+        lastName.toLowerCase()
+      );
+    });
   });
 
   // ─── AC5 (createPlayer mutation behavior): Verify mutation requirements ───

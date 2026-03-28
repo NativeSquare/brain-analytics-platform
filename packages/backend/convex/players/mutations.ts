@@ -10,6 +10,157 @@ import { requireRole } from "../lib/auth";
 const VALID_POSITIONS = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
 // ---------------------------------------------------------------------------
+// Fitness field validation helper
+// ---------------------------------------------------------------------------
+
+function validateFitnessFields(args: {
+  weightKg?: number;
+  bodyFatPercentage?: number;
+  notes?: string;
+}) {
+  // Validate at least one data field
+  if (args.weightKg === undefined && args.bodyFatPercentage === undefined && !args.notes) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "At least one data field (weight, body fat, or notes) is required",
+    });
+  }
+
+  // Validate ranges
+  if (args.weightKg !== undefined && (args.weightKg < 30 || args.weightKg > 200)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Weight must be between 30 and 200 kg",
+    });
+  }
+  if (
+    args.bodyFatPercentage !== undefined &&
+    (args.bodyFatPercentage < 1 || args.bodyFatPercentage > 60)
+  ) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Body fat must be between 1% and 60%",
+    });
+  }
+  if (args.notes !== undefined && args.notes.length > 2000) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Notes cannot exceed 2000 characters",
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fitness CRUD mutations (Story 5.4 AC #6, #9, #11, #14)
+// ---------------------------------------------------------------------------
+
+/**
+ * Add a fitness entry for a player. Admin or physio only.
+ *
+ * Story 5.4 AC #6: Creates a playerFitness entry with validation.
+ * Story 5.4 AC #14: Team-scoped via requireRole.
+ */
+export const addPlayerFitness = mutation({
+  args: {
+    playerId: v.id("players"),
+    date: v.number(),
+    weightKg: v.optional(v.number()),
+    bodyFatPercentage: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const player = await ctx.db.get(args.playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Player not found",
+      });
+    }
+
+    validateFitnessFields(args);
+
+    const now = Date.now();
+    return await ctx.db.insert("playerFitness", {
+      teamId,
+      playerId: args.playerId,
+      date: args.date,
+      weightKg: args.weightKg,
+      bodyFatPercentage: args.bodyFatPercentage,
+      notes: args.notes,
+      createdBy: user._id,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+/**
+ * Update an existing fitness entry. Admin or physio only.
+ *
+ * Story 5.4 AC #9: Patches all fields + updatedAt.
+ * Story 5.4 AC #14: Team-scoped via requireRole.
+ */
+export const updatePlayerFitness = mutation({
+  args: {
+    fitnessId: v.id("playerFitness"),
+    date: v.number(),
+    weightKg: v.optional(v.number()),
+    bodyFatPercentage: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const entry = await ctx.db.get(args.fitnessId);
+    if (!entry || entry.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Fitness entry not found",
+      });
+    }
+
+    validateFitnessFields(args);
+
+    await ctx.db.patch(args.fitnessId, {
+      date: args.date,
+      weightKg: args.weightKg,
+      bodyFatPercentage: args.bodyFatPercentage,
+      notes: args.notes,
+      updatedAt: Date.now(),
+    });
+
+    return args.fitnessId;
+  },
+});
+
+/**
+ * Delete a fitness entry. Admin or physio only.
+ *
+ * Story 5.4 AC #11: Removes the playerFitness document.
+ * Story 5.4 AC #14: Team-scoped via requireRole.
+ */
+export const deletePlayerFitness = mutation({
+  args: {
+    fitnessId: v.id("playerFitness"),
+  },
+  handler: async (ctx, { fitnessId }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const entry = await ctx.db.get(fitnessId);
+    if (!entry || entry.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Fitness entry not found",
+      });
+    }
+
+    await ctx.db.delete(fitnessId);
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Stats field validation helper
 // ---------------------------------------------------------------------------
 

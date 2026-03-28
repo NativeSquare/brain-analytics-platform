@@ -3,6 +3,32 @@ import { query } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
 
 /**
+ * Get fitness entries for a specific player.
+ *
+ * Story 5.4 AC #2: Returns array of playerFitness sorted by date descending.
+ * Story 5.4 AC #14: Team-scoped via requireAuth.
+ */
+export const getPlayerFitness = query({
+  args: { playerId: v.id("players") },
+  handler: async (ctx, { playerId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
+    }
+
+    const entries = await ctx.db
+      .query("playerFitness")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+
+    // Sort by date descending (most recent first)
+    return entries.sort((a, b) => b.date - a.date);
+  },
+});
+
+/**
  * Get match stats for a specific player.
  *
  * AC #2: Returns array of playerStats sorted by matchDate descending.

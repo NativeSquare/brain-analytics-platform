@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/tabs";
 
 import { StatsLog } from "./StatsLog";
+import { FitnessLog } from "./FitnessLog";
 
 interface TabAccess {
   showInjuries: boolean;
@@ -55,6 +56,7 @@ interface PlayerProfileTabsProps {
   player: PlayerData;
   playerId: Id<"players">;
   isAdmin: boolean;
+  canEditFitness?: boolean;
 }
 
 function BioField({ label, value }: { label: string; value?: string | number | null }) {
@@ -76,7 +78,7 @@ function PlaceholderTab({ icon: Icon, name }: { icon: React.ComponentType<{ clas
   );
 }
 
-export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin }: PlayerProfileTabsProps) {
+export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEditFitness = false }: PlayerProfileTabsProps) {
   return (
     <Tabs defaultValue="bio">
       <TabsList variant="line">
@@ -163,7 +165,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin }: Play
       </TabsContent>
 
       <TabsContent value="fitness">
-        <PlaceholderTab icon={IconHeartbeat} name="Fitness" />
+        <FitnessLog playerId={playerId} canEdit={canEditFitness} />
       </TabsContent>
 
       {tabAccess.showInjuries && (

@@ -81,7 +81,7 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
         showInviteButton={!!showInviteButton}
         onInviteClick={handleInviteClick}
       />
-      <PlayerProfileTabs tabAccess={tabAccess} player={player} />
+      <PlayerProfileTabs tabAccess={tabAccess} player={player} playerId={typedPlayerId} isAdmin={isAdmin} />
 
       {showInviteButton && (
         <InvitePlayerDialog

@@ -1,6 +1,32 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
+
+/**
+ * Get match stats for a specific player.
+ *
+ * AC #2: Returns array of playerStats sorted by matchDate descending.
+ * AC #14: Team-scoped via requireAuth.
+ */
+export const getPlayerStats = query({
+  args: { playerId: v.id("players") },
+  handler: async (ctx, { playerId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
+    }
+
+    const stats = await ctx.db
+      .query("playerStats")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+
+    // Sort by matchDate descending (most recent first)
+    return stats.sort((a, b) => b.matchDate - a.matchDate);
+  },
+});
 
 /**
  * Get all players for the authenticated user's team with optional filtering.

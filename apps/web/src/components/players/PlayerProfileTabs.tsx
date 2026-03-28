@@ -13,6 +13,7 @@ import {
   PLAYER_STATUS_LABELS,
   type PlayerStatus,
 } from "@packages/shared/players";
+import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -21,6 +22,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+
+import { StatsLog } from "./StatsLog";
 
 interface TabAccess {
   showInjuries: boolean;
@@ -50,6 +53,8 @@ interface PlayerData {
 interface PlayerProfileTabsProps {
   tabAccess: TabAccess;
   player: PlayerData;
+  playerId: Id<"players">;
+  isAdmin: boolean;
 }
 
 function BioField({ label, value }: { label: string; value?: string | number | null }) {
@@ -71,7 +76,7 @@ function PlaceholderTab({ icon: Icon, name }: { icon: React.ComponentType<{ clas
   );
 }
 
-export function PlayerProfileTabs({ tabAccess, player }: PlayerProfileTabsProps) {
+export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin }: PlayerProfileTabsProps) {
   return (
     <Tabs defaultValue="bio">
       <TabsList variant="line">
@@ -154,7 +159,7 @@ export function PlayerProfileTabs({ tabAccess, player }: PlayerProfileTabsProps)
       </TabsContent>
 
       <TabsContent value="performance">
-        <PlaceholderTab icon={IconChartBar} name="Performance" />
+        <StatsLog playerId={playerId} isAdmin={isAdmin} />
       </TabsContent>
 
       <TabsContent value="fitness">

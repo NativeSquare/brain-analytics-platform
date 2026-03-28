@@ -9,6 +9,171 @@ import { requireRole } from "../lib/auth";
  */
 const VALID_POSITIONS = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
+// ---------------------------------------------------------------------------
+// Stats field validation helper
+// ---------------------------------------------------------------------------
+
+function validateStatsFields(args: {
+  minutesPlayed: number;
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+}) {
+  if (args.minutesPlayed < 0 || args.minutesPlayed > 120) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Minutes played must be between 0 and 120",
+    });
+  }
+  if (args.goals < 0) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Goals must be 0 or more",
+    });
+  }
+  if (args.assists < 0) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Assists must be 0 or more",
+    });
+  }
+  if (args.yellowCards < 0 || args.yellowCards > 2) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Yellow cards must be between 0 and 2",
+    });
+  }
+  if (args.redCards < 0 || args.redCards > 1) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Red cards must be 0 or 1",
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stats CRUD mutations (AC #6, #9, #11, #14)
+// ---------------------------------------------------------------------------
+
+/**
+ * Add match stats for a player. Admin only.
+ *
+ * AC #6: Creates a playerStats entry with validation.
+ * AC #14: Team-scoped via requireRole.
+ */
+export const addPlayerStats = mutation({
+  args: {
+    playerId: v.id("players"),
+    matchDate: v.number(),
+    opponent: v.string(),
+    minutesPlayed: v.number(),
+    goals: v.number(),
+    assists: v.number(),
+    yellowCards: v.number(),
+    redCards: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    const player = await ctx.db.get(args.playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Player not found",
+      });
+    }
+
+    validateStatsFields(args);
+
+    const now = Date.now();
+    return await ctx.db.insert("playerStats", {
+      teamId,
+      playerId: args.playerId,
+      matchDate: args.matchDate,
+      opponent: args.opponent,
+      minutesPlayed: args.minutesPlayed,
+      goals: args.goals,
+      assists: args.assists,
+      yellowCards: args.yellowCards,
+      redCards: args.redCards,
+      createdBy: user._id,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+/**
+ * Update an existing stats entry. Admin only.
+ *
+ * AC #9: Patches all fields + updatedAt.
+ * AC #14: Team-scoped via requireRole.
+ */
+export const updatePlayerStats = mutation({
+  args: {
+    statsId: v.id("playerStats"),
+    matchDate: v.number(),
+    opponent: v.string(),
+    minutesPlayed: v.number(),
+    goals: v.number(),
+    assists: v.number(),
+    yellowCards: v.number(),
+    redCards: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    const stats = await ctx.db.get(args.statsId);
+    if (!stats || stats.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Stats entry not found",
+      });
+    }
+
+    validateStatsFields(args);
+
+    await ctx.db.patch(args.statsId, {
+      matchDate: args.matchDate,
+      opponent: args.opponent,
+      minutesPlayed: args.minutesPlayed,
+      goals: args.goals,
+      assists: args.assists,
+      yellowCards: args.yellowCards,
+      redCards: args.redCards,
+      updatedAt: Date.now(),
+    });
+
+    return args.statsId;
+  },
+});
+
+/**
+ * Delete a stats entry. Admin only.
+ *
+ * AC #11: Removes the playerStats document.
+ * AC #14: Team-scoped via requireRole.
+ */
+export const deletePlayerStats = mutation({
+  args: {
+    statsId: v.id("playerStats"),
+  },
+  handler: async (ctx, { statsId }) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    const stats = await ctx.db.get(statsId);
+    if (!stats || stats.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Stats entry not found",
+      });
+    }
+
+    await ctx.db.delete(statsId);
+  },
+});
+
 /**
  * Create a new player profile. Admin only.
  *

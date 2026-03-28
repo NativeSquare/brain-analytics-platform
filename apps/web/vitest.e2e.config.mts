@@ -1,6 +1,9 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  define: {
+    "process.env.BASE_URL": JSON.stringify(process.env.BASE_URL || "http://localhost:4500"),
+  },
   test: {
     testTimeout: 120000,
     hookTimeout: 180000,

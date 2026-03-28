@@ -56,6 +56,7 @@ import type * as table_playerStats from "../table/playerStats.js";
 import type * as table_players from "../table/players.js";
 import type * as table_teams from "../table/teams.js";
 import type * as table_users from "../table/users.js";
+import type * as testing from "../testing.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
 import type * as utils_generateFunctions from "../utils/generateFunctions.js";
@@ -115,6 +116,7 @@ declare const fullApi: ApiFromModules<{
   "table/players": typeof table_players;
   "table/teams": typeof table_teams;
   "table/users": typeof table_users;
+  testing: typeof testing;
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
   "utils/generateFunctions": typeof utils_generateFunctions;

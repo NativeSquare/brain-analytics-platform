@@ -8,13 +8,14 @@ describe("Smoke", () => {
     await ctx.goto("http://localhost:4500/login");
     const title = await ctx.stagehand.page.title();
     expect(title).toBeTruthy();
-    console.log("Title:", title);
   });
 
-  it("can observe elements on login page", async () => {
-    await ctx.goto("http://localhost:4500/login");
-    const actions = await ctx.stagehand.page.observe("find all buttons and links on the page");
-    console.log("Found actions:", actions.length);
-    expect(actions.length).toBeGreaterThan(0);
+  it("can authenticate as admin via test-auth", async () => {
+    await ctx.auth.signInAs({ role: "admin" });
+    // After auth, navigate to a protected page
+    await ctx.goto("http://localhost:4500/players");
+    // Verify we're not redirected to login
+    const url = ctx.stagehand.page.url();
+    expect(url).toContain("/players");
   });
 });

@@ -11,8 +11,9 @@ import { ResendOTPPasswordReset } from "./lib/auth/ResendOTPPasswordReset";
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
-      verify: ResendOTP,
-      reset: ResendOTPPasswordReset,
+      // In test mode (IS_TEST=true), skip OTP verification for E2E tests
+      verify: process.env.IS_TEST === "true" ? undefined : ResendOTP,
+      reset: process.env.IS_TEST === "true" ? undefined : ResendOTPPasswordReset,
       crypto: {
         hashSecret: async (secret) => {
           return secret;

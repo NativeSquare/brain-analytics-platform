@@ -21,9 +21,7 @@
   "packageManager": "pnpm@9.0.0",
   "pnpm": {
     "overrides": {
-      "preact": "^10.25.0",
-      "react": "19.2.3",
-      "react-dom": "19.2.3"
+      "preact": "^10.25.0"
     }
   }
 }

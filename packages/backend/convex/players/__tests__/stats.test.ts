@@ -130,6 +130,24 @@ async function addPlayerStatsLogic(
     throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
   }
 
+  // Integer validation
+  if (!Number.isInteger(args.minutesPlayed)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Minutes played must be a whole number" });
+  }
+  if (!Number.isInteger(args.goals)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Goals must be a whole number" });
+  }
+  if (!Number.isInteger(args.assists)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Assists must be a whole number" });
+  }
+  if (!Number.isInteger(args.yellowCards)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Yellow cards must be a whole number" });
+  }
+  if (!Number.isInteger(args.redCards)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Red cards must be a whole number" });
+  }
+
+  // Range validation
   if (args.minutesPlayed < 0 || args.minutesPlayed > 120) {
     throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Minutes played must be between 0 and 120" });
   }
@@ -183,6 +201,24 @@ async function updatePlayerStatsLogic(
     throw new ConvexError({ code: "NOT_FOUND" as const, message: "Stats entry not found" });
   }
 
+  // Integer validation
+  if (!Number.isInteger(args.minutesPlayed)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Minutes played must be a whole number" });
+  }
+  if (!Number.isInteger(args.goals)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Goals must be a whole number" });
+  }
+  if (!Number.isInteger(args.assists)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Assists must be a whole number" });
+  }
+  if (!Number.isInteger(args.yellowCards)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Yellow cards must be a whole number" });
+  }
+  if (!Number.isInteger(args.redCards)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Red cards must be a whole number" });
+  }
+
+  // Range validation
   if (args.minutesPlayed < 0 || args.minutesPlayed > 120) {
     throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Minutes played must be between 0 and 120" });
   }

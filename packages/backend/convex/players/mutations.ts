@@ -20,6 +20,39 @@ function validateStatsFields(args: {
   yellowCards: number;
   redCards: number;
 }) {
+  // Validate all numeric fields are integers
+  if (!Number.isInteger(args.minutesPlayed)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Minutes played must be a whole number",
+    });
+  }
+  if (!Number.isInteger(args.goals)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Goals must be a whole number",
+    });
+  }
+  if (!Number.isInteger(args.assists)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Assists must be a whole number",
+    });
+  }
+  if (!Number.isInteger(args.yellowCards)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Yellow cards must be a whole number",
+    });
+  }
+  if (!Number.isInteger(args.redCards)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Red cards must be a whole number",
+    });
+  }
+
+  // Validate ranges
   if (args.minutesPlayed < 0 || args.minutesPlayed > 120) {
     throw new ConvexError({
       code: "VALIDATION_ERROR" as const,

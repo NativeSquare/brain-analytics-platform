@@ -57,6 +57,7 @@ export function StatsFormDialog({
 
   const form = useForm<StatsFormData>({
     resolver: zodResolver(statsFormSchema),
+    mode: "onChange",
     defaultValues: existingStats
       ? {
           matchDate: existingStats.matchDate,
@@ -342,7 +343,7 @@ export function StatsFormDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
               {isSubmitting ? (
                 <>
                   <Spinner className="mr-2 size-4" />

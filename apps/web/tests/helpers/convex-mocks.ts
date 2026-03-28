@@ -140,7 +140,12 @@ export async function mockConvexWithRole(
   });
 }
 
-/** Mock Convex WebSocket with mutation tracking. Returns the array of captured mutation calls. */
+/** Mock Convex WebSocket with mutation tracking AND query responses.
+ *  Unlike the original version, this also responds to ModifyQuerySet with
+ *  proper query results (currentUser as admin, empty players list, etc.)
+ *  so auth-gated pages don't redirect to login.
+ *  Returns the array of captured mutation calls.
+ */
 export async function mockConvexWithMutations(page: Page) {
   await page.route("**/mock-convex-upload.test/**", async (route) => {
     await route.fulfill({
@@ -161,14 +166,18 @@ export async function mockConvexWithMutations(page: Page) {
   let curId = 0;
   let curTs = encodeTs(0);
 
-  function transition(newQS: number, newId: number) {
+  function transition(
+    newQS: number,
+    newId: number,
+    mods: unknown[] = []
+  ) {
     const startTs = curTs;
     const endTs = encodeTs(tsCounter++);
     const msg = {
       type: "Transition",
       startVersion: { querySet: curQS, identity: curId, ts: startTs },
       endVersion: { querySet: newQS, identity: newId, ts: endTs },
-      modifications: [],
+      modifications: mods,
     };
     curQS = newQS;
     curId = newId;
@@ -191,8 +200,50 @@ export async function mockConvexWithMutations(page: Page) {
         setTimeout(() => ws.send(transition(curQS, 1)), 20);
       }
       if (msg.type === "ModifyQuerySet") {
+        // Respond to queries so auth-gated pages see a valid admin user
+        const qm: unknown[] = [];
+        if (msg.modifications) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          for (const mod of msg.modifications as any[]) {
+            if (mod.type === "Add") {
+              if (mod.udfPath.includes("currentUser")) {
+                qm.push({
+                  type: "QueryUpdated",
+                  queryId: mod.queryId,
+                  value: {
+                    _id: "mock_user_001",
+                    _creationTime: 1700000000000,
+                    clerkId: "clerk_mock",
+                    email: "admin@test.com",
+                    name: "Test Admin",
+                    role: "admin",
+                    teamId: "mock_team_001",
+                  },
+                  logLines: [],
+                });
+              } else if (
+                mod.udfPath.includes("getPlayers") ||
+                mod.udfPath.includes("players")
+              ) {
+                qm.push({
+                  type: "QueryUpdated",
+                  queryId: mod.queryId,
+                  value: [],
+                  logLines: [],
+                });
+              } else {
+                qm.push({
+                  type: "QueryUpdated",
+                  queryId: mod.queryId,
+                  value: null,
+                  logLines: [],
+                });
+              }
+            }
+          }
+        }
         setTimeout(
-          () => ws.send(transition(msg.newVersion, curId)),
+          () => ws.send(transition(msg.newVersion, curId, qm)),
           20
         );
       }

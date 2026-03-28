@@ -315,15 +315,16 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   });
 
   // ===========================================================================
-  // AC4: createPlayer mutation creates a player profile on valid submission
+  // AC4: createPlayer mutation creates player profile
   // ===========================================================================
 
-  test("AC4: filling required fields and submitting calls createPlayer mutation and shows success toast", async ({
+  test("AC4: createPlayer mutation creates player profile with proper backend validation", async ({
     page,
   }) => {
-    // SETUP: Navigate to form with mutation mocking
+    // SETUP: Navigate to form with mutation mocking (includes admin user query responses)
     const { ok, mutationCalls } = await goToFormWithMock(page);
-    if (!ok) return;
+    // HARD FAIL: form MUST load — if auth redirect happens, the mock is broken
+    expect(ok).toBe(true);
 
     // ACT: Fill firstName="Test", lastName="Player", position="Forward"
     await fillRequiredFields(page);
@@ -345,6 +346,12 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     expect(createCall).toBeDefined();
     expect(createCall!.args).toBeDefined();
 
+    // ASSERT AC4: Mutation args include the required fields we filled
+    const argsStr = JSON.stringify(createCall!.args);
+    expect(argsStr).toContain("Test");
+    expect(argsStr).toContain("Player");
+    expect(argsStr).toContain("Forward");
+
     // ASSERT AC4: Form exits the "Creating..." loading state
     await expect(page.getByText("Creating...")).not.toBeVisible({
       timeout: 5000,
@@ -356,17 +363,18 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   });
 
   // ===========================================================================
-  // AC5: Photo upload — file input, preview, storage integration
+  // AC5: Photo upload flow — file selection, Convex storage, preview
   // ===========================================================================
 
-  test("AC5: photo upload triggers generateUploadUrl, uploads file, and shows preview image", async ({
+  test("AC5: Photo upload flow — file selection triggers generateUploadUrl, uploads to Convex storage, shows preview", async ({
     page,
   }) => {
-    // SETUP: Navigate to form with mutation mocking
+    // SETUP: Navigate to form with mutation mocking (includes admin user query responses)
     const { ok, mutationCalls } = await goToFormWithMock(page);
-    if (!ok) return;
+    // HARD FAIL: form MUST load for photo upload to work
+    expect(ok).toBe(true);
 
-    // ASSERT AC5: File input exists and accepts correct image types
+    // ASSERT AC5: File input exists and accepts correct image types (JPEG, PNG, WebP)
     const fileInput = page.locator('input[type="file"]');
     await expect(fileInput).toBeAttached();
     const acceptAttr = await fileInput.getAttribute("accept");
@@ -377,7 +385,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       page.getByText("JPEG, PNG or WebP. Max 5MB.")
     ).toBeVisible();
 
-    // ACT: Upload a small PNG file via the file input
+    // ACT: Select a PNG photo file via the file input
     const pngBuffer = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
       "base64"
@@ -388,12 +396,12 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       buffer: pngBuffer,
     });
 
-    // ASSERT AC5: Preview image appears after upload
+    // ASSERT AC5: Preview image is displayed after file selection
     await expect(page.locator('img[alt="Preview"]')).toBeVisible({
       timeout: 15000,
     });
 
-    // ASSERT AC5: generateUploadUrl mutation was called to get upload URL
+    // ASSERT AC5: generateUploadUrl mutation was called to upload to Convex storage
     const uploadCall = mutationCalls.find((c) =>
       c.udfPath.includes("generateUploadUrl")
     );
@@ -405,28 +413,29 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   });
 
   // ===========================================================================
-  // AC6: Success feedback — toast + navigation to player profile
+  // AC6: Success feedback after player creation — toast + navigation
   // ===========================================================================
 
-  test("AC6: after creation shows success toast and navigates to /players/:id", async ({
+  test("AC6: Success feedback after player creation — shows success toast and navigates to player profile page", async ({
     page,
   }) => {
-    // SETUP: Navigate to form with mutation mocking
+    // SETUP: Navigate to form with mutation mocking (includes admin user query responses)
     const { ok } = await goToFormWithMock(page);
-    if (!ok) return;
+    // HARD FAIL: form MUST load for submission flow to work
+    expect(ok).toBe(true);
 
-    // ACT: Fill and submit form
+    // ACT: Fill required fields and submit form
     await fillRequiredFields(page);
     const createBtn = page.getByRole("button", { name: /Create Player/i });
     await createBtn.scrollIntoViewIfNeeded();
     await createBtn.click();
 
-    // ASSERT AC6: Success toast notification appears
+    // ASSERT AC6: Success toast message "Player created successfully" appears
     await expect(
       page.getByText("Player created successfully")
     ).toBeVisible({ timeout: 20000 });
 
-    // ASSERT AC6: Loading state clears
+    // ASSERT AC6: Loading state ("Creating...") clears after success
     await expect(page.getByText("Creating...")).not.toBeVisible({
       timeout: 5000,
     });
@@ -435,7 +444,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       path: "tests/screenshots/5-2-ac6-success-toast.png",
     });
 
-    // ACT: Dismiss invite dialog to trigger navigation
+    // ACT: Dismiss invite dialog to trigger navigation to player profile
     const gotItBtn = page.getByRole("button", { name: /Got it/i });
     const skipBtn = page.getByRole("button", { name: /Skip/i });
     const gotItVisible = await gotItBtn
@@ -447,7 +456,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     if (gotItVisible) await gotItBtn.click();
     else if (skipVisible) await skipBtn.click();
 
-    // ASSERT AC6: Browser navigated to the player profile page
+    // ASSERT AC6: Browser navigated to the player profile page (/players/:id)
     await page.waitForTimeout(2000);
     expect(page.url()).toContain("/players/");
 
@@ -457,15 +466,16 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   });
 
   // ===========================================================================
-  // AC7: Admin prompted to send invitation after player creation
+  // AC7: Invitation prompt dialog after player creation
   // ===========================================================================
 
-  test("AC7: invite dialog with Send Invite and Skip buttons when email provided", async ({
+  test("AC7: Invitation prompt dialog — shows Send Invite and Skip buttons when email provided", async ({
     page,
   }) => {
-    // SETUP: Navigate to form with mutation mocking
+    // SETUP: Navigate to form with mutation mocking (includes admin user query responses)
     const { ok } = await goToFormWithMock(page);
-    if (!ok) return;
+    // HARD FAIL: form MUST load for invitation flow to work
+    expect(ok).toBe(true);
 
     // ACT: Fill form WITH email address, then submit
     await fillRequiredFields(page, { email: "player@example.com" });
@@ -478,7 +488,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       page.getByText("Player created successfully")
     ).toBeVisible({ timeout: 20000 });
 
-    // ASSERT AC7: "Invite Player" dialog heading appears
+    // ASSERT AC7: "Invite Player" dialog heading appears after creation
     await expect(
       page.getByRole("heading", { name: /Invite Player/i })
     ).toBeVisible({ timeout: 8000 });
@@ -486,12 +496,12 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     // ASSERT AC7: Dialog shows the entered email address
     await expect(page.getByText("player@example.com")).toBeVisible();
 
-    // ASSERT AC7: "Send Invite" button is visible
+    // ASSERT AC7: "Send Invite" button is visible in the dialog
     await expect(
       page.getByRole("button", { name: /Send Invite/i })
     ).toBeVisible();
 
-    // ASSERT AC7: "Skip" button is visible
+    // ASSERT AC7: "Skip" button is visible in the dialog
     await expect(
       page.getByRole("button", { name: /Skip/i })
     ).toBeVisible();
@@ -501,12 +511,13 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     });
   });
 
-  test("AC7: No Email Address dialog shown when email not provided", async ({
+  test("AC7: Invitation prompt dialog — shows No Email Address dialog with Got it button when email not provided", async ({
     page,
   }) => {
-    // SETUP: Navigate to form with mutation mocking
+    // SETUP: Navigate to form with mutation mocking (includes admin user query responses)
     const { ok } = await goToFormWithMock(page);
-    if (!ok) return;
+    // HARD FAIL: form MUST load for invitation flow to work
+    expect(ok).toBe(true);
 
     // ACT: Fill form WITHOUT email, then submit
     await fillRequiredFields(page);
@@ -519,7 +530,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       page.getByText("Player created successfully")
     ).toBeVisible({ timeout: 20000 });
 
-    // ASSERT AC7: "No Email Address" dialog heading appears
+    // ASSERT AC7: "No Email Address" dialog heading appears after creation
     await expect(
       page.getByRole("heading", { name: /No Email Address/i })
     ).toBeVisible({ timeout: 8000 });
@@ -544,9 +555,10 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   test("AC8: clicking Send Invite triggers invitePlayer mutation and shows confirmation toast", async ({
     page,
   }) => {
-    // SETUP: Navigate to form with mutation mocking
+    // SETUP: Navigate to form with mutation mocking (includes admin user query responses)
     const { ok, mutationCalls } = await goToFormWithMock(page);
-    if (!ok) return;
+    // HARD FAIL: form MUST load for invite flow to work
+    expect(ok).toBe(true);
 
     // ACT: Fill form with email and submit
     await fillRequiredFields(page, { email: "invite-test@example.com" });

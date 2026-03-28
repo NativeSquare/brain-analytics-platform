@@ -53,7 +53,10 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
   // ─── AC1: "Add Player" button visible to admins on /players ───
   describe("AC1: Add Player button visibility", () => {
-    it("shows Add Player button on the players list page", async () => {
+    it("admin can see the Add Player button on the players list page", async () => {
+      // MANDATORY: authenticate before accessing protected pages
+      await ctx.auth.signInAs({ role: "admin" });
+
       await ctx.goto("/players");
       await ctx.stagehand.page.waitForTimeout(2000);
 
@@ -513,9 +516,7 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         `${dialog.dialogTitle} ${dialog.dialogMessage} ${dialog.buttonLabels.join(" ")}`.toLowerCase();
       expect(allText).toMatch(/no email|got it/);
       expect(
-        dialog.buttonLabels.some((b) =>
-          b.toLowerCase().includes("got it")
-        )
+        dialog.buttonLabels.some((b) => b.toLowerCase().includes("got it"))
       ).toBe(true);
     });
 
@@ -560,6 +561,46 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       const msgLower =
         `${dialog.dialogTitle} ${dialog.dialogMessage}`.toLowerCase();
       expect(msgLower).toMatch(/invit|email|account/);
+    });
+  });
+
+  // ─── AC8: invitePlayer mutation sends an account invitation ───
+  describe("AC8: invitePlayer mutation sends an account invitation", () => {
+    it("clicking Send Invite triggers the invitePlayer mutation and shows confirmation toast", async () => {
+      await ctx.goto("/players/new");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      const uniqueName = `AC8Invite${Date.now()}`;
+      const testEmail = `${uniqueName}@test.example.com`;
+
+      // Create a player with email to trigger the invite dialog
+      await fillRequiredFieldsAndSubmit({
+        firstName: uniqueName,
+        lastName: "InviteMutation",
+        position: "Midfielder",
+        email: testEmail,
+      });
+      await ctx.stagehand.page.waitForTimeout(5000);
+
+      // The invite dialog should be open — click "Send Invite"
+      await ctx.stagehand.page.act(
+        "click the 'Send Invite' button in the dialog"
+      );
+      await ctx.stagehand.page.waitForTimeout(3000);
+
+      // After invitePlayer mutation, a confirmation toast should appear
+      const toastResult = await ctx.stagehand.page.extract({
+        instruction:
+          "look for a toast notification or success message about the invitation being sent. Check for text containing 'invitation sent' or 'invite' or the email address. Return whether such a toast is visible and its text.",
+        schema: z.object({
+          hasInviteToast: z.boolean(),
+          toastText: z.string(),
+        }),
+      });
+
+      expect(toastResult.hasInviteToast).toBe(true);
+      const toastLower = toastResult.toastText.toLowerCase();
+      expect(toastLower).toMatch(/invit|sent/);
     });
   });
 

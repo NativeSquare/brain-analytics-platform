@@ -181,19 +181,23 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
   // ─── AC #4: createPlayer mutation creates a player profile ───
   describe("AC4: createPlayer mutation creates a player profile", () => {
-    it("fills required fields, submits form, and createPlayer mutation creates a player", async () => {
+    it("fills required fields, submits the form, and verifies the player profile was created in the database by finding it in the players list", async () => {
+      const playerFirst = `AC4Player${Date.now()}`;
+      const playerLast = "MutationTest";
+
+      // Step 1: Navigate to the add player form
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields
+      // Step 2: Fill required fields
       await ctx.stagehand.page.act(
-        "type 'TestPlayerFirst' into the First Name input field"
+        `type '${playerFirst}' into the First Name input field`
       );
       await ctx.stagehand.page.act(
-        "type 'TestPlayerLast' into the Last Name input field"
+        `type '${playerLast}' into the Last Name input field`
       );
 
-      // Select position (required field) — open the select and choose Forward
+      // Select position (required field)
       await ctx.stagehand.page.act(
         "click on the Position select/dropdown to open it"
       );
@@ -203,35 +207,37 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       );
       await ctx.stagehand.page.waitForTimeout(500);
 
-      // Submit the form
+      // Step 3: Submit the form — this calls the createPlayer mutation
       await ctx.stagehand.page.act("click the 'Create Player' button");
       await ctx.stagehand.page.waitForTimeout(5000);
 
-      // After successful creation, the page should navigate away from /players/new
-      // Either to the player profile or the invite dialog should appear
-      const currentUrl = ctx.stagehand.page.url();
+      // Step 4: Dismiss the invite dialog if it appeared (click Got it / Skip)
+      try {
+        await ctx.stagehand.page.act(
+          "if there is a dialog or modal visible, click the 'Got it' or 'Skip' or close button to dismiss it"
+        );
+        await ctx.stagehand.page.waitForTimeout(1000);
+      } catch {
+        // Dialog may not be present — that's fine
+      }
 
-      // The page should no longer be on /players/new (mutation succeeded and triggered navigation/dialog)
-      // OR a dialog should be visible (invite prompt appears before navigation)
-      const pageState = await ctx.stagehand.page.extract({
-        instruction:
-          "check the current page state. Is there a dialog/modal visible? What is the page heading or dialog title? Is there a success toast notification visible?",
+      // Step 5: Navigate to /players list to verify the player was persisted
+      await ctx.goto("/players");
+      await ctx.stagehand.page.waitForTimeout(3000);
+
+      // Step 6: Extract player names from the players list to confirm the mutation created the profile
+      const playersList = await ctx.stagehand.page.extract({
+        instruction: `look at the players list/table on this page. Search for a player whose first name contains '${playerFirst}' or whose name contains '${playerLast}'. Is the player visible in the list? Return whether the player was found and the full name if found.`,
         schema: z.object({
-          hasDialog: z.boolean(),
-          dialogOrHeadingText: z.string(),
-          hasSuccessToast: z.boolean(),
+          playerFound: z.boolean(),
+          playerName: z.string(),
         }),
       });
 
-      // The createPlayer mutation succeeded if we see either:
-      // 1. A success toast ("Player created successfully")
-      // 2. The invite dialog appeared (which only shows after successful creation)
-      // 3. Navigation to the player profile page
-      const mutationSucceeded =
-        pageState.hasSuccessToast ||
-        pageState.hasDialog ||
-        !currentUrl.includes("/players/new");
-      expect(mutationSucceeded).toBe(true);
+      // The createPlayer mutation must have persisted the player to the database
+      // because we can now find them in the players list
+      expect(playersList.playerFound).toBe(true);
+      expect(playersList.playerName).toContain(playerLast);
     });
   });
 
@@ -253,7 +259,41 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       expect(photoSection.helperText.toLowerCase()).toContain("5mb");
     });
 
-    it("photo upload area has a clickable upload zone for selecting image files", async () => {
+    it("uploads a photo file and shows a preview image in the upload area", async () => {
+      await ctx.goto("/players/new");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Create a minimal valid PNG image buffer (1x1 red pixel)
+      // PNG header + IHDR + IDAT + IEND chunks
+      const pngBuffer = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+        "base64"
+      );
+
+      // Upload the test image via the file input (file inputs require programmatic access)
+      const fileInput = ctx.stagehand.page.locator('input[type="file"]').first();
+      await fileInput.setInputFiles({
+        name: "test-player-photo.png",
+        mimeType: "image/png",
+        buffer: pngBuffer,
+      });
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Verify a photo preview now appears in the upload area
+      const previewState = await ctx.stagehand.page.extract({
+        instruction:
+          "look at the photo upload area in the Basic Info section. Is there now a preview image displayed? Is there a remove/delete button to remove the uploaded photo? Return whether a preview image is visible and whether there is a way to remove the photo.",
+        schema: z.object({
+          hasPreviewImage: z.boolean(),
+          hasRemoveOption: z.boolean(),
+        }),
+      });
+
+      // After uploading, a preview of the photo should be shown
+      expect(previewState.hasPreviewImage).toBe(true);
+    });
+
+    it("upload area has a clickable zone and mentions supported image formats", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
@@ -281,12 +321,12 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
   // ─── AC #6: Success feedback after player creation ───
   describe("AC6: Success feedback after player creation", () => {
-    it("shows success toast and navigates away after creating a player", async () => {
+    it("displays a success toast notification containing 'created' after submitting the player form", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields with unique name to avoid conflicts
-      const uniqueName = `E2EPlayer${Date.now()}`;
+      // Fill required fields with unique name
+      const uniqueName = `AC6Toast${Date.now()}`;
       await ctx.stagehand.page.act(
         `type '${uniqueName}' into the First Name input field`
       );
@@ -306,39 +346,81 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
       // Submit the form
       await ctx.stagehand.page.act("click the 'Create Player' button");
-      await ctx.stagehand.page.waitForTimeout(5000);
+      await ctx.stagehand.page.waitForTimeout(3000);
 
-      // Check for success toast notification
+      // Verify a success toast notification appeared with text about player creation
       const feedback = await ctx.stagehand.page.extract({
         instruction:
-          "look for any toast notification, success message, or alert on the page. Also check if there is a dialog/modal visible. Extract the toast or success message text if found.",
+          "look for a toast notification, snackbar, or success message anywhere on the page (often in the top-right or bottom corner). Extract the exact text of the toast or success message.",
         schema: z.object({
           toastText: z.string(),
-          hasToastOrSuccessMessage: z.boolean(),
+          hasSuccessToast: z.boolean(),
         }),
       });
 
-      // The toast should say "Player created successfully" or similar
-      expect(feedback.hasToastOrSuccessMessage).toBe(true);
-
-      // After the dialog is dismissed, the admin should be on the player profile page
-      // (the invite dialog may still be open at this point — that's covered by AC7)
+      // The toast must appear and contain the word "created" (e.g. "Player created successfully")
+      expect(feedback.hasSuccessToast).toBe(true);
+      expect(feedback.toastText.toLowerCase()).toContain("created");
     });
-  });
 
-  // ─── AC #7: Admin is prompted to send an account invitation ───
-  describe("AC7: Admin is prompted to send an account invitation", () => {
-    it("shows invite dialog without email — 'No Email Address' with Got it button", async () => {
+    it("navigates away from /players/new to the player profile page after successful creation", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields only (no email)
+      // Fill required fields
+      const uniqueName = `AC6Nav${Date.now()}`;
+      await ctx.stagehand.page.act(
+        `type '${uniqueName}' into the First Name input field`
+      );
+      await ctx.stagehand.page.act(
+        "type 'NavigationTest' into the Last Name input field"
+      );
+
+      // Select position
+      await ctx.stagehand.page.act(
+        "click on the Position select/dropdown to open it"
+      );
+      await ctx.stagehand.page.waitForTimeout(500);
+      await ctx.stagehand.page.act(
+        "select the 'Forward' option from the position dropdown"
+      );
+      await ctx.stagehand.page.waitForTimeout(500);
+
+      // Submit the form
+      await ctx.stagehand.page.act("click the 'Create Player' button");
+      await ctx.stagehand.page.waitForTimeout(5000);
+
+      // Dismiss invite dialog if present
+      try {
+        await ctx.stagehand.page.act(
+          "if there is a dialog or modal visible, click the 'Got it' or 'Skip' or close button to dismiss it"
+        );
+        await ctx.stagehand.page.waitForTimeout(2000);
+      } catch {
+        // Dialog may not be present
+      }
+
+      // Verify we navigated away from /players/new to the player profile
+      const finalUrl = ctx.stagehand.page.url();
+      expect(finalUrl).not.toContain("/players/new");
+      // Should be on a player profile page (/players/{id}) or the players list
+      expect(finalUrl).toContain("/players");
+    });
+  });
+
+  // ─── AC #7: Admin is prompted to send an account invitation after player creation ───
+  describe("AC7: Admin is prompted to send an account invitation", () => {
+    it("after player creation without email, shows an invite prompt dialog with 'No Email Address' and a 'Got it' dismiss button", async () => {
+      await ctx.goto("/players/new");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Fill required fields only — deliberately no email to trigger no-email variant
       const uniqueName = `NoEmail${Date.now()}`;
       await ctx.stagehand.page.act(
         `type '${uniqueName}' into the First Name input field`
       );
       await ctx.stagehand.page.act(
-        "type 'InviteTest' into the Last Name input field"
+        "type 'InvitePromptTest' into the Last Name input field"
       );
 
       // Select position
@@ -351,14 +433,14 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       );
       await ctx.stagehand.page.waitForTimeout(500);
 
-      // Submit without providing an email
+      // Submit — no email provided, so the invite prompt should show no-email variant
       await ctx.stagehand.page.act("click the 'Create Player' button");
       await ctx.stagehand.page.waitForTimeout(5000);
 
-      // The invite dialog should appear — without email, it shows "No Email Address"
+      // Verify the invite prompt dialog appeared automatically after player creation
       const dialog = await ctx.stagehand.page.extract({
         instruction:
-          "check if a dialog or modal is visible on the page. Look for text about inviting the player, 'No Email Address', or prompts about sending an invitation. Also look for 'Got it', 'Skip', or 'Send Invite' buttons. Extract the dialog title, message, and button labels.",
+          "check if a dialog or modal is visible on the page. Look for text about inviting the player, sending an account invitation, or 'No Email Address'. Also look for 'Got it', 'Skip', or 'Send Invite' buttons. Extract the dialog title, message, and button labels.",
         schema: z.object({
           isDialogVisible: z.boolean(),
           dialogTitle: z.string(),
@@ -367,29 +449,26 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         }),
       });
 
-      // Dialog should be visible with no-email variant
+      // The invite prompt dialog must be visible after player creation
       expect(dialog.isDialogVisible).toBe(true);
-      // Should mention no email or "Got it" button should be present
-      const hasNoEmailContent =
-        dialog.dialogTitle.toLowerCase().includes("no email") ||
-        dialog.dialogMessage.toLowerCase().includes("no email") ||
-        dialog.buttonLabels.some((b) =>
-          b.toLowerCase().includes("got it")
-        );
-      expect(hasNoEmailContent).toBe(true);
+
+      // Without email: dialog mentions "no email" and has a "Got it" dismiss button
+      const allText = `${dialog.dialogTitle} ${dialog.dialogMessage} ${dialog.buttonLabels.join(" ")}`.toLowerCase();
+      expect(allText).toMatch(/no email|got it/);
+      expect(dialog.buttonLabels.some((b) => b.toLowerCase().includes("got it"))).toBe(true);
     });
 
-    it("shows invite dialog with email — Send Invite and Skip buttons", async () => {
+    it("after player creation with email, shows an invite prompt dialog with 'Send Invite' and 'Skip' buttons", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields WITH an email
+      // Fill required fields WITH an email to trigger email variant of the invite prompt
       const uniqueName = `WithEmail${Date.now()}`;
       await ctx.stagehand.page.act(
         `type '${uniqueName}' into the First Name input field`
       );
       await ctx.stagehand.page.act(
-        "type 'InviteTest' into the Last Name input field"
+        "type 'InviteEmailTest' into the Last Name input field"
       );
 
       // Select position
@@ -412,7 +491,7 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       await ctx.stagehand.page.act("click the 'Create Player' button");
       await ctx.stagehand.page.waitForTimeout(5000);
 
-      // The invite dialog should appear — with email, it shows Send Invite / Skip
+      // Verify the invite prompt dialog appeared automatically after player creation
       const dialog = await ctx.stagehand.page.extract({
         instruction:
           "check if a dialog or modal is visible on the page. Look for text about inviting the player to create their account, or sending an invitation email. Extract the dialog title, message content, and all button labels visible in the dialog.",
@@ -424,13 +503,17 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         }),
       });
 
+      // The invite prompt dialog must be visible after player creation
       expect(dialog.isDialogVisible).toBe(true);
-      // Should have Send Invite and Skip buttons
+
+      // With email: dialog should offer "Send Invite" and "Skip" options
       const btnLabels = dialog.buttonLabels.map((b) => b.toLowerCase());
-      const hasInviteOptions =
-        btnLabels.some((b) => b.includes("send") || b.includes("invite")) &&
-        btnLabels.some((b) => b.includes("skip"));
-      expect(hasInviteOptions).toBe(true);
+      expect(btnLabels.some((b) => b.includes("send") || b.includes("invite"))).toBe(true);
+      expect(btnLabels.some((b) => b.includes("skip"))).toBe(true);
+
+      // The dialog message should reference the email or invitation
+      const msgLower = `${dialog.dialogTitle} ${dialog.dialogMessage}`.toLowerCase();
+      expect(msgLower).toMatch(/invit|email|account/);
     });
   });
 

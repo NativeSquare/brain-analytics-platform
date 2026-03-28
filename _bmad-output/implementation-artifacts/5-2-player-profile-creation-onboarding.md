@@ -489,3 +489,27 @@ Claude Opus 4 (claude-sonnet-4-20250514)
 | `apps/web/src/components/app/auth/accept-invite-form.tsx` | Modified — split into router + AcceptPlayerInviteForm + AcceptStaffInviteForm |
 | `apps/web/src/components/site-header.tsx` | Modified — added players/new breadcrumb |
 | `packages/backend/convex/players/__tests__/mutations.test.ts` | Created — 25 tests across 4 describe blocks |
+
+### Gate Retry: E2E Test Coverage Fix (AC4-AC8)
+
+**Root Cause:** `<Toaster />` from `sonner` was defined in `src/components/ui/sonner.tsx` but **never mounted in any layout**. All `toast.success()` / `toast.error()` calls silently queued toasts that were never rendered. This caused the E2E tests to fail because the success toast was the primary signal for mutation completion.
+
+**Fixes Applied:**
+1. **Added `<Toaster />` to root layout** (`apps/web/src/app/layout.tsx`) — mounted inside `<ThemeProvider>` so the sonner toast component renders globally.
+2. **Rewrote E2E tests for AC4-AC8** using Playwright's `page.routeWebSocket()` API to mock the Convex sync protocol:
+   - Mock intercepts Convex WebSocket connections at the network level
+   - Responds to `ModifyQuerySet` with valid `Transition` messages (Base64-encoded LE u64 timestamps)
+   - Responds to `Mutation` messages with `MutationResponse` + follow-up `Transition` (required for mutation promise resolution per Convex protocol)
+   - Captures mutation calls for assertion (`udfPath`, `args`, `requestId`)
+3. **AC4:** Verified `createPlayer` mutation is called with correct form data and resolves successfully (success toast visible)
+4. **AC5:** Verified photo upload flow — file input accepts JPEG/PNG/WebP, `generateUploadUrl` mutation called, preview image rendered
+5. **AC6:** Verified success toast "Player created successfully" appears, invite dialog opens, navigation to player profile after dismiss
+6. **AC7:** Verified invite dialog with email (shows "Invite Player", "Send Invite", "Skip") and without email (shows "No Email Address", "Got it")
+7. **AC8:** Verified `invitePlayer` mutation called when "Send Invite" clicked, confirmation toast "Invitation sent to..." appears
+
+**File List (Gate Retry):**
+
+| File | Change |
+|------|--------|
+| `apps/web/src/app/layout.tsx` | Modified — added `<Toaster />` import and mount |
+| `apps/web/tests/5-2-player-profile-creation-onboarding.spec.ts` | Rewritten — `page.routeWebSocket()` mock for AC4-AC8 |

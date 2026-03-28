@@ -5,6 +5,7 @@ import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 import { ThemeProvider } from "next-themes";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 
 const instrumentSansHeading = Instrument_Sans({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <ConvexClientProvider>{children}</ConvexClientProvider>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

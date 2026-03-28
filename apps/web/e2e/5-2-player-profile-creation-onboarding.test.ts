@@ -417,6 +417,120 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         ])
       );
     });
+
+    it("AC2 — clicking Add Player opens a multi-section form with ALL specified fields: Basic Info (first name, last name, photo, DOB, nationality), Football Details (position, squad number, preferred foot), Physical (height, weight), Contact (phone, email, address), Emergency Contact (name, relationship, phone)", async () => {
+      await ctx.auth.signInAs({ role: "admin" });
+
+      // Navigate to /players and click "Add Player" to open the form
+      await ctx.goto("/players");
+      await ctx.stagehand.page.waitForTimeout(2000);
+      await ctx.stagehand.page.act("click the 'Add Player' button");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Confirm we're on the form page
+      const url = ctx.stagehand.page.url();
+      expect(url).toContain("/players/new");
+
+      // ── Basic Info section: first name, last name, photo upload, date of birth, nationality ──
+      const basicInfoFields = await ctx.stagehand.page.extract({
+        instruction:
+          "In the 'Basic Info' section of the form, find ALL form fields. Look for: a 'First Name' text input, a 'Last Name' text input, a photo upload area (file picker or drag-and-drop zone), a 'Date of Birth' date picker field, and a 'Nationality' text input. Return the label or name of each field you find in this section.",
+        schema: z.object({
+          fieldLabels: z.array(z.string()),
+        }),
+      });
+
+      const basicLabels = basicInfoFields.fieldLabels.map((l) =>
+        l.toLowerCase()
+      );
+      // AC2: Basic Info must have first name, last name, photo, date of birth, nationality
+      expect(basicLabels).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/first.*name/),
+          expect.stringMatching(/last.*name/),
+        ])
+      );
+      // Photo upload and date of birth must be present
+      const basicJoined = basicLabels.join(" ");
+      expect(basicJoined).toMatch(/photo|upload|image/);
+      expect(basicJoined).toMatch(/date.*birth|dob|birth/);
+      expect(basicJoined).toMatch(/national/);
+
+      // ── Football Details section: position, squad number, preferred foot ──
+      const footballFields = await ctx.stagehand.page.extract({
+        instruction:
+          "In the 'Football Details' section of the form, find ALL form fields. Look for: a 'Position' dropdown/select (with options Goalkeeper, Defender, Midfielder, Forward), a 'Squad Number' number input, and a 'Preferred Foot' dropdown/select (with options Left, Right, Both). Return the label or name of each field you find in this section.",
+        schema: z.object({
+          fieldLabels: z.array(z.string()),
+        }),
+      });
+
+      const footballLabels = footballFields.fieldLabels.map((l) =>
+        l.toLowerCase()
+      );
+      // AC2: Football Details must have position, squad number, preferred foot
+      expect(footballLabels).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/position/),
+        ])
+      );
+      const footballJoined = footballLabels.join(" ");
+      expect(footballJoined).toMatch(/squad|number/);
+      expect(footballJoined).toMatch(/prefer.*foot|foot/);
+
+      // ── Physical section: height, weight ──
+      const physicalFields = await ctx.stagehand.page.extract({
+        instruction:
+          "In the 'Physical' section of the form, find ALL form fields. Look for: a 'Height' number input (in cm) and a 'Weight' number input (in kg). Return the label or name of each field you find in this section.",
+        schema: z.object({
+          fieldLabels: z.array(z.string()),
+        }),
+      });
+
+      const physicalLabels = physicalFields.fieldLabels.map((l) =>
+        l.toLowerCase()
+      );
+      // AC2: Physical must have height and weight
+      const physicalJoined = physicalLabels.join(" ");
+      expect(physicalJoined).toMatch(/height/);
+      expect(physicalJoined).toMatch(/weight/);
+
+      // ── Contact section: phone, personal email, address ──
+      const contactFields = await ctx.stagehand.page.extract({
+        instruction:
+          "In the 'Contact' section of the form (NOT the Emergency Contact section), find ALL form fields. Look for: a 'Phone' text input, a 'Personal Email' or 'Email' input, and an 'Address' textarea or text input. Return the label or name of each field you find in this section.",
+        schema: z.object({
+          fieldLabels: z.array(z.string()),
+        }),
+      });
+
+      const contactLabels = contactFields.fieldLabels.map((l) =>
+        l.toLowerCase()
+      );
+      // AC2: Contact must have phone, personal email, address
+      const contactJoined = contactLabels.join(" ");
+      expect(contactJoined).toMatch(/phone/);
+      expect(contactJoined).toMatch(/email/);
+      expect(contactJoined).toMatch(/address/);
+
+      // ── Emergency Contact section: name, relationship, phone ──
+      const emergencyFields = await ctx.stagehand.page.extract({
+        instruction:
+          "In the 'Emergency Contact' section of the form, find ALL form fields. Look for: a 'Name' or 'Contact Name' text input, a 'Relationship' text input, and a 'Phone' text input. Return the label or name of each field you find in this section.",
+        schema: z.object({
+          fieldLabels: z.array(z.string()),
+        }),
+      });
+
+      const emergencyLabels = emergencyFields.fieldLabels.map((l) =>
+        l.toLowerCase()
+      );
+      // AC2: Emergency Contact must have name, relationship, phone
+      const emergencyJoined = emergencyLabels.join(" ");
+      expect(emergencyJoined).toMatch(/name/);
+      expect(emergencyJoined).toMatch(/relation/);
+      expect(emergencyJoined).toMatch(/phone/);
+    });
   });
 
   // ─── AC5: Photo upload flow ───

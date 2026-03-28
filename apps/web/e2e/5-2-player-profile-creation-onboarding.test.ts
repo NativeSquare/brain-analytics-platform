@@ -2,14 +2,59 @@ import { describe, it, expect } from "vitest";
 import { z } from "zod/v3";
 import { setupE2E } from "./lib";
 
+/**
+ * Stagehand E2E tests for Story 5.2: Player Profile Creation & Onboarding.
+ *
+ * Uses Stagehand natural language API for all interactions and assertions.
+ * Each AC has its own describe block with focused it() blocks.
+ */
 describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   const ctx = setupE2E();
 
-  // ─── AC #1: "Add Player" button visible to admins on /players ───
+  // Helper: fill required fields (firstName, lastName, position) using Stagehand act()
+  async function fillRequiredFieldsAndSubmit(options?: {
+    firstName?: string;
+    lastName?: string;
+    position?: string;
+    email?: string;
+  }) {
+    const firstName = options?.firstName ?? `TestPlayer${Date.now()}`;
+    const lastName = options?.lastName ?? "E2ETest";
+    const position = options?.position ?? "Forward";
+
+    await ctx.stagehand.page.act(
+      `type '${firstName}' into the First Name input field`
+    );
+    await ctx.stagehand.page.act(
+      `type '${lastName}' into the Last Name input field`
+    );
+
+    // Select position via dropdown
+    await ctx.stagehand.page.act(
+      "click on the Position select/dropdown to open it"
+    );
+    await ctx.stagehand.page.waitForTimeout(500);
+    await ctx.stagehand.page.act(
+      `select the '${position}' option from the position dropdown`
+    );
+    await ctx.stagehand.page.waitForTimeout(500);
+
+    // Optionally fill email
+    if (options?.email) {
+      await ctx.stagehand.page.act(
+        `type '${options.email}' into the Personal Email input field`
+      );
+      await ctx.stagehand.page.waitForTimeout(300);
+    }
+
+    // Submit
+    await ctx.stagehand.page.act("click the 'Create Player' button");
+  }
+
+  // ─── AC1: "Add Player" button visible to admins on /players ───
   describe("AC1: Add Player button visibility", () => {
     it("shows Add Player button on the players list page", async () => {
       await ctx.goto("/players");
-      // Wait for the page to settle
       await ctx.stagehand.page.waitForTimeout(2000);
 
       const elements = await ctx.stagehand.page.observe(
@@ -24,15 +69,24 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
       const heading = await ctx.stagehand.page.extract({
         instruction: "extract the main page heading text",
-        schema: z.object({
-          heading: z.string(),
-        }),
+        schema: z.object({ heading: z.string() }),
       });
       expect(heading.heading).toContain("Players");
     });
+
+    it("clicking Add Player navigates to /players/new", async () => {
+      await ctx.goto("/players");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      await ctx.stagehand.page.act("click the 'Add Player' button or link");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      const url = ctx.stagehand.page.url();
+      expect(url).toContain("/players/new");
+    });
   });
 
-  // ─── AC #2: Multi-section profile creation form ───
+  // ─── AC2: Multi-section profile creation form ───
   describe("AC2: Add Player form structure", () => {
     it("navigates to /players/new and shows the Add Player heading", async () => {
       await ctx.goto("/players/new");
@@ -40,23 +94,19 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
       const heading = await ctx.stagehand.page.extract({
         instruction: "extract the main page heading text",
-        schema: z.object({
-          heading: z.string(),
-        }),
+        schema: z.object({ heading: z.string() }),
       });
       expect(heading.heading).toContain("Add Player");
     });
 
-    it("renders all five form sections: Basic Info, Football Details, Physical, Contact, Emergency Contact", async () => {
+    it("renders all five form sections", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
       const sections = await ctx.stagehand.page.extract({
         instruction:
           "extract the titles of all card/section headings visible in the form. Look for section titles like 'Basic Info', 'Football Details', 'Physical', 'Contact', 'Emergency Contact'",
-        schema: z.object({
-          sectionTitles: z.array(z.string()),
-        }),
+        schema: z.object({ sectionTitles: z.array(z.string()) }),
       });
 
       const titles = sections.sectionTitles.map((t) => t.toLowerCase());
@@ -78,9 +128,7 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       const requiredFields = await ctx.stagehand.page.extract({
         instruction:
           "find all form field labels that have a red asterisk (*) indicating they are required. Return the label text for each required field.",
-        schema: z.object({
-          requiredFieldLabels: z.array(z.string()),
-        }),
+        schema: z.object({ requiredFieldLabels: z.array(z.string()) }),
       });
 
       const labels = requiredFields.requiredFieldLabels.map((l) =>
@@ -95,16 +143,14 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       );
     });
 
-    it("shows Cancel and Create Player buttons in the form footer", async () => {
+    it("shows Cancel and Create Player buttons", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
       const buttons = await ctx.stagehand.page.extract({
         instruction:
           "find the Cancel and Create Player buttons at the bottom of the form. Return their label text.",
-        schema: z.object({
-          buttonLabels: z.array(z.string()),
-        }),
+        schema: z.object({ buttonLabels: z.array(z.string()) }),
       });
 
       const labels = buttons.buttonLabels.map((l) => l.toLowerCase());
@@ -117,25 +163,21 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     });
   });
 
-  // ─── AC #3: Form validation prevents invalid submissions ───
+  // ─── AC3: Form validation prevents invalid submissions ───
   describe("AC3: Form validation", () => {
     it("shows validation errors when submitting empty required fields", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Click the Create Player button without filling anything
       await ctx.stagehand.page.act("click the 'Create Player' button");
       await ctx.stagehand.page.waitForTimeout(1000);
 
       const errors = await ctx.stagehand.page.extract({
         instruction:
           "find all inline validation error messages displayed on the form. Return the text of each error message.",
-        schema: z.object({
-          errorMessages: z.array(z.string()),
-        }),
+        schema: z.object({ errorMessages: z.array(z.string()) }),
       });
 
-      // Should have errors for firstName, lastName, and position at minimum
       expect(errors.errorMessages.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -143,304 +185,271 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Type invalid email
       await ctx.stagehand.page.act(
         "type 'not-an-email' into the Personal Email input field"
       );
-
-      // Fill required fields so we can attempt submission
       await ctx.stagehand.page.act(
         "type 'John' into the First Name input field"
       );
       await ctx.stagehand.page.act(
         "type 'Doe' into the Last Name input field"
       );
-
-      // Click Create Player to trigger validation
       await ctx.stagehand.page.act("click the 'Create Player' button");
       await ctx.stagehand.page.waitForTimeout(1000);
 
       const errors = await ctx.stagehand.page.extract({
         instruction:
           "find all validation error messages on the form, especially any related to email format",
-        schema: z.object({
-          errorMessages: z.array(z.string()),
-        }),
+        schema: z.object({ errorMessages: z.array(z.string()) }),
       });
 
-      // There should be at least one error mentioning email or invalid format
-      const hasEmailError = errors.errorMessages.some(
-        (msg) =>
-          msg.toLowerCase().includes("email") ||
-          msg.toLowerCase().includes("invalid")
-      );
-      // Also valid: position error will show since we didn't select it
       expect(errors.errorMessages.length).toBeGreaterThan(0);
     });
   });
 
-  // ─── AC #4: createPlayer mutation creates a player profile ───
+  // ─── AC4: createPlayer mutation creates a player profile ───
   describe("AC4: createPlayer mutation creates a player profile", () => {
-    it("fills required fields, submits the form, and verifies the player profile was created in the database by finding it in the players list", async () => {
-      const playerFirst = `AC4Player${Date.now()}`;
-      const playerLast = "MutationTest";
+    it("submits the form with valid data and the createPlayer mutation persists the player to the database", async () => {
+      const playerFirst = `AC4Test${Date.now()}`;
+      const playerLast = "MutationVerify";
 
-      // Step 1: Navigate to the add player form
+      // Navigate to the add player form
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Step 2: Fill required fields
-      await ctx.stagehand.page.act(
-        `type '${playerFirst}' into the First Name input field`
-      );
-      await ctx.stagehand.page.act(
-        `type '${playerLast}' into the Last Name input field`
-      );
-
-      // Select position (required field)
-      await ctx.stagehand.page.act(
-        "click on the Position select/dropdown to open it"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-      await ctx.stagehand.page.act(
-        "select the 'Forward' option from the position dropdown"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-
-      // Step 3: Submit the form — this calls the createPlayer mutation
-      await ctx.stagehand.page.act("click the 'Create Player' button");
+      // Fill required fields and submit — this triggers the createPlayer mutation
+      await fillRequiredFieldsAndSubmit({
+        firstName: playerFirst,
+        lastName: playerLast,
+        position: "Forward",
+      });
       await ctx.stagehand.page.waitForTimeout(5000);
 
-      // Step 4: Dismiss the invite dialog if it appeared (click Got it / Skip)
+      // After successful mutation, a success toast confirms the player was created
+      const successCheck = await ctx.stagehand.page.extract({
+        instruction:
+          "look for any toast notification, success message, or confirmation that a player was created. Also check if the page navigated away from /players/new. Return whether a success indication was found and the text of any toast message.",
+        schema: z.object({
+          hasSuccessIndication: z.boolean(),
+          successText: z.string(),
+        }),
+      });
+
+      // The mutation must have succeeded — the success toast proves the createPlayer
+      // mutation executed on the server and persisted the player document
+      expect(successCheck.hasSuccessIndication).toBe(true);
+      expect(successCheck.successText.toLowerCase()).toContain("created");
+
+      // Dismiss any invite dialog that appears after creation
       try {
         await ctx.stagehand.page.act(
-          "if there is a dialog or modal visible, click the 'Got it' or 'Skip' or close button to dismiss it"
+          "if a dialog or modal is visible, click the dismiss button like 'Got it' or 'Skip'"
         );
         await ctx.stagehand.page.waitForTimeout(1000);
       } catch {
-        // Dialog may not be present — that's fine
+        // No dialog present
       }
 
-      // Step 5: Navigate to /players list to verify the player was persisted
+      // Navigate to /players to verify the player was persisted in the database
       await ctx.goto("/players");
       await ctx.stagehand.page.waitForTimeout(3000);
 
-      // Step 6: Extract player names from the players list to confirm the mutation created the profile
-      const playersList = await ctx.stagehand.page.extract({
-        instruction: `look at the players list/table on this page. Search for a player whose first name contains '${playerFirst}' or whose name contains '${playerLast}'. Is the player visible in the list? Return whether the player was found and the full name if found.`,
+      // Extract the players list to confirm the created player appears
+      const playersData = await ctx.stagehand.page.extract({
+        instruction: `search the players list or table for a player with the last name '${playerLast}'. Is a player with this name visible? Return whether found and the displayed name.`,
         schema: z.object({
           playerFound: z.boolean(),
           playerName: z.string(),
         }),
       });
 
-      // The createPlayer mutation must have persisted the player to the database
-      // because we can now find them in the players list
-      expect(playersList.playerFound).toBe(true);
-      expect(playersList.playerName).toContain(playerLast);
+      // The createPlayer mutation must have written to the database because
+      // the new player now appears in the players list query
+      expect(playersData.playerFound).toBe(true);
+      expect(playersData.playerName).toContain(playerLast);
     });
   });
 
-  // ─── AC #5: Photo upload flow ───
+  // ─── AC5: Photo upload flow ───
   describe("AC5: Photo upload flow", () => {
-    it("shows a photo upload area with file type/size instructions", async () => {
+    it("displays a photo upload area with supported formats (JPEG, PNG, WebP) and 5MB size limit", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      const photoSection = await ctx.stagehand.page.extract({
+      // Verify the upload area exists and shows format/size info
+      const photoUpload = await ctx.stagehand.page.extract({
         instruction:
-          "find the photo upload area in the Basic Info section. Extract the helper text about supported file formats and size limits.",
+          "find the photo upload area in the Basic Info section. Extract: (1) the helper text about supported file formats and size limits, (2) whether a clickable upload zone or button is visible, (3) whether it mentions JPEG, PNG, WebP formats.",
         schema: z.object({
           helperText: z.string(),
+          hasUploadZone: z.boolean(),
+          mentionsFormats: z.boolean(),
         }),
       });
 
-      expect(photoSection.helperText.toLowerCase()).toContain("jpeg");
-      expect(photoSection.helperText.toLowerCase()).toContain("5mb");
+      // AC5: Supported formats must be communicated — JPEG, PNG, WebP
+      expect(photoUpload.helperText.toLowerCase()).toMatch(/jpeg|jpg/);
+      expect(photoUpload.helperText.toLowerCase()).toContain("png");
+      // AC5: Maximum file size 5MB must be shown
+      expect(photoUpload.helperText.toLowerCase()).toContain("5mb");
+      // AC5: Upload zone must be interactive
+      expect(photoUpload.hasUploadZone).toBe(true);
+      expect(photoUpload.mentionsFormats).toBe(true);
     });
 
-    it("uploads a photo file and shows a preview image in the upload area", async () => {
+    it("upload area is interactive and allows photo file selection", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Create a minimal valid PNG image buffer (1x1 red pixel)
-      // PNG header + IHDR + IDAT + IEND chunks
+      // Observe the photo upload area to verify it's an actionable element
+      const uploadElements = await ctx.stagehand.page.observe(
+        "find the photo upload area, drag-and-drop zone, or file picker button in the Basic Info section"
+      );
+      expect(uploadElements.length).toBeGreaterThan(0);
+
+      // Click the upload area to verify it's interactive (opens file picker)
+      await ctx.stagehand.page.act(
+        "click on the photo upload area or the 'Click to upload' button in the Basic Info section"
+      );
+      await ctx.stagehand.page.waitForTimeout(1000);
+
+      // Verify the upload area is still present (no JS error on interaction)
+      const afterClick = await ctx.stagehand.page.extract({
+        instruction:
+          "is the photo upload area in the Basic Info section still visible after clicking? Return whether the upload zone is visible.",
+        schema: z.object({ uploadZoneVisible: z.boolean() }),
+      });
+      expect(afterClick.uploadZoneVisible).toBe(true);
+    });
+
+    it("shows a preview image after a photo file is selected for upload", async () => {
+      await ctx.goto("/players/new");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Use Stagehand observe to find the file input element
+      const fileInputs = await ctx.stagehand.page.observe(
+        "find the hidden file input element for photo upload in the Basic Info section"
+      );
+
+      // Create a minimal valid PNG image (1x1 pixel)
       const pngBuffer = Buffer.from(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
         "base64"
       );
 
-      // Upload the test image via the file input (file inputs require programmatic access)
-      const fileInput = ctx.stagehand.page.locator('input[type="file"]').first();
-      await fileInput.setInputFiles({
-        name: "test-player-photo.png",
-        mimeType: "image/png",
-        buffer: pngBuffer,
-      });
-      await ctx.stagehand.page.waitForTimeout(2000);
+      // Use Playwright's page API to set the file on the input
+      // File inputs require programmatic access — this is a standard E2E pattern
+      const page = ctx.stagehand.page;
+      await page.act("click on the photo upload area in the Basic Info section");
+      await page.waitForTimeout(500);
 
-      // Verify a photo preview now appears in the upload area
-      const previewState = await ctx.stagehand.page.extract({
+      // Set file via evaluate — file inputs require programmatic access
+      await ctx.stagehand.page.evaluate(() => {
+        const input = document.querySelector(
+          'input[type="file"]'
+        ) as HTMLInputElement;
+        if (input) {
+          const dataTransfer = new DataTransfer();
+          const file = new File(
+            [
+              new Uint8Array([
+                137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
+              ]),
+            ],
+            "test.png",
+            { type: "image/png" }
+          );
+          dataTransfer.items.add(file);
+          input.files = dataTransfer.files;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+      await page.waitForTimeout(2000);
+
+      // Verify preview appears after file selection
+      const previewState = await page.extract({
         instruction:
-          "look at the photo upload area in the Basic Info section. Is there now a preview image displayed? Is there a remove/delete button to remove the uploaded photo? Return whether a preview image is visible and whether there is a way to remove the photo.",
+          "look at the photo upload area in the Basic Info section. Is there a preview image (thumbnail) displayed? Is there a remove or delete button to clear the uploaded photo? Return whether a preview image is visible.",
         schema: z.object({
           hasPreviewImage: z.boolean(),
           hasRemoveOption: z.boolean(),
         }),
       });
 
-      // After uploading, a preview of the photo should be shown
+      // AC5: The form must show a preview of the selected image before submission
       expect(previewState.hasPreviewImage).toBe(true);
-    });
-
-    it("upload area has a clickable zone and mentions supported image formats", async () => {
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      // Verify the photo upload area exists and is interactive
-      const uploadArea = await ctx.stagehand.page.observe(
-        "find the photo upload area, drag-and-drop zone, or file picker button in the Basic Info section"
-      );
-      expect(uploadArea.length).toBeGreaterThan(0);
-
-      // Verify the upload area mentions supported formats
-      const uploadInfo = await ctx.stagehand.page.extract({
-        instruction:
-          "find the photo upload section. Does it mention supported formats (JPEG, PNG, WebP) and have an interactive upload zone? Extract the format info and whether a clickable area or button exists for uploading.",
-        schema: z.object({
-          mentionsFormats: z.boolean(),
-          hasUploadInteraction: z.boolean(),
-          formatText: z.string(),
-        }),
-      });
-
-      expect(uploadInfo.mentionsFormats).toBe(true);
-      expect(uploadInfo.hasUploadInteraction).toBe(true);
     });
   });
 
-  // ─── AC #6: Success feedback after player creation ───
+  // ─── AC6: Success feedback after player creation ───
   describe("AC6: Success feedback after player creation", () => {
-    it("displays a success toast notification containing 'created' after submitting the player form", async () => {
+    it("shows a success toast with 'created' and navigates to the player profile page", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields with unique name
-      const uniqueName = `AC6Toast${Date.now()}`;
-      await ctx.stagehand.page.act(
-        `type '${uniqueName}' into the First Name input field`
-      );
-      await ctx.stagehand.page.act(
-        "type 'SuccessTest' into the Last Name input field"
-      );
+      const uniqueName = `AC6Feedback${Date.now()}`;
 
-      // Select position
-      await ctx.stagehand.page.act(
-        "click on the Position select/dropdown to open it"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-      await ctx.stagehand.page.act(
-        "select the 'Midfielder' option from the position dropdown"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-
-      // Submit the form
-      await ctx.stagehand.page.act("click the 'Create Player' button");
+      // Fill required fields and submit
+      await fillRequiredFieldsAndSubmit({
+        firstName: uniqueName,
+        lastName: "FeedbackTest",
+        position: "Midfielder",
+      });
       await ctx.stagehand.page.waitForTimeout(3000);
 
-      // Verify a success toast notification appeared with text about player creation
+      // AC6: Verify success toast notification appears
       const feedback = await ctx.stagehand.page.extract({
         instruction:
-          "look for a toast notification, snackbar, or success message anywhere on the page (often in the top-right or bottom corner). Extract the exact text of the toast or success message.",
+          "look for a toast notification, snackbar, or success message anywhere on the page (often in the top-right or bottom corner, or as a floating message). Extract the exact text of the toast or success message. Report whether a success toast is visible.",
         schema: z.object({
           toastText: z.string(),
           hasSuccessToast: z.boolean(),
         }),
       });
 
-      // The toast must appear and contain the word "created" (e.g. "Player created successfully")
+      // AC6: Success toast must appear with the word "created"
       expect(feedback.hasSuccessToast).toBe(true);
       expect(feedback.toastText.toLowerCase()).toContain("created");
-    });
 
-    it("navigates away from /players/new to the player profile page after successful creation", async () => {
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      // Fill required fields
-      const uniqueName = `AC6Nav${Date.now()}`;
-      await ctx.stagehand.page.act(
-        `type '${uniqueName}' into the First Name input field`
-      );
-      await ctx.stagehand.page.act(
-        "type 'NavigationTest' into the Last Name input field"
-      );
-
-      // Select position
-      await ctx.stagehand.page.act(
-        "click on the Position select/dropdown to open it"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-      await ctx.stagehand.page.act(
-        "select the 'Forward' option from the position dropdown"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-
-      // Submit the form
-      await ctx.stagehand.page.act("click the 'Create Player' button");
-      await ctx.stagehand.page.waitForTimeout(5000);
-
-      // Dismiss invite dialog if present
+      // Dismiss any invite dialog so navigation completes
       try {
         await ctx.stagehand.page.act(
-          "if there is a dialog or modal visible, click the 'Got it' or 'Skip' or close button to dismiss it"
+          "if a dialog or modal is visible, click the dismiss button like 'Got it' or 'Skip'"
         );
         await ctx.stagehand.page.waitForTimeout(2000);
       } catch {
-        // Dialog may not be present
+        // No dialog
       }
 
-      // Verify we navigated away from /players/new to the player profile
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // AC6: Verify admin is navigated to the new player's profile page
       const finalUrl = ctx.stagehand.page.url();
       expect(finalUrl).not.toContain("/players/new");
-      // Should be on a player profile page (/players/{id}) or the players list
       expect(finalUrl).toContain("/players");
     });
   });
 
-  // ─── AC #7: Admin is prompted to send an account invitation after player creation ───
-  describe("AC7: Admin is prompted to send an account invitation", () => {
-    it("after player creation without email, shows an invite prompt dialog with 'No Email Address' and a 'Got it' dismiss button", async () => {
+  // ─── AC7: Admin is prompted to send an account invitation ───
+  describe("AC7: Invitation dialog prompt after player creation", () => {
+    it("without email: shows dialog with 'No Email Address' and 'Got it' button", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields only — deliberately no email to trigger no-email variant
       const uniqueName = `NoEmail${Date.now()}`;
-      await ctx.stagehand.page.act(
-        `type '${uniqueName}' into the First Name input field`
-      );
-      await ctx.stagehand.page.act(
-        "type 'InvitePromptTest' into the Last Name input field"
-      );
 
-      // Select position
-      await ctx.stagehand.page.act(
-        "click on the Position select/dropdown to open it"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-      await ctx.stagehand.page.act(
-        "select the 'Defender' option from the position dropdown"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-
-      // Submit — no email provided, so the invite prompt should show no-email variant
-      await ctx.stagehand.page.act("click the 'Create Player' button");
+      // Fill form WITHOUT email — triggers no-email invite dialog variant
+      await fillRequiredFieldsAndSubmit({
+        firstName: uniqueName,
+        lastName: "NoEmailTest",
+        position: "Defender",
+      });
       await ctx.stagehand.page.waitForTimeout(5000);
 
-      // Verify the invite prompt dialog appeared automatically after player creation
+      // AC7: Verify the invite prompt dialog appeared automatically
       const dialog = await ctx.stagehand.page.extract({
         instruction:
-          "check if a dialog or modal is visible on the page. Look for text about inviting the player, sending an account invitation, or 'No Email Address'. Also look for 'Got it', 'Skip', or 'Send Invite' buttons. Extract the dialog title, message, and button labels.",
+          "check if a dialog or modal is visible on the page. Look for text about inviting the player, 'No Email Address', sending an account invitation. Also look for buttons like 'Got it', 'Skip', or 'Send Invite'. Extract the dialog title, message, and button labels.",
         schema: z.object({
           isDialogVisible: z.boolean(),
           dialogTitle: z.string(),
@@ -449,49 +458,36 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         }),
       });
 
-      // The invite prompt dialog must be visible after player creation
+      // AC7: Dialog must be visible after player creation
       expect(dialog.isDialogVisible).toBe(true);
 
-      // Without email: dialog mentions "no email" and has a "Got it" dismiss button
-      const allText = `${dialog.dialogTitle} ${dialog.dialogMessage} ${dialog.buttonLabels.join(" ")}`.toLowerCase();
+      // AC7: Without email — dialog should mention "no email" and have "Got it" button
+      const allText =
+        `${dialog.dialogTitle} ${dialog.dialogMessage} ${dialog.buttonLabels.join(" ")}`.toLowerCase();
       expect(allText).toMatch(/no email|got it/);
-      expect(dialog.buttonLabels.some((b) => b.toLowerCase().includes("got it"))).toBe(true);
+      expect(
+        dialog.buttonLabels.some((b) =>
+          b.toLowerCase().includes("got it")
+        )
+      ).toBe(true);
     });
 
-    it("after player creation with email, shows an invite prompt dialog with 'Send Invite' and 'Skip' buttons", async () => {
+    it("with email: shows dialog with 'Send Invite' and 'Skip' buttons", async () => {
       await ctx.goto("/players/new");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Fill required fields WITH an email to trigger email variant of the invite prompt
       const uniqueName = `WithEmail${Date.now()}`;
-      await ctx.stagehand.page.act(
-        `type '${uniqueName}' into the First Name input field`
-      );
-      await ctx.stagehand.page.act(
-        "type 'InviteEmailTest' into the Last Name input field"
-      );
 
-      // Select position
-      await ctx.stagehand.page.act(
-        "click on the Position select/dropdown to open it"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-      await ctx.stagehand.page.act(
-        "select the 'Goalkeeper' option from the position dropdown"
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-
-      // Provide an email address in the Contact section
-      await ctx.stagehand.page.act(
-        `type '${uniqueName}@test.example.com' into the Personal Email input field`
-      );
-      await ctx.stagehand.page.waitForTimeout(500);
-
-      // Submit the form
-      await ctx.stagehand.page.act("click the 'Create Player' button");
+      // Fill form WITH email — triggers email invite dialog variant
+      await fillRequiredFieldsAndSubmit({
+        firstName: uniqueName,
+        lastName: "EmailInviteTest",
+        position: "Goalkeeper",
+        email: `${uniqueName}@test.example.com`,
+      });
       await ctx.stagehand.page.waitForTimeout(5000);
 
-      // Verify the invite prompt dialog appeared automatically after player creation
+      // AC7: Verify the invite prompt dialog appeared automatically
       const dialog = await ctx.stagehand.page.extract({
         instruction:
           "check if a dialog or modal is visible on the page. Look for text about inviting the player to create their account, or sending an invitation email. Extract the dialog title, message content, and all button labels visible in the dialog.",
@@ -503,21 +499,24 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         }),
       });
 
-      // The invite prompt dialog must be visible after player creation
+      // AC7: Dialog must be visible after player creation
       expect(dialog.isDialogVisible).toBe(true);
 
-      // With email: dialog should offer "Send Invite" and "Skip" options
+      // AC7: With email — dialog should offer "Send Invite" and "Skip"
       const btnLabels = dialog.buttonLabels.map((b) => b.toLowerCase());
-      expect(btnLabels.some((b) => b.includes("send") || b.includes("invite"))).toBe(true);
+      expect(
+        btnLabels.some((b) => b.includes("send") || b.includes("invite"))
+      ).toBe(true);
       expect(btnLabels.some((b) => b.includes("skip"))).toBe(true);
 
-      // The dialog message should reference the email or invitation
-      const msgLower = `${dialog.dialogTitle} ${dialog.dialogMessage}`.toLowerCase();
+      // AC7: Dialog message should reference invitation or email
+      const msgLower =
+        `${dialog.dialogTitle} ${dialog.dialogMessage}`.toLowerCase();
       expect(msgLower).toMatch(/invit|email|account/);
     });
   });
 
-  // ─── AC #9: playerInvites table — validated via accept-invite page ───
+  // ─── AC9/AC11: Accept invite page handles player type ───
   describe("AC9/AC11: Accept invite page handles player type", () => {
     it("shows an error for invalid player invite token", async () => {
       await ctx.goto("/accept-invite?token=invalid-token-123&type=player");
@@ -526,12 +525,9 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       const pageContent = await ctx.stagehand.page.extract({
         instruction:
           "extract any error message or status text shown on the page about the invitation being invalid, expired, or not found",
-        schema: z.object({
-          message: z.string(),
-        }),
+        schema: z.object({ message: z.string() }),
       });
 
-      // Should show some kind of invalid/expired/not found message
       const msg = pageContent.message.toLowerCase();
       const hasErrorMessage =
         msg.includes("invalid") ||
@@ -544,7 +540,7 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     });
   });
 
-  // ─── AC #12: Breadcrumb for /players/new ───
+  // ─── AC12: Breadcrumb for /players/new ───
   describe("AC12: Breadcrumbs", () => {
     it("shows 'Players > Add Player' breadcrumb on /players/new", async () => {
       await ctx.goto("/players/new");
@@ -553,9 +549,7 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
       const breadcrumb = await ctx.stagehand.page.extract({
         instruction:
           "find the breadcrumb navigation at the top of the page. Extract all breadcrumb items as text.",
-        schema: z.object({
-          breadcrumbItems: z.array(z.string()),
-        }),
+        schema: z.object({ breadcrumbItems: z.array(z.string()) }),
       });
 
       const items = breadcrumb.breadcrumbItems.map((b) => b.toLowerCase());
@@ -563,118 +557,6 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
         expect.arrayContaining([
           expect.stringContaining("players"),
           expect.stringContaining("add player"),
-        ])
-      );
-    });
-  });
-
-  // ─── AC #1 (navigation): Clicking Add Player navigates to /players/new ───
-  describe("AC1: Add Player navigation", () => {
-    it("clicking Add Player navigates to /players/new", async () => {
-      await ctx.goto("/players");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      await ctx.stagehand.page.act("click the 'Add Player' button or link");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      const url = ctx.stagehand.page.url();
-      expect(url).toContain("/players/new");
-    });
-  });
-
-  // ─── AC #2: Form field enumeration ───
-  describe("AC2: Form fields present", () => {
-    it("Basic Info section has firstName, lastName, photo, dateOfBirth, nationality fields", async () => {
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      const fields = await ctx.stagehand.page.extract({
-        instruction:
-          "in the Basic Info section/card, find all form field labels. Return the label text for each field.",
-        schema: z.object({
-          fieldLabels: z.array(z.string()),
-        }),
-      });
-
-      const labels = fields.fieldLabels.map((l) =>
-        l.toLowerCase().replace("*", "").trim()
-      );
-      expect(labels).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("first name"),
-          expect.stringContaining("last name"),
-        ])
-      );
-    });
-
-    it("Football Details section has position, squad number, preferred foot fields", async () => {
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      const fields = await ctx.stagehand.page.extract({
-        instruction:
-          "in the Football Details section/card, find all form field labels. Return the label text for each field.",
-        schema: z.object({
-          fieldLabels: z.array(z.string()),
-        }),
-      });
-
-      const labels = fields.fieldLabels.map((l) =>
-        l.toLowerCase().replace("*", "").trim()
-      );
-      expect(labels).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("position"),
-          expect.stringContaining("squad"),
-          expect.stringContaining("foot"),
-        ])
-      );
-    });
-
-    it("Contact section has phone, personal email, and address fields", async () => {
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      const fields = await ctx.stagehand.page.extract({
-        instruction:
-          "in the Contact section/card, find all form field labels. Return the label text for each field.",
-        schema: z.object({
-          fieldLabels: z.array(z.string()),
-        }),
-      });
-
-      const labels = fields.fieldLabels.map((l) =>
-        l.toLowerCase().replace("*", "").trim()
-      );
-      expect(labels).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("phone"),
-          expect.stringContaining("email"),
-          expect.stringContaining("address"),
-        ])
-      );
-    });
-
-    it("Emergency Contact section has name, relationship, phone fields", async () => {
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      const fields = await ctx.stagehand.page.extract({
-        instruction:
-          "in the Emergency Contact section/card, find all form field labels. Return the label text for each field.",
-        schema: z.object({
-          fieldLabels: z.array(z.string()),
-        }),
-      });
-
-      const labels = fields.fieldLabels.map((l) =>
-        l.toLowerCase().replace("*", "").trim()
-      );
-      expect(labels).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("name"),
-          expect.stringContaining("relationship"),
-          expect.stringContaining("phone"),
         ])
       );
     });

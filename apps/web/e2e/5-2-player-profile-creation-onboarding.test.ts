@@ -312,21 +312,93 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
   // ─── AC2: "Add Player" opens a multi-section profile creation form ───
   describe("AC2: Add Player opens a multi-section profile creation form", () => {
-    it("clicking Add Player button on /players opens a multi-section profile creation form with Basic Info, Football Details, Physical, Contact, and Emergency Contact sections", async () => {
+    it("AC2 — Add Player opens a multi-section profile creation form: clicking the Add Player button on /players opens the profile creation form with all required sections and fields", async () => {
       await ctx.auth.signInAs({ role: "admin" });
-      // Start from the players list page
+
+      // Step 1: Navigate to the players list page
       await ctx.goto("/players");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Click the "Add Player" button to open the profile creation form
+      // Step 2: Click the "Add Player" button to open the profile creation form
       await ctx.stagehand.page.act("click the 'Add Player' button");
       await ctx.stagehand.page.waitForTimeout(2000);
 
-      // Verify we navigated to the profile creation form
+      // Step 3: Verify the profile creation form opened at /players/new
       const url = ctx.stagehand.page.url();
       expect(url).toContain("/players/new");
 
-      // Extract all form section headings to verify multi-section structure
+      // Step 4: Verify the form is a multi-section profile creation form
+      // Extract form title/heading to confirm we are on the profile creation form
+      const formHeading = await ctx.stagehand.page.extract({
+        instruction:
+          "Look for the main page heading or form title. It should say something like 'Add Player', 'Create Player', or 'New Player'. Return the heading text and whether a form is visible on the page.",
+        schema: z.object({
+          headingText: z.string(),
+          isFormVisible: z.boolean(),
+        }),
+      });
+
+      // The profile creation form must be visible after clicking Add Player
+      expect(formHeading.isFormVisible).toBe(true);
+      expect(formHeading.headingText.toLowerCase()).toMatch(
+        /add|create|new|player/
+      );
+
+      // Step 5: Extract all form section headings to verify multi-section structure
+      const sections = await ctx.stagehand.page.extract({
+        instruction:
+          "Extract all the section headings/titles visible in this player profile creation form. Look for section titles like 'Basic Info', 'Football Details', 'Physical', 'Contact', 'Emergency Contact'. Return each section title found and the total count.",
+        schema: z.object({
+          sectionTitles: z.array(z.string()),
+          sectionCount: z.number(),
+        }),
+      });
+
+      // AC2: The form must have multiple sections (at least 3)
+      expect(sections.sectionCount).toBeGreaterThanOrEqual(3);
+
+      // AC2: The form must include these specific sections
+      const titles = sections.sectionTitles.map((t) => t.toLowerCase());
+      expect(titles).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("basic"),
+          expect.stringContaining("football"),
+        ])
+      );
+
+      // Step 6: Verify required form fields are present in the opened form
+      const fields = await ctx.stagehand.page.extract({
+        instruction:
+          "Look at the form fields in the Basic Info and Football Details sections. Find the First Name, Last Name, and Position fields. Check if they have required indicators (like asterisks * next to their labels). Return the field labels and whether they appear to be required.",
+        schema: z.object({
+          fields: z.array(
+            z.object({
+              label: z.string(),
+              isRequired: z.boolean(),
+            })
+          ),
+        }),
+      });
+
+      // AC2: Required fields (First Name, Last Name, Position) must be present
+      const fieldLabels = fields.fields.map((f) => f.label.toLowerCase());
+      expect(fieldLabels).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/first.*name/),
+          expect.stringMatching(/last.*name/),
+          expect.stringMatching(/position/),
+        ])
+      );
+    });
+
+    it("AC2 — the profile creation form contains all five sections: Basic Info, Football Details, Physical, Contact, and Emergency Contact", async () => {
+      await ctx.auth.signInAs({ role: "admin" });
+
+      // Navigate directly to the form to verify all sections
+      await ctx.goto("/players/new");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Extract all form section headings
       const sections = await ctx.stagehand.page.extract({
         instruction:
           "Extract all the section headings/titles visible in this player profile creation form. Look for section titles like 'Basic Info', 'Football Details', 'Physical', 'Contact', 'Emergency Contact'. Return each section title found.",
@@ -342,35 +414,6 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
           expect.stringContaining("physical"),
           expect.stringContaining("contact"),
           expect.stringContaining("emergency"),
-        ])
-      );
-    });
-
-    it("the profile creation form contains required fields: First Name, Last Name, Position with required indicators", async () => {
-      await ctx.auth.signInAs({ role: "admin" });
-      await ctx.goto("/players/new");
-      await ctx.stagehand.page.waitForTimeout(2000);
-
-      // Verify required fields are present with required indicators (asterisks)
-      const fields = await ctx.stagehand.page.extract({
-        instruction:
-          "Look at the form fields in the Basic Info and Football Details sections. Find the First Name, Last Name, and Position fields. Check if they have required indicators (like asterisks * next to their labels). Return the field labels and whether they appear to be required.",
-        schema: z.object({
-          fields: z.array(
-            z.object({
-              label: z.string(),
-              isRequired: z.boolean(),
-            })
-          ),
-        }),
-      });
-
-      const fieldLabels = fields.fields.map((f) => f.label.toLowerCase());
-      expect(fieldLabels).toEqual(
-        expect.arrayContaining([
-          expect.stringMatching(/first.*name/),
-          expect.stringMatching(/last.*name/),
-          expect.stringMatching(/position/),
         ])
       );
     });

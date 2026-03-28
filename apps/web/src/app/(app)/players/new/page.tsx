@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -28,13 +29,17 @@ export default function AddPlayerPage() {
     personalEmail: undefined,
   });
 
+  // Ref to always access the latest playerId in callbacks (avoids stale closures)
+  const playerIdRef = useRef(inviteDialogState.playerId);
+  playerIdRef.current = inviteDialogState.playerId;
+
   // Auth guard: redirect non-admin users
   if (currentUser !== undefined && currentUser?.role !== "admin") {
     router.replace("/players");
     return null;
   }
 
-  const handleSuccess = (playerId: string, data: PlayerFormData) => {
+  const handleSuccess = useCallback((playerId: string, data: PlayerFormData) => {
     setInviteDialogState({
       open: true,
       playerId: playerId as Id<"players">,
@@ -42,15 +47,15 @@ export default function AddPlayerPage() {
       lastName: data.lastName,
       personalEmail: data.personalEmail || undefined,
     });
-  };
+  }, []);
 
-  const handleInviteClose = () => {
+  const handleInviteClose = useCallback(() => {
     setInviteDialogState((prev) => ({ ...prev, open: false }));
-    // Navigate to the new player's profile
-    if (inviteDialogState.playerId) {
-      router.push(`/players/${inviteDialogState.playerId}`);
+    // Navigate to the new player's profile — read from ref to avoid stale closure
+    if (playerIdRef.current) {
+      router.push(`/players/${playerIdRef.current}`);
     }
-  };
+  }, [router]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">

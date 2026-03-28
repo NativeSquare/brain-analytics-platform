@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { use } from "react";
+import { use, useCallback } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
@@ -35,6 +35,15 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
   );
 
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
+
+  // Memoize callbacks to preserve React.memo on PlayerProfileHeader
+  const handleInviteClick = useCallback(() => {
+    setInviteDialogOpen(true);
+  }, []);
+
+  const handleInviteDialogClose = useCallback(() => {
+    setInviteDialogOpen(false);
+  }, []);
 
   const isAdmin = currentUser?.role === "admin";
   const hasNoAccount = player && !player.userId;
@@ -70,7 +79,7 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
         player={player}
         inviteStatus={inviteStatus}
         showInviteButton={!!showInviteButton}
-        onInviteClick={() => setInviteDialogOpen(true)}
+        onInviteClick={handleInviteClick}
       />
       <PlayerProfileTabs tabAccess={tabAccess} player={player} />
 
@@ -81,7 +90,7 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
           lastName={player.lastName}
           personalEmail={player.personalEmail}
           open={inviteDialogOpen}
-          onClose={() => setInviteDialogOpen(false)}
+          onClose={handleInviteDialogClose}
         />
       )}
     </div>

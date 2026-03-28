@@ -51,6 +51,28 @@ export const getPlayers = query({
       return a.squadNumber - b.squadNumber;
     });
 
+    // Batch-fetch all playerInvites for the team once (avoids N+1 per-player queries)
+    const teamInvites = await ctx.db
+      .query("playerInvites")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    // Build a map of playerId → most recent invite status
+    const invitesByPlayer = new Map<string, { status: string; createdAt: number }>();
+    for (const invite of teamInvites) {
+      const existing = invitesByPlayer.get(invite.playerId);
+      if (!existing || invite.createdAt > existing.createdAt) {
+        invitesByPlayer.set(invite.playerId, {
+          status: invite.status,
+          createdAt: invite.createdAt,
+        });
+      }
+    }
+    const inviteStatusMap = new Map<string, string>();
+    for (const [playerId, { status: invStatus }] of invitesByPlayer) {
+      inviteStatusMap.set(playerId, invStatus);
+    }
+
     // Resolve photo URLs (AC #15) and invite status (AC #12)
     const results = await Promise.all(
       players.map(async (player) => {
@@ -59,18 +81,10 @@ export const getPlayers = query({
           ? await ctx.storage.getUrl(player.photo as Parameters<typeof ctx.storage.getUrl>[0])
           : null;
 
-        // Resolve invite status for players without a linked account (AC #12)
-        let inviteStatus: string | null = null;
-        if (!player.userId) {
-          const invites = await ctx.db
-            .query("playerInvites")
-            .withIndex("by_playerId", (q) => q.eq("playerId", player._id))
-            .collect();
-          if (invites.length > 0) {
-            const sorted = invites.sort((a, b) => b.createdAt - a.createdAt);
-            inviteStatus = sorted[0].status;
-          }
-        }
+        // Look up invite status from the pre-fetched map (AC #12)
+        const inviteStatus = !player.userId
+          ? inviteStatusMap.get(player._id) ?? null
+          : null;
 
         return {
           _id: player._id,

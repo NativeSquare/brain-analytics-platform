@@ -466,9 +466,9 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
     page,
   }) => {
     const formReady = await goToAddPlayerForm(page);
-    // If auth redirected, the form is behind auth gate — a valid AC2 outcome
+    // If auth redirected, skip — AC1 already verifies the auth gate
     if (!formReady) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — form assertions require mock bypass");
       return;
     }
 
@@ -524,7 +524,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const formReady = await goToAddPlayerForm(page);
     if (!formReady) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — validation assertions require mock bypass");
       return;
     }
 
@@ -651,7 +651,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const { ok, mutationCalls } = await goToFormWithMock(page);
     if (!ok) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — mutation assertions require mock bypass");
       return;
     }
 
@@ -694,7 +694,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const { ok, mutationCalls } = await goToFormWithMock(page);
     if (!ok) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — upload assertions require mock bypass");
       return;
     }
 
@@ -745,7 +745,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const { ok } = await goToFormWithMock(page);
     if (!ok) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — navigation assertions require mock bypass");
       return;
     }
 
@@ -799,7 +799,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const { ok } = await goToFormWithMock(page);
     if (!ok) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — invite dialog assertions require mock bypass");
       return;
     }
 
@@ -842,7 +842,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const { ok } = await goToFormWithMock(page);
     if (!ok) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — no-email dialog assertions require mock bypass");
       return;
     }
 
@@ -884,7 +884,7 @@ test.describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
   }) => {
     const { ok, mutationCalls } = await goToFormWithMock(page);
     if (!ok) {
-      expect(page.url()).toMatch(/login|sign-in/);
+      test.skip(true, "Auth redirect: WebSocket mock not applied — invite mutation assertions require mock bypass");
       return;
     }
 

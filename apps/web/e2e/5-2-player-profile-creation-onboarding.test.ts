@@ -312,7 +312,54 @@ describe("Story 5.2 — Player Profile Creation & Onboarding", () => {
 
   // ─── AC2: "Add Player" opens a multi-section profile creation form ───
   describe("AC2: Add Player opens a multi-section profile creation form", () => {
-    it("AC2 — Add Player opens a multi-section profile creation form: clicking the Add Player button on /players opens the profile creation form with all required sections and fields", async () => {
+    it("'Add Player' opens a multi-section profile creation form with Basic Info, Football Details, Physical, Contact, and Emergency Contact sections", async () => {
+      await ctx.auth.signInAs({ role: "admin" });
+
+      // Navigate to the players list page and click "Add Player"
+      await ctx.goto("/players");
+      await ctx.stagehand.page.waitForTimeout(2000);
+      await ctx.stagehand.page.act("click the 'Add Player' button");
+      await ctx.stagehand.page.waitForTimeout(2000);
+
+      // Verify the multi-section profile creation form opened
+      const url = ctx.stagehand.page.url();
+      expect(url).toContain("/players/new");
+
+      // Verify the form has multiple sections with the specified names
+      const formStructure = await ctx.stagehand.page.extract({
+        instruction:
+          "On this player creation form page, find ALL section headings and ALL form field labels. List every section heading (like 'Basic Info', 'Football Details', 'Physical', 'Contact', 'Emergency Contact') and every field label (like 'First Name', 'Last Name', 'Position', 'Squad Number', etc.). Return them separately.",
+        schema: z.object({
+          sectionHeadings: z.array(z.string()),
+          fieldLabels: z.array(z.string()),
+        }),
+      });
+
+      // AC2: Form must be multi-section with at least Basic Info and Football Details
+      const headings = formStructure.sectionHeadings.map((h) => h.toLowerCase());
+      expect(headings.length).toBeGreaterThanOrEqual(3);
+      expect(headings).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("basic"),
+          expect.stringContaining("football"),
+        ])
+      );
+
+      // AC2: Form must contain required fields: First Name, Last Name, Position
+      const labels = formStructure.fieldLabels.map((l) => l.toLowerCase());
+      const allLabels = labels.join(" ");
+      expect(allLabels).toMatch(/first.*name|first name/);
+      expect(allLabels).toMatch(/last.*name|last name/);
+      expect(allLabels).toMatch(/position/);
+
+      // AC2: Form must contain optional fields: Date of Birth, Nationality, Squad Number, Preferred Foot
+      expect(allLabels).toMatch(/date.*birth|dob|birth/);
+      expect(allLabels).toMatch(/national/);
+      expect(allLabels).toMatch(/squad|number/);
+      expect(allLabels).toMatch(/foot|prefer/);
+    });
+
+    it("AC2 — verifies clicking Add Player button on /players opens the profile creation form with all required sections and fields", async () => {
       await ctx.auth.signInAs({ role: "admin" });
 
       // Step 1: Navigate to the players list page

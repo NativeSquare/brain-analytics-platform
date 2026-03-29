@@ -31,6 +31,7 @@ import { FitnessLog } from "./FitnessLog";
 import { InjuryLog } from "./InjuryLog";
 import { ContactInfoEditDialog } from "./ContactInfoEditDialog";
 import { ExternalProviders } from "./ExternalProviders";
+import { ContractCard } from "./ContractCard";
 
 interface TabAccess {
   showInjuries: boolean;
@@ -63,6 +64,8 @@ interface PlayerProfileTabsProps {
   playerId: Id<"players">;
   isAdmin: boolean;
   canEditFitness?: boolean;
+  /** Story 6.2 AC7: canViewContract from contracts module — single source of truth */
+  canViewContract?: boolean;
 }
 
 function BioField({ label, value }: { label: string; value?: string | number | null }) {
@@ -84,7 +87,7 @@ function PlaceholderTab({ icon: Icon, name }: { icon: React.ComponentType<{ clas
   );
 }
 
-export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEditFitness = false }: PlayerProfileTabsProps) {
+export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEditFitness = false, canViewContract }: PlayerProfileTabsProps) {
   // Story 5.6 AC #9: Self-service contact info edit dialog state
   const [contactEditOpen, setContactEditOpen] = React.useState(false);
   const handleOpenContactEdit = React.useCallback(() => setContactEditOpen(true), []);
@@ -115,7 +118,8 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
             Injuries
           </TabsTrigger>
         )}
-        {tabAccess.showContract && (
+        {/* Story 6.2 AC7: canViewContract is single source of truth for tab visibility */}
+        {canViewContract === true && (
           <TabsTrigger value="contract">
             <IconFileText className="mr-1.5 size-4" />
             Contract
@@ -212,9 +216,10 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
         </TabsContent>
       )}
 
-      {tabAccess.showContract && (
+      {/* Story 6.2 AC1,3,7: Contract tab completely omitted from DOM for unauthorized users */}
+      {canViewContract === true && (
         <TabsContent value="contract">
-          <PlaceholderTab icon={IconFileText} name="Contract" />
+          <ContractCard playerId={playerId} />
         </TabsContent>
       )}
 

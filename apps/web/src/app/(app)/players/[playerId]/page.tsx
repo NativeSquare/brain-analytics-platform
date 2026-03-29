@@ -34,6 +34,11 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
     player ? { playerId: typedPlayerId } : "skip"
   );
 
+  // Story 6.2 AC7: canViewContract is the single source of truth for Contract tab visibility
+  const canViewContract = useQuery(api.contracts.queries.canViewContract, {
+    playerId: typedPlayerId,
+  });
+
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
 
   // Memoize callbacks to preserve React.memo on PlayerProfileHeader
@@ -82,7 +87,8 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
         onInviteClick={handleInviteClick}
         isAdmin={isAdmin}
       />
-      <PlayerProfileTabs tabAccess={tabAccess} player={player} playerId={typedPlayerId} isAdmin={isAdmin} canEditFitness={currentUser?.role === "admin" || currentUser?.role === "physio"} />
+      {/* Story 6.2 AC7: canViewContract passed as single source of truth for Contract tab */}
+      <PlayerProfileTabs tabAccess={tabAccess} player={player} playerId={typedPlayerId} isAdmin={isAdmin} canEditFitness={currentUser?.role === "admin" || currentUser?.role === "physio"} canViewContract={canViewContract === true} />
 
       {showInviteButton && (
         <InvitePlayerDialog

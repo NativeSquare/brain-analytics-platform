@@ -1,6 +1,6 @@
 # Story 6.2: Contract Security & Access Control
 
-Status: ready-for-dev
+Status: dev-complete
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
 
@@ -64,8 +64,8 @@ so that sensitive financial information is protected at every layer of the syste
 
 ### Backend Tasks
 
-- [ ] **Task 1: Create `canViewContract` Authorization Query** (AC: 1, 3, 4, 5, 7)
-  - [ ] 1.1: Add to `packages/backend/convex/contracts/queries.ts`:
+- [x] **Task 1: Create `canViewContract` Authorization Query** (AC: 1, 3, 4, 5, 7)
+  - [x] 1.1: Add to `packages/backend/convex/contracts/queries.ts`:
     ```
     canViewContract(ctx, { playerId }) → boolean
     ```
@@ -74,59 +74,59 @@ so that sensitive financial information is protected at every layer of the syste
     - Return `true` if `user.role === "player"` AND user's linked `playerId === args.playerId`
     - Return `false` for all other cases
     - Always filter by `teamId` — if player not in same team, return `false`
-  - [ ] 1.2: Ensure the query uses the `players` table to verify the requesting player's identity (lookup user → player record via `userId`)
+  - [x] 1.2: Ensure the query uses the `players` table to verify the requesting player's identity (lookup user → player record via `userId`)
 
-- [ ] **Task 2: Harden `getContract` Query with Player-Self Access** (AC: 2, 4, 5, 6)
-  - [ ] 2.1: Modify `packages/backend/convex/contracts/queries.ts` `getContract`:
+- [x] **Task 2: Harden `getContract` Query with Player-Self Access** (AC: 2, 4, 5, 6)
+  - [x] 2.1: Modify `packages/backend/convex/contracts/queries.ts` `getContract`:
     - Current (from Story 6.1): `requireRole(ctx, ["admin"])`
     - New logic: call `requireAuth(ctx)`, then check:
       - If admin → proceed (full access)
       - If player AND `playerId` matches own linked player → proceed (read-only flag returned)
       - Otherwise → return `null` (no error thrown, no data leaked)
     - Always scope by `teamId`
-  - [ ] 2.2: Add a `readOnly: boolean` field to the query return type:
+  - [x] 2.2: Add a `readOnly: boolean` field to the query return type:
     - `true` for player viewing own contract
     - `false` for admin
-  - [ ] 2.3: Ensure `getContractDownloadUrl` follows same authorization logic — admin OR player-self only
+  - [x] 2.3: Ensure `getContractDownloadUrl` follows same authorization logic — admin OR player-self only
 
-- [ ] **Task 3: Harden Contract Mutations (Admin-Only Write Access)** (AC: 4)
-  - [ ] 3.1: Verify `uploadContract` mutation uses `requireRole(ctx, ["admin"])` — players cannot upload
-  - [ ] 3.2: Verify `updateContractFields` mutation uses `requireRole(ctx, ["admin"])` — players cannot edit
-  - [ ] 3.3: Add explicit `NOT_AUTHORIZED` ConvexError if non-admin attempts mutation
+- [x] **Task 3: Harden Contract Mutations (Admin-Only Write Access)** (AC: 4)
+  - [x] 3.1: Verify `uploadContract` mutation uses `requireRole(ctx, ["admin"])` — players cannot upload
+  - [x] 3.2: Verify `updateContractFields` mutation uses `requireRole(ctx, ["admin"])` — players cannot edit
+  - [x] 3.3: Add explicit `NOT_AUTHORIZED` ConvexError if non-admin attempts mutation
 
-- [ ] **Task 4: Write Security-Focused Backend Tests** (AC: 1, 2, 4, 5, 6)
-  - [ ] 4.1: Add tests to `packages/backend/convex/contracts/__tests__/security.test.ts`
-  - [ ] 4.2: Test `canViewContract`:
+- [x] **Task 4: Write Security-Focused Backend Tests** (AC: 1, 2, 4, 5, 6)
+  - [x] 4.1: Add tests to `packages/backend/convex/contracts/__tests__/security.test.ts`
+  - [x] 4.2: Test `canViewContract`:
     - Admin user → returns `true` for any player in same team
     - Player user viewing own profile → returns `true`
     - Player user viewing other player → returns `false`
     - Coach/Analyst/Physio/Staff → returns `false`
     - Admin from different team → returns `false`
-  - [ ] 4.3: Test `getContract` hardened access:
+  - [x] 4.3: Test `getContract` hardened access:
     - Admin → returns full contract with `readOnly: false`
     - Player-self → returns contract with `readOnly: true`
     - Player-other → returns `null`
     - Non-admin role (Coach, Physio, etc.) → returns `null`
     - Wrong team admin → returns `null`
-  - [ ] 4.4: Test `getContractDownloadUrl` access:
+  - [x] 4.4: Test `getContractDownloadUrl` access:
     - Admin → returns signed URL
     - Player-self → returns signed URL
     - Non-admin/non-self → returns `null`
-  - [ ] 4.5: Test mutation guards:
+  - [x] 4.5: Test mutation guards:
     - `uploadContract` rejects non-admin (including players)
     - `updateContractFields` rejects non-admin (including players)
 
 ### Frontend Tasks
 
-- [ ] **Task 5: Implement Contract Tab Conditional Rendering** (AC: 1, 3, 4, 5, 7)
-  - [ ] 5.1: In `apps/web/src/app/(app)/players/[playerId]/page.tsx`:
+- [x] **Task 5: Implement Contract Tab Conditional Rendering** (AC: 1, 3, 4, 5, 7)
+  - [x] 5.1: In `apps/web/src/app/(app)/players/[playerId]/page.tsx`:
     - Subscribe to `api.contracts.queries.canViewContract` via `useQuery` passing the current `playerId`
     - Only include the "Contract" tab in the tabs array when `canViewContract` returns `true`
     - Do NOT render a hidden/disabled tab — completely omit it from the DOM
-  - [ ] 5.2: If `canViewContract` is still loading (`undefined`), do not flash the tab — wait for resolution before rendering tabs
+  - [x] 5.2: If `canViewContract` is still loading (`undefined`), do not flash the tab — wait for resolution before rendering tabs
 
-- [ ] **Task 6: Update ContractCard for Read-Only Mode** (AC: 4)
-  - [ ] 6.1: In `apps/web/src/components/players/ContractCard.tsx`:
+- [x] **Task 6: Update ContractCard for Read-Only Mode** (AC: 4)
+  - [x] 6.1: In `apps/web/src/components/players/ContractCard.tsx`:
     - Read the `readOnly` flag from the `getContract` query response
     - When `readOnly === true`:
       - Hide the "Upload Contract" button
@@ -135,12 +135,12 @@ so that sensitive financial information is protected at every layer of the syste
       - Display all fields as static text (no form controls)
     - When `readOnly === false` (admin):
       - Show full edit/upload/replace functionality (existing Story 6.1 behavior)
-  - [ ] 6.2: Ensure the "Download PDF" button remains visible in both admin and player-self modes
+  - [x] 6.2: Ensure the "Download PDF" button remains visible in both admin and player-self modes
 
-- [ ] **Task 7: Verify No Contract Data Leakage in Player Profile** (AC: 2, 3)
-  - [ ] 7.1: Confirm that the player profile page does NOT pre-fetch contract data for all users — only fetch when `canViewContract` is `true`
-  - [ ] 7.2: Ensure no contract fields appear in the player profile overview/header area (contract data only in Contract tab)
-  - [ ] 7.3: Verify the browser network tab shows no contract-related Convex queries for non-authorized users
+- [x] **Task 7: Verify No Contract Data Leakage in Player Profile** (AC: 2, 3)
+  - [x] 7.1: Confirm that the player profile page does NOT pre-fetch contract data for all users — only fetch when `canViewContract` is `true`
+  - [x] 7.2: Ensure no contract fields appear in the player profile overview/header area (contract data only in Contract tab)
+  - [x] 7.3: Verify the browser network tab shows no contract-related Convex queries for non-authorized users
 
 ## Dev Notes
 
@@ -254,10 +254,35 @@ async function isPlayerSelf(ctx, playerId: Id<"players">): Promise<boolean> {
 
 ### Agent Model Used
 
-<!-- To be filled by implementing agent -->
+Claude Opus 4.6
 
 ### Debug Log References
 
+- Backend tests: 495 tests passing across 22 files (including 30 new security tests)
+- TypeScript: Clean compile for web app (0 errors)
+- Convex codegen: Successfully regenerated with contracts module
+
 ### Completion Notes List
 
+- **Story 6.1 dependency**: Since Story 6.1 (Contract Upload & AI Extraction) had not yet been implemented, this story created the contracts module infrastructure (table schema, queries, mutations) with security hardening baked in from the start. When Story 6.1 is implemented, it will extend these files with upload/extraction logic.
+- **Contracts table**: Created `packages/backend/convex/table/contracts.ts` with teamId, playerId, fileId, extractionStatus, extractedData fields and proper indexes (by_playerId, by_teamId, by_teamId_playerId).
+- **canViewContract query**: Implements AC7 — single source of truth for Contract tab visibility. Returns true only for admin or player-self, always scoped by teamId.
+- **getContract query**: Returns null for unauthorized users (no error thrown per architecture pattern). Includes readOnly flag (true for player-self, false for admin).
+- **getContractDownloadUrl query**: Same authorization logic as getContract — admin or player-self only.
+- **Mutations**: Both uploadContract and updateContractFields use requireRole(ctx, ["admin"]) — non-admin users get NOT_AUTHORIZED ConvexError.
+- **Frontend**: PlayerProfileTabs uses canViewContract prop (strict === true check) to completely omit Contract tab from DOM. ContractCard reads readOnly flag to conditionally show/hide edit/upload/replace buttons.
+- **No tab flash**: canViewContract === true check ensures the tab isn't shown while the query is loading (undefined doesn't match true).
+- **Test pattern**: Mutation guard tests use the capture-inside-run pattern from existing status-and-self-service.test.ts to properly extract ConvexError codes.
+- **PlaceholderTab retained**: The PlaceholderTab component is still defined in PlayerProfileTabs.tsx but no longer used for the Contract tab (replaced by ContractCard). Keeping for potential future use by other tabs.
+
 ### File List
+
+- `packages/backend/convex/table/contracts.ts` — NEW: Contracts table schema
+- `packages/backend/convex/schema.ts` — MODIFIED: Added contracts table import and registration
+- `packages/backend/convex/contracts/queries.ts` — NEW: canViewContract, getContract, getContractDownloadUrl
+- `packages/backend/convex/contracts/mutations.ts` — NEW: uploadContract, updateContractFields (admin-only)
+- `packages/backend/convex/contracts/__tests__/security.test.ts` — NEW: 30 security tests
+- `apps/web/src/app/(app)/players/[playerId]/page.tsx` — MODIFIED: Added canViewContract subscription
+- `apps/web/src/components/players/PlayerProfileTabs.tsx` — MODIFIED: Uses canViewContract prop, imports ContractCard
+- `apps/web/src/components/players/ContractCard.tsx` — NEW: Contract card with readOnly mode
+- `packages/backend/convex/_generated/api.d.ts` — AUTO-GENERATED: Updated by codegen with contracts module

@@ -1,6 +1,7 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema } from "convex/server";
 import { adminInvites } from "./table/adminInvites";
+import { contracts } from "./table/contracts";
 import { calendarEvents } from "./table/calendarEvents";
 import { calendarEventSeries } from "./table/calendarEventSeries";
 import { calendarEventUsers } from "./table/calendarEventUsers";
@@ -24,6 +25,7 @@ export default defineSchema({
   ...authTables,
   adminInvites,
   calendarEvents,
+  contracts,
   calendarEventSeries,
   calendarEventUsers,
   documentReads,

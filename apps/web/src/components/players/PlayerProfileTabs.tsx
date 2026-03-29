@@ -86,6 +86,8 @@ function PlaceholderTab({ icon: Icon, name }: { icon: React.ComponentType<{ clas
 export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEditFitness = false }: PlayerProfileTabsProps) {
   // Story 5.6 AC #9: Self-service contact info edit dialog state
   const [contactEditOpen, setContactEditOpen] = React.useState(false);
+  const handleOpenContactEdit = React.useCallback(() => setContactEditOpen(true), []);
+  const handleCloseContactEdit = React.useCallback(() => setContactEditOpen(false), []);
 
   // Story 5.6 AC #9: Player self-service shows "Edit Contact Info"
   // Story 5.6 AC #12: Admin sees full "Edit Profile" (not implemented here — deferred to Story 5.2 ProfileForm)
@@ -133,7 +135,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setContactEditOpen(true)}
+                  onClick={handleOpenContactEdit}
                 >
                   <IconPencil className="mr-1 size-4" />
                   Edit Contact Info
@@ -190,7 +192,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
           <ContactInfoEditDialog
             player={player}
             open={contactEditOpen}
-            onClose={() => setContactEditOpen(false)}
+            onClose={handleCloseContactEdit}
           />
         )}
       </TabsContent>

@@ -72,20 +72,26 @@ export function ContactInfoEditDialog({
     },
   });
 
-  // Reset form when dialog opens with fresh player data
+  // Reset form when dialog opens with fresh player data.
+  // Only depend on `open` — captures latest `player` at open-time without
+  // resetting mid-edit when Convex pushes an unrelated player update.
+  const playerRef = React.useRef(player);
+  playerRef.current = player;
+
   React.useEffect(() => {
     if (open) {
+      const p = playerRef.current;
       form.reset({
-        phone: player.phone ?? "",
-        personalEmail: player.personalEmail ?? "",
-        address: player.address ?? "",
-        emergencyContactName: player.emergencyContactName ?? "",
-        emergencyContactRelationship:
-          player.emergencyContactRelationship ?? "",
-        emergencyContactPhone: player.emergencyContactPhone ?? "",
+        phone: p.phone ?? "",
+        personalEmail: p.personalEmail ?? "",
+        address: p.address ?? "",
+        emergencyContactName: p.emergencyContactName ?? "",
+        emergencyContactRelationship: p.emergencyContactRelationship ?? "",
+        emergencyContactPhone: p.emergencyContactPhone ?? "",
       });
     }
-  }, [open, player, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const onSubmit = async (data: ContactInfoFormData) => {
     setIsSubmitting(true);

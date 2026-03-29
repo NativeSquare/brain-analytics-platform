@@ -62,6 +62,8 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
 
   // Story 5.6 AC #1: Status change dialog state
   const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);
+  const handleOpenStatusDialog = React.useCallback(() => setStatusDialogOpen(true), []);
+  const handleCloseStatusDialog = React.useCallback(() => setStatusDialogOpen(false), []);
 
   return (
     <div className="space-y-4">
@@ -128,7 +130,7 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setStatusDialogOpen(true)}
+              onClick={handleOpenStatusDialog}
             >
               <IconSwitchHorizontal className="mr-1 size-4" />
               Change Status
@@ -151,7 +153,7 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
           currentStatus={player.status}
           playerName={`${player.firstName} ${player.lastName}`}
           open={statusDialogOpen}
-          onClose={() => setStatusDialogOpen(false)}
+          onClose={handleCloseStatusDialog}
         />
       )}
     </div>

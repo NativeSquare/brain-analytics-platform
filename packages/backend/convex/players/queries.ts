@@ -394,3 +394,30 @@ export const getPlayerInviteStatus = query({
     return sorted[0].status;
   },
 });
+
+/**
+ * Get external provider links for a player.
+ *
+ * Story 5.7 AC #7: Returns providers sorted alphabetically + canEdit flag.
+ * Story 5.7 AC #9: Real-time via Convex useQuery subscription.
+ * Story 5.7 AC #10: Team-scoped via requireAuth.
+ */
+export const getExternalProviders = query({
+  args: { playerId: v.id("players") },
+  handler: async (ctx, { playerId }) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      return { providers: [], canEdit: false };
+    }
+
+    const canEdit = user.role === "admin";
+
+    const providers = (player.externalProviderLinks ?? []).sort((a, b) =>
+      a.provider.localeCompare(b.provider)
+    );
+
+    return { providers, canEdit };
+  },
+});

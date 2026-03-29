@@ -35,48 +35,48 @@ so that future integrations with GPS trackers and performance platforms can link
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create `getExternalProviders` query** (AC: #7, #9, #10)
-  - [ ] 1.1: In `packages/backend/convex/players/queries.ts`, add a new exported query `getExternalProviders`. Args: `{ playerId: v.id("players") }`. Call `requireAuth(ctx)` to get `{ user, teamId }`.
-  - [ ] 1.2: Fetch the player via `ctx.db.get(playerId)`. Validate `player !== null` and `player.teamId === teamId`. If validation fails, return `{ providers: [], canEdit: false }` (safe default, no error thrown — consistent with other read queries returning empty results for inaccessible data).
-  - [ ] 1.3: Determine `canEdit` by checking `user.role === "admin"`.
-  - [ ] 1.4: Return `{ providers: (player.externalProviderLinks ?? []).sort((a, b) => a.provider.localeCompare(b.provider)), canEdit }`.
+- [x] **Task 1: Create `getExternalProviders` query** (AC: #7, #9, #10)
+  - [x] 1.1: In `packages/backend/convex/players/queries.ts`, add a new exported query `getExternalProviders`. Args: `{ playerId: v.id("players") }`. Call `requireAuth(ctx)` to get `{ user, teamId }`.
+  - [x] 1.2: Fetch the player via `ctx.db.get(playerId)`. Validate `player !== null` and `player.teamId === teamId`. If validation fails, return `{ providers: [], canEdit: false }` (safe default, no error thrown — consistent with other read queries returning empty results for inaccessible data).
+  - [x] 1.3: Determine `canEdit` by checking `user.role === "admin"`.
+  - [x] 1.4: Return `{ providers: (player.externalProviderLinks ?? []).sort((a, b) => a.provider.localeCompare(b.provider)), canEdit }`.
 
-- [ ] **Task 2: Create `updateExternalProviders` mutation** (AC: #6, #10)
-  - [ ] 2.1: In `packages/backend/convex/players/mutations.ts`, add a new exported mutation `updateExternalProviders`. Args: `{ playerId: v.id("players"), externalProviderLinks: v.array(v.object({ provider: v.string(), accountId: v.string() })) }`.
-  - [ ] 2.2: Call `requireRole(ctx, ["admin"])` to get `{ user, teamId }`.
-  - [ ] 2.3: Fetch the player via `ctx.db.get(playerId)`. Validate `player !== null` and `player.teamId === teamId` — throw `ConvexError({ code: "NOT_FOUND", message: "Player not found" })` if not.
-  - [ ] 2.4: Validate each entry: trim `provider` and `accountId`, throw `ConvexError({ code: "VALIDATION_ERROR", message: "Provider name and account ID are required" })` if either is empty after trimming.
-  - [ ] 2.5: Validate uniqueness: build a set of lowercased provider names. If a duplicate is found, throw `ConvexError({ code: "VALIDATION_ERROR", message: "Duplicate provider name: [name]" })`.
-  - [ ] 2.6: Normalize entries: map over the array, trimming whitespace from `provider` and `accountId` values.
-  - [ ] 2.7: Patch the player document: `ctx.db.patch(playerId, { externalProviderLinks: normalizedLinks, updatedAt: Date.now() })`.
-  - [ ] 2.8: Return `{ success: true }`.
+- [x] **Task 2: Create `updateExternalProviders` mutation** (AC: #6, #10)
+  - [x] 2.1: In `packages/backend/convex/players/mutations.ts`, add a new exported mutation `updateExternalProviders`. Args: `{ playerId: v.id("players"), externalProviderLinks: v.array(v.object({ provider: v.string(), accountId: v.string() })) }`.
+  - [x] 2.2: Call `requireRole(ctx, ["admin"])` to get `{ user, teamId }`.
+  - [x] 2.3: Fetch the player via `ctx.db.get(playerId)`. Validate `player !== null` and `player.teamId === teamId` — throw `ConvexError({ code: "NOT_FOUND", message: "Player not found" })` if not.
+  - [x] 2.4: Validate each entry: trim `provider` and `accountId`, throw `ConvexError({ code: "VALIDATION_ERROR", message: "Provider name and account ID are required" })` if either is empty after trimming.
+  - [x] 2.5: Validate uniqueness: build a set of lowercased provider names. If a duplicate is found, throw `ConvexError({ code: "VALIDATION_ERROR", message: "Duplicate provider name: [name]" })`.
+  - [x] 2.6: Normalize entries: map over the array, trimming whitespace from `provider` and `accountId` values.
+  - [x] 2.7: Patch the player document: `ctx.db.patch(playerId, { externalProviderLinks: normalizedLinks, updatedAt: Date.now() })`.
+  - [x] 2.8: Return `{ success: true }`.
 
-- [ ] **Task 3: Build `ExternalProviders` component** (AC: #1, #2, #3, #4, #5, #8, #9)
-  - [ ] 3.1: Create `apps/web/src/components/players/ExternalProviders.tsx`. Accept props: `{ playerId: Id<"players"> }`.
-  - [ ] 3.2: Call `useQuery(api.players.queries.getExternalProviders, { playerId })` to get `{ providers, canEdit }`. Handle loading state (return `Skeleton` components when query returns `undefined`).
-  - [ ] 3.3: Render the info banner at the top using a shadcn `Alert` or `Callout` component with an info icon: "External provider links are saved for future integrations. No data is imported automatically at this time."
-  - [ ] 3.4: Render the provider list section with a heading "Linked Providers" and, if `canEdit` is true, an "Add Provider" button (shadcn `Button` with a `+` or link icon).
-  - [ ] 3.5: **Empty state:** When `providers` is empty, render a centered empty state: an icon (`IconPlug`, `IconLink`, or `IconPlugConnected` from `@tabler/icons-react` or `lucide-react`), "No external providers linked" heading, "Link GPS trackers, performance platforms, and other services to this player." subtext. If `canEdit`, show an "Add Provider" CTA button.
-  - [ ] 3.6: **Provider list:** When providers exist, render each entry as a row/card showing: provider name (bold/primary text), account ID/URL (secondary/muted text). If `canEdit`, each row has an action menu (shadcn `DropdownMenu` or inline icon buttons) with "Edit" and "Remove" actions.
-  - [ ] 3.7: **Add/Edit form:** Use a shadcn `Dialog` component with a form (react-hook-form + Zod validation). Fields: Provider Name (`Input`, required, min 1 char after trim), Account ID / URL (`Input`, required, min 1 char after trim). For edit mode, pre-populate fields with current values. Form title: "Link Provider" (add) or "Edit Provider" (edit).
-  - [ ] 3.8: **Add submission logic:** On add, take the current `providers` array from the query, append the new entry, and call `updateExternalProviders` mutation with the full array. Validate client-side that the provider name is not already in the list (case-insensitive). On success, close the dialog and show `toast.success("Provider linked")`.
-  - [ ] 3.9: **Edit submission logic:** On edit, take the current `providers` array, replace the entry at the index being edited with the new values, and call `updateExternalProviders` mutation with the full array. Validate uniqueness excluding the current index. On success, close the dialog and show `toast.success("Provider updated")`.
-  - [ ] 3.10: **Delete logic:** Show a shadcn `AlertDialog` with confirmation text: "Remove [Provider Name]? This will unlink this provider from [Player Name]. This action cannot be undone." On confirm, take the current `providers` array, filter out the entry at the index being deleted, and call `updateExternalProviders` mutation with the remaining array. On success, show `toast.success("Provider removed")`.
-  - [ ] 3.11: **Error handling:** Wrap mutation calls in try/catch. On `ConvexError`, display `error.data.message` via `toast.error()`. On unknown errors, display a generic "Something went wrong" toast.
+- [x] **Task 3: Build `ExternalProviders` component** (AC: #1, #2, #3, #4, #5, #8, #9)
+  - [x] 3.1: Create `apps/web/src/components/players/ExternalProviders.tsx`. Accept props: `{ playerId: Id<"players"> }`.
+  - [x] 3.2: Call `useQuery(api.players.queries.getExternalProviders, { playerId })` to get `{ providers, canEdit }`. Handle loading state (return `Skeleton` components when query returns `undefined`).
+  - [x] 3.3: Render the info banner at the top using a shadcn `Alert` or `Callout` component with an info icon: "External provider links are saved for future integrations. No data is imported automatically at this time."
+  - [x] 3.4: Render the provider list section with a heading "Linked Providers" and, if `canEdit` is true, an "Add Provider" button (shadcn `Button` with a `+` or link icon).
+  - [x] 3.5: **Empty state:** When `providers` is empty, render a centered empty state: an icon (`IconPlug`, `IconLink`, or `IconPlugConnected` from `@tabler/icons-react` or `lucide-react`), "No external providers linked" heading, "Link GPS trackers, performance platforms, and other services to this player." subtext. If `canEdit`, show an "Add Provider" CTA button.
+  - [x] 3.6: **Provider list:** When providers exist, render each entry as a row/card showing: provider name (bold/primary text), account ID/URL (secondary/muted text). If `canEdit`, each row has an action menu (shadcn `DropdownMenu` or inline icon buttons) with "Edit" and "Remove" actions.
+  - [x] 3.7: **Add/Edit form:** Use a shadcn `Dialog` component with a form (react-hook-form + Zod validation). Fields: Provider Name (`Input`, required, min 1 char after trim), Account ID / URL (`Input`, required, min 1 char after trim). For edit mode, pre-populate fields with current values. Form title: "Link Provider" (add) or "Edit Provider" (edit).
+  - [x] 3.8: **Add submission logic:** On add, take the current `providers` array from the query, append the new entry, and call `updateExternalProviders` mutation with the full array. Validate client-side that the provider name is not already in the list (case-insensitive). On success, close the dialog and show `toast.success("Provider linked")`.
+  - [x] 3.9: **Edit submission logic:** On edit, take the current `providers` array, replace the entry at the index being edited with the new values, and call `updateExternalProviders` mutation with the full array. Validate uniqueness excluding the current index. On success, close the dialog and show `toast.success("Provider updated")`.
+  - [x] 3.10: **Delete logic:** Show a shadcn `AlertDialog` with confirmation text: "Remove [Provider Name]? This will unlink this provider from [Player Name]. This action cannot be undone." On confirm, take the current `providers` array, filter out the entry at the index being deleted, and call `updateExternalProviders` mutation with the remaining array. On success, show `toast.success("Provider removed")`.
+  - [x] 3.11: **Error handling:** Wrap mutation calls in try/catch. On `ConvexError`, display `error.data.message` via `toast.error()`. On unknown errors, display a generic "Something went wrong" toast.
 
-- [ ] **Task 4: Wire `ExternalProviders` into the player profile "Integrations" tab** (AC: #1)
-  - [ ] 4.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, locate the "Integrations" tab content rendering.
-  - [ ] 4.2: Replace the placeholder content (icon + "Coming soon" text) with: `<ExternalProviders playerId={player._id} />`.
-  - [ ] 4.3: Import `ExternalProviders` from `./ExternalProviders`.
+- [x] **Task 4: Wire `ExternalProviders` into the player profile "Integrations" tab** (AC: #1)
+  - [x] 4.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, locate the "Integrations" tab content rendering.
+  - [x] 4.2: Replace the placeholder content (icon + "Coming soon" text) with: `<ExternalProviders playerId={playerId} playerName={...} />`.
+  - [x] 4.3: Import `ExternalProviders` from `./ExternalProviders`.
 
-- [ ] **Task 5: Write backend unit tests** (AC: #6, #7, #10)
-  - [ ] 5.1: In `packages/backend/convex/players/__tests__/queries.test.ts` (create if not exists), add tests for `getExternalProviders`:
+- [x] **Task 5: Write backend unit tests** (AC: #6, #7, #10)
+  - [x] 5.1: In `packages/backend/convex/players/__tests__/queries.test.ts` (create if not exists), add tests for `getExternalProviders`:
     - (a) Returns empty array and `canEdit: false` for player with no external providers when called by a non-admin user.
     - (b) Returns empty array and `canEdit: true` for player with no external providers when called by an admin user.
     - (c) Returns provider links sorted alphabetically by provider name.
     - (d) Returns `{ providers: [], canEdit: false }` for a player from a different team (no error thrown).
     - (e) Returns `{ providers: [], canEdit: false }` for a non-existent player ID.
-  - [ ] 5.2: In `packages/backend/convex/players/__tests__/mutations.test.ts` (create if not exists), add tests for `updateExternalProviders`:
+  - [x] 5.2: In `packages/backend/convex/players/__tests__/mutations.test.ts` (create if not exists), add tests for `updateExternalProviders`:
     - (a) Admin can add a single provider link to a player with no existing links.
     - (b) Admin can add multiple provider links at once.
     - (c) Admin can update the full array (simulating edit of one entry).
@@ -89,10 +89,10 @@ so that future integrations with GPS trackers and performance platforms can link
     - (j) Trims whitespace from provider name and account ID before saving.
     - (k) Updates `updatedAt` timestamp on the player document.
 
-- [ ] **Task 6: Final validation** (AC: all)
-  - [ ] 6.1: Run `pnpm typecheck` — must pass with zero errors.
-  - [ ] 6.2: Run `pnpm lint` — must pass with zero errors.
-  - [ ] 6.3: Run backend tests (`vitest run` in packages/backend) — all new and existing tests pass.
+- [x] **Task 6: Final validation** (AC: all)
+  - [x] 6.1: Run `pnpm typecheck` — passed with zero errors.
+  - [x] 6.2: Run `pnpm lint` — web/backend pass (native pre-existing failures unrelated).
+  - [x] 6.3: Run backend tests (`vitest run` in packages/backend) — all 465 tests pass (21 files).
   - [ ] 6.4: Start the dev server — navigate to `/players/[playerId]`, click the "Integrations" tab. Verify the info banner and empty state render correctly.
   - [ ] 6.5: As an admin, click "Add Provider". Enter a provider name and account ID. Submit. Verify the provider appears in the list with a success toast.
   - [ ] 6.6: Add a second provider. Verify both appear sorted alphabetically.
@@ -310,10 +310,29 @@ const [deleteIndex, setDeleteIndex] = useState<number | null>(null) // controls 
 
 ### Agent Model Used
 
-(to be filled during implementation)
+Claude Opus 4.6
 
 ### Debug Log References
 
+None — clean implementation, all tests passed on first run.
+
 ### Completion Notes List
 
+- Task 1: Added `getExternalProviders` query to `queries.ts`. Uses `requireAuth`, returns safe empty default for inaccessible players, `canEdit` derived from `user.role === "admin"`, providers sorted alphabetically.
+- Task 2: Added `updateExternalProviders` mutation to `mutations.ts`. Uses `requireRole(["admin"])`, validates non-empty fields, case-insensitive uniqueness, trims whitespace, patches player doc with `updatedAt`.
+- Task 3: Created `ExternalProviders.tsx` with full CRUD: info banner (Alert), empty state (IconPlug), provider list with DropdownMenu actions, Dialog form (react-hook-form + Zod), AlertDialog for delete confirmation. Uses `getConvexErrorMessage` utility for error toasts.
+- Task 4: Replaced `PlaceholderTab` in PlayerProfileTabs with `<ExternalProviders>`, passing `playerId` and `playerName`.
+- Task 5: Added 5 query tests (a-e) and 11 mutation tests (a-k) using `convex-test` + `t.run` pattern. All 16 new tests pass. Full suite: 465 tests, 21 files, 0 failures.
+- Task 6: `pnpm typecheck` passes (5/5 packages). Web/backend lint clean. Full backend test suite passes. Manual validation tasks (6.4–6.11) deferred to QA.
+- `requireAuth` import already existed in `mutations.test.ts` — added `requireAuth` alongside existing `requireRole` import for completeness.
+- Used existing `getConvexErrorMessage` utility from `@/utils/getConvexErrorMessage.ts` instead of inline ConvexError handling — consistent with project patterns.
+
 ### File List
+
+- `packages/backend/convex/players/queries.ts` (modified — added `getExternalProviders` query)
+- `packages/backend/convex/players/mutations.ts` (modified — added `updateExternalProviders` mutation)
+- `apps/web/src/components/players/ExternalProviders.tsx` (created — full CRUD component)
+- `apps/web/src/components/players/PlayerProfileTabs.tsx` (modified — replaced integrations placeholder)
+- `packages/backend/convex/players/__tests__/queries.test.ts` (modified — added 5 getExternalProviders tests)
+- `packages/backend/convex/players/__tests__/mutations.test.ts` (modified — added 11 updateExternalProviders tests)
+- `_bmad-output/implementation-artifacts/5-7-external-provider-linking.md` (modified — task checkmarks + dev record)

@@ -30,6 +30,7 @@ import { StatsLog } from "./StatsLog";
 import { FitnessLog } from "./FitnessLog";
 import { InjuryLog } from "./InjuryLog";
 import { ContactInfoEditDialog } from "./ContactInfoEditDialog";
+import { ExternalProviders } from "./ExternalProviders";
 
 interface TabAccess {
   showInjuries: boolean;
@@ -218,7 +219,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
       )}
 
       <TabsContent value="integrations">
-        <PlaceholderTab icon={IconLink} name="Integrations" />
+        <ExternalProviders playerId={playerId} playerName={`${player.firstName} ${player.lastName}`} />
       </TabsContent>
     </Tabs>
   );

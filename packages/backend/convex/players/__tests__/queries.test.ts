@@ -586,3 +586,141 @@ describe("getPlayerTabAccess", () => {
     expect(result.isSelf).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// getExternalProviders (Story 5.7 AC #7, #9, #10)
+// ---------------------------------------------------------------------------
+
+describe("getExternalProviders", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  it("(a) returns empty array and canEdit: false for player with no providers when called by non-admin", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getExternalProviders,
+      { playerId }
+    );
+
+    expect(result.providers).toEqual([]);
+    expect(result.canEdit).toBe(false);
+  });
+
+  it("(b) returns empty array and canEdit: true for player with no providers when called by admin", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getExternalProviders,
+      { playerId }
+    );
+
+    expect(result.providers).toEqual([]);
+    expect(result.canEdit).toBe(true);
+  });
+
+  it("(c) returns provider links sorted alphabetically by provider name", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+      externalProviderLinks: [
+        { provider: "Hudl", accountId: "hudl-123" },
+        { provider: "Catapult", accountId: "cat-456" },
+        { provider: "StatsBomb", accountId: "sb-789" },
+      ],
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getExternalProviders,
+      { playerId }
+    );
+
+    expect(result.providers).toHaveLength(3);
+    expect(result.providers[0].provider).toBe("Catapult");
+    expect(result.providers[1].provider).toBe("Hudl");
+    expect(result.providers[2].provider).toBe("StatsBomb");
+  });
+
+  it("(d) returns empty providers and canEdit: false for a player from a different team", async () => {
+    const t = convexTest(schema, modules);
+    const { userId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const otherTeamId = await t.run(async (ctx) =>
+      ctx.db.insert("teams", { name: "Other Club", slug: "other-club" })
+    );
+
+    const playerId = await insertPlayer(t, {
+      teamId: otherTeamId,
+      firstName: "Other",
+      lastName: "Player",
+      position: "Defender",
+      status: "active",
+      externalProviderLinks: [
+        { provider: "Catapult", accountId: "cat-456" },
+      ],
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getExternalProviders,
+      { playerId }
+    );
+
+    expect(result.providers).toEqual([]);
+    expect(result.canEdit).toBe(false);
+  });
+
+  it("(e) returns empty providers and canEdit: false for a non-existent player ID", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    // Insert and delete to get a valid-format but non-existent ID
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Ghost",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+    await t.run(async (ctx) => {
+      await ctx.db.delete(playerId);
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getExternalProviders,
+      { playerId }
+    );
+
+    expect(result.providers).toEqual([]);
+    expect(result.canEdit).toBe(false);
+  });
+});

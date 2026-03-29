@@ -757,6 +757,70 @@ export const createPlayer = mutation({
 });
 
 /**
+ * Update external provider links for a player. Admin only.
+ *
+ * Story 5.7 AC #6: Full-array replacement pattern.
+ * Validates non-empty fields, unique provider names (case-insensitive),
+ * trims whitespace, and patches the player document.
+ * Story 5.7 AC #10: Team-scoped via requireRole.
+ */
+export const updateExternalProviders = mutation({
+  args: {
+    playerId: v.id("players"),
+    externalProviderLinks: v.array(
+      v.object({ provider: v.string(), accountId: v.string() })
+    ),
+  },
+  handler: async (ctx, { playerId, externalProviderLinks }) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Player not found",
+      });
+    }
+
+    // Validate each entry: non-empty after trimming
+    for (const link of externalProviderLinks) {
+      if (!link.provider.trim() || !link.accountId.trim()) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: "Provider name and account ID are required",
+        });
+      }
+    }
+
+    // Validate uniqueness (case-insensitive)
+    const seen = new Set<string>();
+    for (const link of externalProviderLinks) {
+      const key = link.provider.trim().toLowerCase();
+      if (seen.has(key)) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `Duplicate provider name: ${link.provider.trim()}`,
+        });
+      }
+      seen.add(key);
+    }
+
+    // Normalize: trim whitespace
+    const normalizedLinks = externalProviderLinks.map((link) => ({
+      provider: link.provider.trim(),
+      accountId: link.accountId.trim(),
+    }));
+
+    await ctx.db.patch(playerId, {
+      externalProviderLinks: normalizedLinks,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
  * Invite a player to create their account. Admin only.
  *
  * AC #8: Validates player has personalEmail, generates token,

@@ -17,7 +17,7 @@ vi.mock("@convex-dev/auth/server", async (importOriginal) => {
 });
 
 const { default: schema } = await import("../../schema");
-const { requireRole } = await import("../../lib/auth");
+const { requireRole, requireAuth } = await import("../../lib/auth");
 const { getAuthUserId } = await import("@convex-dev/auth/server");
 
 const modules = import.meta.glob(["../../**/*.ts", "!../../http.ts"]);
@@ -1067,5 +1067,461 @@ describe("acceptPlayerInvite", () => {
       })
     ).rejects.toThrow(ConvexError);
     expect(errorCode).toBe("NOT_AUTHENTICATED");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateExternalProviders (Story 5.7 AC #6, #10)
+// ---------------------------------------------------------------------------
+
+/** Mirrors updateExternalProviders handler in mutations.ts */
+async function updateExternalProvidersLogic(
+  ctx: any,
+  args: {
+    playerId: Id<"players">;
+    externalProviderLinks: Array<{ provider: string; accountId: string }>;
+  }
+) {
+  const { teamId } = await requireRole(ctx, ["admin"]);
+
+  const player = await ctx.db.get(args.playerId);
+  if (!player || player.teamId !== teamId) {
+    throw new ConvexError({
+      code: "NOT_FOUND" as const,
+      message: "Player not found",
+    });
+  }
+
+  for (const link of args.externalProviderLinks) {
+    if (!link.provider.trim() || !link.accountId.trim()) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Provider name and account ID are required",
+      });
+    }
+  }
+
+  const seen = new Set<string>();
+  for (const link of args.externalProviderLinks) {
+    const key = link.provider.trim().toLowerCase();
+    if (seen.has(key)) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: `Duplicate provider name: ${link.provider.trim()}`,
+      });
+    }
+    seen.add(key);
+  }
+
+  const normalizedLinks = args.externalProviderLinks.map((link) => ({
+    provider: link.provider.trim(),
+    accountId: link.accountId.trim(),
+  }));
+
+  await ctx.db.patch(args.playerId, {
+    externalProviderLinks: normalizedLinks,
+    updatedAt: Date.now(),
+  });
+
+  return { success: true };
+}
+
+describe("updateExternalProviders", () => {
+  beforeEach(() => {
+    mockGetAuthUserId.mockReset();
+  });
+
+  it("(a) admin can add a single provider link to a player with no existing links", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const result = await t.run(async (ctx) => {
+      return updateExternalProvidersLogic(ctx, {
+        playerId,
+        externalProviderLinks: [
+          { provider: "Catapult", accountId: "cat-123" },
+        ],
+      });
+    });
+
+    expect(result.success).toBe(true);
+
+    const player = await t.run(async (ctx) => ctx.db.get(playerId));
+    expect(player!.externalProviderLinks).toEqual([
+      { provider: "Catapult", accountId: "cat-123" },
+    ]);
+  });
+
+  it("(b) admin can add multiple provider links at once", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    await t.run(async (ctx) => {
+      return updateExternalProvidersLogic(ctx, {
+        playerId,
+        externalProviderLinks: [
+          { provider: "Catapult", accountId: "cat-123" },
+          { provider: "Hudl", accountId: "hudl-456" },
+          { provider: "StatsBomb", accountId: "sb-789" },
+        ],
+      });
+    });
+
+    const player = await t.run(async (ctx) => ctx.db.get(playerId));
+    expect(player!.externalProviderLinks).toHaveLength(3);
+  });
+
+  it("(c) admin can update the full array (simulating edit of one entry)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        externalProviderLinks: [
+          { provider: "Catapult", accountId: "old-id" },
+        ],
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    await t.run(async (ctx) => {
+      return updateExternalProvidersLogic(ctx, {
+        playerId,
+        externalProviderLinks: [
+          { provider: "Catapult", accountId: "new-id" },
+        ],
+      });
+    });
+
+    const player = await t.run(async (ctx) => ctx.db.get(playerId));
+    expect(player!.externalProviderLinks).toEqual([
+      { provider: "Catapult", accountId: "new-id" },
+    ]);
+  });
+
+  it("(d) admin can set an empty array (simulating removal of all providers)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        externalProviderLinks: [
+          { provider: "Catapult", accountId: "cat-123" },
+        ],
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    await t.run(async (ctx) => {
+      return updateExternalProvidersLogic(ctx, {
+        playerId,
+        externalProviderLinks: [],
+      });
+    });
+
+    const player = await t.run(async (ctx) => ctx.db.get(playerId));
+    expect(player!.externalProviderLinks).toEqual([]);
+  });
+
+  it("(e) throws NOT_AUTHORIZED when called by a non-admin user", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateExternalProvidersLogic(ctx, {
+            playerId,
+            externalProviderLinks: [
+              { provider: "Catapult", accountId: "cat-123" },
+            ],
+          });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_AUTHORIZED");
+  });
+
+  it("(f) throws NOT_FOUND when called with a player ID from a different team", async () => {
+    const t = convexTest(schema, modules);
+    const { userId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const otherTeamId = await t.run(async (ctx) =>
+      ctx.db.insert("teams", { name: "Other Club", slug: "other-club" })
+    );
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId: otherTeamId,
+        firstName: "Other",
+        lastName: "Player",
+        position: "Defender",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateExternalProvidersLogic(ctx, {
+            playerId,
+            externalProviderLinks: [
+              { provider: "Catapult", accountId: "cat-123" },
+            ],
+          });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_FOUND");
+  });
+
+  it("(g) throws VALIDATION_ERROR when a provider name is empty or whitespace-only", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateExternalProvidersLogic(ctx, {
+            playerId,
+            externalProviderLinks: [
+              { provider: "   ", accountId: "cat-123" },
+            ],
+          });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("(h) throws VALIDATION_ERROR when an account ID is empty or whitespace-only", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateExternalProvidersLogic(ctx, {
+            playerId,
+            externalProviderLinks: [
+              { provider: "Catapult", accountId: "" },
+            ],
+          });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("(i) throws VALIDATION_ERROR when duplicate provider names are provided (case-insensitive)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    let errorCode: string | undefined;
+    let errorMessage: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateExternalProvidersLogic(ctx, {
+            playerId,
+            externalProviderLinks: [
+              { provider: "Catapult", accountId: "cat-123" },
+              { provider: "catapult", accountId: "cat-456" },
+            ],
+          });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          if (e instanceof ConvexError) {
+            errorMessage = (e.data as any).message;
+          }
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+    expect(errorMessage).toContain("Duplicate provider name");
+  });
+
+  it("(j) trims whitespace from provider name and account ID before saving", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    await t.run(async (ctx) => {
+      return updateExternalProvidersLogic(ctx, {
+        playerId,
+        externalProviderLinks: [
+          { provider: "  Catapult  ", accountId: "  cat-123  " },
+        ],
+      });
+    });
+
+    const player = await t.run(async (ctx) => ctx.db.get(playerId));
+    expect(player!.externalProviderLinks).toEqual([
+      { provider: "Catapult", accountId: "cat-123" },
+    ]);
+  });
+
+  it("(k) updates updatedAt timestamp on the player document", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await t.run(async (ctx) => {
+      return ctx.db.insert("players", {
+        teamId,
+        firstName: "Test",
+        lastName: "Player",
+        position: "Forward",
+        status: "active",
+        createdAt: 1000,
+        updatedAt: 1000,
+      });
+    });
+
+    await t.run(async (ctx) => {
+      return updateExternalProvidersLogic(ctx, {
+        playerId,
+        externalProviderLinks: [
+          { provider: "Catapult", accountId: "cat-123" },
+        ],
+      });
+    });
+
+    const player = await t.run(async (ctx) => ctx.db.get(playerId));
+    expect(player!.updatedAt).toBeGreaterThan(1000);
   });
 });

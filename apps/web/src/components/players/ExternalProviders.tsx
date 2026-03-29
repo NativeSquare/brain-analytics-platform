@@ -81,6 +81,22 @@ export function ExternalProviders({ playerId, playerName }: ExternalProvidersPro
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
+  // Safety: auto-close edit dialog if the target provider was removed by a
+  // real-time Convex subscription update (prevents out-of-bounds crash).
+  React.useEffect(() => {
+    if (editIndex !== null && data && editIndex >= data.providers.length) {
+      setDialogOpen(false);
+      setEditIndex(null);
+    }
+  }, [editIndex, data]);
+
+  // Safety: dismiss delete confirmation if the target provider disappeared.
+  React.useEffect(() => {
+    if (deleteIndex !== null && data && deleteIndex >= data.providers.length) {
+      setDeleteIndex(null);
+    }
+  }, [deleteIndex, data]);
+
   // Loading state
   if (data === undefined) {
     return (
@@ -265,7 +281,7 @@ export function ExternalProviders({ playerId, playerName }: ExternalProvidersPro
         }}
         editMode={editIndex !== null}
         defaultValues={
-          editIndex !== null
+          editIndex !== null && editIndex < providers.length
             ? {
                 provider: providers[editIndex].provider,
                 accountId: providers[editIndex].accountId,
@@ -331,12 +347,15 @@ function ProviderFormDialog({
     defaultValues: defaultValues ?? { provider: "", accountId: "" },
   });
 
-  // Reset form when dialog opens/closes or defaults change
+  // Reset form when dialog opens. Deliberately excludes `defaultValues` from
+  // deps so that a real-time Convex subscription update while the user is
+  // editing does NOT wipe their in-progress input.
   React.useEffect(() => {
     if (open) {
       reset(defaultValues ?? { provider: "", accountId: "" });
     }
-  }, [open, defaultValues, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, reset]);
 
   const handleFormSubmit = handleSubmit(async (data) => {
     await onSubmit(data);

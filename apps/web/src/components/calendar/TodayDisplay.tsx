@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Calendar, Clock, MapPin } from "lucide-react";
 
@@ -48,12 +48,27 @@ const BORDER_COLORS: Record<EventType, string> = {
 export function TodayDisplay({ events, onMidnightRollover }: TodayDisplayProps) {
   const [now, setNow] = useState(() => new Date());
 
-  // ---- Live clock (updates every 60 s) ----
+  // ---- Live clock (synced to minute boundaries for accurate HH:mm) ----
   useEffect(() => {
-    const interval = setInterval(() => {
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    // Align the first tick to the next whole-minute boundary
+    const now = new Date();
+    const msUntilNextMinute =
+      (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+    const timeoutId = setTimeout(() => {
       setNow(new Date());
-    }, 60_000);
-    return () => clearInterval(interval);
+      // After aligning, tick every 60 s
+      intervalId = setInterval(() => {
+        setNow(new Date());
+      }, 60_000);
+    }, msUntilNextMinute);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   // ---- Midnight rollover ----
@@ -123,7 +138,11 @@ function EventList({ events }: { events: TodayEvent[] }) {
 // TV Event Card
 // ---------------------------------------------------------------------------
 
-function TVEventCard({ event }: { event: TodayEvent }) {
+const TVEventCard = React.memo(function TVEventCard({
+  event,
+}: {
+  event: TodayEvent;
+}) {
   const startTime = format(new Date(event.startsAt), "HH:mm");
   const endTime = format(new Date(event.endsAt), "HH:mm");
 
@@ -161,7 +180,7 @@ function TVEventCard({ event }: { event: TodayEvent }) {
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Empty State

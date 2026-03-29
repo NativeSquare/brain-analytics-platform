@@ -134,31 +134,51 @@ This document provides the complete epic and story breakdown for BrainAnalytics 
 
 ## Epic List
 
-### Epic 1: Design System & Project Setup
+### Epic 1: Design System & Project Setup — *Week 1*
 Set up the monorepo from the NativeSquare template, configure the shadcn/ui design system with the project's visual identity, and establish the foundational UI components that all modules will use.
 **FRs covered:** None directly (enabling epic)
 **UX-DRs covered:** UX-DR1, UX-DR2, UX-DR3, UX-DR5, UX-DR6, UX-DR7, UX-DR8
 
-### Epic 2: Authentication, Navigation & Homepage
+### Epic 2: Authentication, Navigation & Homepage — *Week 1*
 Users can sign in, see a role-appropriate homepage with quick access to all modules, and navigate the platform through a consistent sidebar. Admins can invite new users and assign roles.
 **FRs covered:** FR33, FR34, FR35, FR36, FR37, FR38, FR39
 **UX-DRs covered:** UX-DR4
 
-### Epic 3: Calendar & Scheduling
+### Epic 3: Calendar & Scheduling — *Week 1*
 Club staff and players can view, respond to, and sync calendar events. Admins can create and manage the club's full event schedule including recurring events. A TV-friendly "What's on Today" view keeps the club informed.
 **FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10
 
-### Epic 4: Document Hub
-Admins can organize, upload, and permission club documents in a structured folder system. Staff and players can browse, search, and download documents relevant to their role.
-**FRs covered:** FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19
-
-### Epic 5: Player Profiles & Management
+### Epic 5: Player Profiles & Management — *Week 1*
 Admins can onboard players, manage profiles, log performance and fitness data, and track player status. Medical staff can manage injury history. Players can view their own data and update their contact info.
 **FRs covered:** FR20, FR21, FR22, FR23, FR24, FR25, FR28, FR29, FR30, FR31, FR32
 
-### Epic 6: Contract Management
+### Epic 4: Document Hub — *Week 2*
+Admins can organize, upload, and permission club documents in a structured folder system. Staff and players can browse, search, and download documents relevant to their role.
+**FRs covered:** FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19
+
+### Epic 6: Contract Management — *Week 2*
 Admins can upload player contracts and have key terms extracted automatically via AI. Contract data is securely visible only to admins.
 **FRs covered:** FR26, FR27
+
+### Epic 7: Staff Profiles & Directory — *Week 3*
+Staff members get structured profiles with bios, job titles, and certification tracking with expiry alerts. A club directory gives everyone a single place to find contact information.
+**Proposal ref:** Originally Sprint 1 "Staff Profiles & Directory", moved to Sprint 2 (swapped with Document Hub).
+
+### Epic 8: Injury Reporting — *Week 4*
+Comprehensive injury management with clinical classification, timeline tracking, rehab notes, color-coded return-to-play statuses, and a medical dashboard. Extends Story 5.5.
+**Proposal ref:** Sprint 2 "Injury Reporting".
+
+### Epic 9: Scouting Reports — *Week 5*
+Scouts create structured reports on transfer targets with grading, recommendations (Sign/Watch/Pass), media attachments, and follow-up notes. Restricted to scouts and admins.
+**Proposal ref:** Sprint 3 "Scouting Reports".
+
+### Epic 10: Shadow Teams — *Week 5*
+Visual pitch-based squad planning tool for ranking scouting targets by position and priority category (Immediate/Development/Emergency).
+**Proposal ref:** Sprint 3 "Scouting Shadow Teams".
+
+### Epic 11: Notifications & WhatsApp Integration — *Week 6*
+WhatsApp Business API integration for automated and manual notifications. Extends the in-app notification center (Story 3.7) with external push, admin broadcasts, templates, and user privacy controls.
+**Proposal ref:** Sprint 3 "WhatsApp Notifications".
 
 ---
 
@@ -657,3 +677,399 @@ So that sensitive financial information is protected.
 **When** they look at their contract tab
 **Then** they can see their own contract details (read-only)
 **And** they cannot see any other player's contract
+
+---
+
+# Sprint 2 — Staff & Medical
+
+Sprint 2 delivers the Staff Profiles & Directory module (originally planned for Sprint 1, swapped with Document Hub) and the Injury Reporting module. Together they complete the club's people management capabilities.
+
+> **Open questions for this sprint:** See [sprint2-3-open-questions.md](sprint2-3-open-questions.md) — questions Q-S2-01 through Q-S2-05.
+
+## Epic 7: Staff Profiles & Directory
+
+Staff members get structured profiles with bios, job titles, and certification tracking. The club directory gives everyone a single place to find contact information. Admins manage onboarding and permission levels.
+
+**Proposal reference:** Sprint 1 "Staff Profiles & Directory" (moved to Sprint 2 to prioritize Document Hub in Sprint 1).
+
+### Story 7.1: Staff Data Model & Directory View
+
+As a user,
+I want to browse a staff directory showing all club staff with their name, role, job title, and photo,
+So that I can quickly find and contact anyone at the club.
+
+**Acceptance Criteria:**
+
+**Given** the Convex schema for staff profiles is deployed (id, teamId, userId, photo, fullName, jobTitle, department, phone, email, bio, dateJoined)
+**When** a user navigates to /staff
+**Then** a searchable directory displays all staff with photo, name, job title, department, and role badge
+**And** the directory can be filtered by department or role
+**And** clicking a staff member shows their full profile (bio, contact info, certifications)
+**And** players see a read-only directory view (no edit capabilities)
+**And** data is team-scoped (Convex query enforces teamId)
+
+> **Depends on:** [Q-S2-02](sprint2-3-open-questions.md#q-s2-02-staff-profile-fields) — Final field list may expand based on client input. Default assumption: core bio + contact fields.
+
+### Story 7.2: Staff Profile Creation & Onboarding
+
+As an admin,
+I want to create staff profiles and invite staff members to the platform,
+So that new hires are onboarded with their information centralized.
+
+**Acceptance Criteria:**
+
+**Given** the admin is on the staff directory page
+**When** the admin clicks "Add Staff Member"
+**Then** a form appears with fields: photo upload, full name, job title, department, phone, email, bio, date joined
+**When** the admin submits the form
+**Then** the staff profile is created and visible in the directory
+**And** the admin is prompted to send an account invitation to the staff member's email
+**And** when the staff member accepts the invitation, a user account is created with their assigned role linked to this profile
+**And** existing users (already invited via Story 2.2) can be linked to a staff profile retroactively
+
+> **Depends on:** [Q-S2-02](sprint2-3-open-questions.md#q-s2-02-staff-profile-fields) — Additional fields may be added based on client answer.
+
+### Story 7.3: Certification Tracking & Expiry Alerts
+
+As an admin,
+I want to track staff certifications with expiry dates and receive alerts before they expire,
+So that the club stays compliant and no certification lapses go unnoticed.
+
+**Acceptance Criteria:**
+
+**Given** the admin is viewing a staff member's profile
+**When** the admin navigates to the "Certifications" section
+**Then** they can add a certification entry: name, issuing body, date obtained, expiry date, document upload (optional)
+**And** multiple certifications can be tracked per staff member
+**And** a certification with an expiry date within 30 days shows a warning badge on the profile and in the directory
+**And** an in-app notification is generated 30 days before expiry, addressed to the staff member and all admins
+**And** expired certifications show a red "Expired" badge
+**And** the admin dashboard includes a "Certifications expiring soon" widget showing all upcoming expirations across all staff
+
+> **Depends on:** [Q-S2-01](sprint2-3-open-questions.md#q-s2-01-staff-certification-types) — If the client wants predefined certification categories (e.g., UEFA coaching badges, medical licenses) instead of free-text, the form will include a category dropdown. Default assumption: flexible name field.
+
+### Story 7.4: Staff Permission Levels
+
+As an admin,
+I want to assign granular permission levels to staff members,
+So that each staff member sees only what is relevant to their function.
+
+**Acceptance Criteria:**
+
+**Given** the role system from Sprint 1 exists (Admin, Coach, Analyst, Physio/Medical, Player, Staff)
+**When** an admin creates or edits a staff profile
+**Then** the admin can assign one or more roles to the staff member
+**And** permissions from Sprint 1 modules (Calendar, Documents, Players) automatically apply based on assigned roles
+**And** the staff directory visibility respects role-based access rules
+**And** medical-only data (injuries) remains restricted to Physio/Medical role
+**And** contract data remains restricted to Admin role
+
+> **Depends on:** [Q-S2-03](sprint2-3-open-questions.md#q-s2-03-staff-permission-granularity) — If the client needs department-level scoping beyond roles, this story will expand to include a department-based permission layer. Default assumption: existing role system is sufficient.
+
+---
+
+## Epic 8: Injury Reporting
+
+A comprehensive injury management system for the medical team, extending the foundation from Story 5.5 (basic injury logging) with clinical classification, status tracking, rehab workflows, and archiving.
+
+**Proposal reference:** Sprint 2 "Injury Reporting".
+**Builds on:** Story 5.5 (sprint2-5-5-injury-history-medical-staff-only.md) — basic injury logging already implemented.
+
+### Story 8.1: Injury Data Model & Classification
+
+As a medical staff member,
+I want to log injuries with structured clinical classification (body region, injury type, mechanism),
+So that the medical team has precise, searchable injury records.
+
+**Acceptance Criteria:**
+
+**Given** the basic injury model from Story 5.5 exists (date, injury type, severity, estimated recovery, notes)
+**When** the medical staff member logs a new injury
+**Then** the form includes enhanced fields: body region (dropdown: Head, Neck, Shoulder, Upper Arm, Elbow, Forearm, Wrist/Hand, Chest, Abdomen, Lower Back, Hip/Groin, Thigh, Knee, Lower Leg, Ankle, Foot), injury type (dropdown: Muscle strain, Ligament sprain, Fracture, Contusion, Tendinopathy, Concussion, Other), mechanism of injury (dropdown: Contact, Non-contact, Overuse, Training, Match, Other), and laterality (Left/Right/Bilateral/N/A)
+**And** the existing free-text fields (severity, estimated recovery, notes) are preserved
+**And** historical injuries logged via Story 5.5 remain accessible and valid (backwards-compatible)
+**And** all injury data access is restricted to medical/physio role at the Convex query layer
+
+> **Depends on:** [Q-S2-04](sprint2-3-open-questions.md#q-s2-04-injury-classification-system) — If the client uses Orchard Codes, we'll add an optional Orchard Code field alongside the dropdown classification. Default assumption: dropdown-based classification without Orchard Codes.
+
+### Story 8.2: Injury Timeline & Rehab Notes
+
+As a medical staff member,
+I want to track the progression of an injury with timeline entries and rehab notes,
+So that the full treatment history is documented from injury to clearance.
+
+**Acceptance Criteria:**
+
+**Given** an active injury record exists for a player
+**When** the medical staff member opens the injury detail view
+**Then** a chronological timeline displays all events related to this injury
+**And** the medical staff member can add timeline entries: date, type (Assessment, Treatment, Rehab Session, Follow-up, Scan/MRI, Clearance Test), notes, and optional file attachment (scan images, reports)
+**And** each timeline entry shows the author (which medical staff member logged it)
+**And** the estimated recovery date can be updated from any timeline entry
+**And** the timeline is read-only for non-medical roles (they cannot see it per existing access control)
+
+### Story 8.3: Injury Status & Return-to-Play Tracking
+
+As a medical staff member,
+I want to set a color-coded status on each injury so coaches and staff can see player availability at a glance,
+So that squad selection and training planning account for player fitness.
+
+**Acceptance Criteria:**
+
+**Given** an injury record exists for a player
+**When** the medical staff member updates the injury status
+**Then** the status can be set to: Red (Out — unavailable for training and matches), Yellow (Modified — available for modified training only), or Green (Cleared — fully fit, returned to play)
+**And** the player list (/players) shows the current injury status as a colored indicator next to the player's name (visible to all roles)
+**And** the player's profile shows the status badge on their overview tab
+**And** coaches can see the status indicator but NOT the injury details (medical data remains restricted)
+**And** changing status to Green prompts the medical staff to set a clearance date and final notes
+**And** a notification is sent to admins when a player's status changes
+
+> **Depends on:** [Q-S2-05](sprint2-3-open-questions.md#q-s2-05-injury-status-workflow) — Status transitions and who can change them may be adjusted based on client workflow. Default assumption: only medical staff can change injury status.
+
+### Story 8.4: Injury Dashboard & Archiving
+
+As a medical staff member,
+I want a dashboard showing all current injuries across the squad and the ability to archive resolved injuries,
+So that I have a real-time overview of squad fitness and a clean workspace.
+
+**Acceptance Criteria:**
+
+**Given** the user has the medical/physio role
+**When** they navigate to a medical dashboard (e.g., /injuries or a dedicated tab)
+**Then** a summary view shows all currently injured players grouped by status (Red/Yellow/Green)
+**And** each entry shows player name, injury type, body region, days since injury, and estimated return date
+**And** when an injury's status is set to Green (Cleared) and a clearance date is recorded, the injury can be archived
+**And** archived injuries move to a "History" tab, keeping the active view focused on current cases
+**And** archived injuries remain fully accessible and searchable for historical reference
+**And** the dashboard is accessible only to medical/physio and admin roles
+
+---
+
+# Sprint 3 — Scouting & Communications
+
+Sprint 3 delivers the scouting suite (reports + shadow teams) and the WhatsApp notification layer, completing the platform's feature set as outlined in the original proposal.
+
+> **Open questions for this sprint:** See [sprint2-3-open-questions.md](sprint2-3-open-questions.md) — questions Q-S3-01 through Q-S3-06.
+> **Critical prerequisite:** Q-S3-01 (Jesper's scouting format) and Q-S3-03 (WhatsApp Business API setup) must be resolved before Sprint 3 starts.
+
+## Epic 9: Scouting Reports
+
+Scouts and admins can create, grade, and manage scouting reports on transfer targets. Reports include structured data, media attachments, and final recommendations. Access is restricted to scouts and admins.
+
+**Proposal reference:** Sprint 3 "Scouting Reports".
+
+### Story 9.1: Scouting Data Model & Report List
+
+As a scout or admin,
+I want to see a list of all scouting reports with target name, position, recommendation, and date,
+So that I can quickly review and manage the club's scouting pipeline.
+
+**Acceptance Criteria:**
+
+**Given** the Convex schema for scouting is deployed (scoutingReports table: id, teamId, targetPlayerName, targetCurrentClub, targetPosition, targetAge, targetNationality, marketValue, scoutId, recommendation, status, createdAt, updatedAt)
+**When** a scout or admin navigates to /scouting
+**Then** a list/table displays all scouting reports with target name, current club, position, recommendation badge (Sign/Watch/Pass), and scout name
+**And** the list can be filtered by recommendation, position, and status (Active/Archived)
+**And** a search field filters by target player name or club
+**And** clicking a report navigates to the full report detail view
+**And** the scouting section is not visible to non-scout/non-admin roles
+**And** access control is enforced at the Convex query layer
+
+> **Depends on:** [Q-S3-01](sprint2-3-open-questions.md#q-s3-01-scouting-report-format-jesper-input-needed) — The data model fields listed here are provisional. Jesper's input will finalize the exact fields and may add custom attributes. **This is a blocking dependency.**
+
+### Story 9.2: Scouting Report Creation & Media Attachments
+
+As a scout,
+I want to create a detailed scouting report with text analysis, media, and video links,
+So that decision-makers have all the information they need to evaluate a target.
+
+**Acceptance Criteria:**
+
+**Given** a scout is on the scouting page
+**When** the scout clicks "New Report"
+**Then** a form appears with: target player info (name, current club, position, age, nationality, market value), strengths (free text), weaknesses (free text), tactical notes (free text), and video links (multiple URLs)
+**And** the scout can attach files (photos, PDF reports, screenshots) to the report
+**And** video links open in the source platform in a new tab (same pattern as Document Hub)
+**And** the form is mobile-friendly with a simplified layout for scouts in the field
+**And** the report can be saved as draft before final submission
+**And** submitted reports are immediately visible to all scouts and admins
+
+> **Depends on:** [Q-S3-01](sprint2-3-open-questions.md#q-s3-01-scouting-report-format-jesper-input-needed) — Form fields will be adjusted based on Jesper's report format. **This is a blocking dependency.**
+
+### Story 9.3: Grading System & Recommendations
+
+As a scout,
+I want to grade a target player across multiple criteria and assign a final recommendation,
+So that reports follow a consistent evaluation framework.
+
+**Acceptance Criteria:**
+
+**Given** the scout is creating or editing a scouting report
+**When** the scout fills in the grading section
+**Then** a set of evaluation criteria are displayed with a numerical rating scale (1-10) for each: Technical Ability, Tactical Awareness, Physical Attributes, Mental Attributes, Potential
+**And** the scout selects a final recommendation: Sign, Watch, or Pass
+**And** an overall score is automatically calculated as the average of individual criteria
+**And** the recommendation and overall score are displayed prominently on the report list and detail views
+**And** grades can be updated after initial submission (with edit history tracked)
+
+> **Depends on:** [Q-S3-01](sprint2-3-open-questions.md#q-s3-01-scouting-report-format-jesper-input-needed) — Grading criteria and scale are provisional. Jesper may want different criteria, a different scale (e.g., letter grades, stars), or additional evaluation categories. **This is a blocking dependency.**
+
+### Story 9.4: Follow-up Notes & Target Archiving
+
+As a scout or admin,
+I want to add follow-up notes to existing reports and archive targets that are no longer relevant,
+So that the scouting pipeline stays current and historical data is preserved.
+
+**Acceptance Criteria:**
+
+**Given** a scouting report exists
+**When** a scout or admin views the report detail
+**Then** they can add follow-up notes (date + text) that appear chronologically below the original report
+**And** follow-up notes show the author name and date
+**And** an admin or the original scout can change the report status to "Archived" with a reason (Signed elsewhere, Budget, Not interested, Other)
+**And** archived reports move to an "Archived" tab but remain searchable
+**And** archived reports cannot be edited but can still have follow-up notes added
+
+---
+
+## Epic 10: Shadow Teams
+
+A visual squad-planning tool where scouts and admins build shadow teams by position, categorize targets by priority, and rank them using drag-and-drop.
+
+**Proposal reference:** Sprint 3 "Scouting Shadow Teams".
+
+### Story 10.1: Shadow Team Data Model & Pitch View
+
+As a scout or admin,
+I want to see a visual pitch view displaying scouting targets organized by position,
+So that I can evaluate squad coverage and identify gaps at a glance.
+
+**Acceptance Criteria:**
+
+**Given** the Convex schema for shadow teams is deployed (shadowTeams table: id, teamId, name, transferWindow, status; shadowTeamEntries table: id, shadowTeamId, scoutingReportId, position, category, rank)
+**When** a scout or admin navigates to /scouting/shadow-team
+**Then** a visual football pitch (formation view) displays with position zones
+**And** each position zone shows the assigned scouting targets (player name + recommendation badge)
+**And** empty positions show a visual indicator ("No targets")
+**And** the pitch layout adapts to show common formations (4-3-3, 4-4-2, 3-5-2) with a formation selector
+**And** the shadow team is restricted to scouts and admins (same access as scouting reports)
+
+> **Depends on:** [Q-S3-02](sprint2-3-open-questions.md#q-s3-02-shadow-team-positions-and-categories) — Number of concurrent shadow teams and whether categories are fixed or custom. Default assumption: one active shadow team, 3 fixed categories.
+
+### Story 10.2: Category Management & Player Assignment
+
+As a scout or admin,
+I want to categorize shadow team targets by priority (Immediate, Development, Emergency/Loan),
+So that transfer planning reflects different urgency levels.
+
+**Acceptance Criteria:**
+
+**Given** the shadow team pitch view is displayed
+**When** a scout or admin adds a target from the scouting report list to the shadow team
+**Then** they select a position on the pitch and a category: Immediate (first choice targets), Development (long-term prospects), or Emergency/Loan (backup options)
+**And** each category has a distinct visual treatment (color or icon) on the pitch view
+**And** a player can only appear once per shadow team (but can be in multiple position zones if versatile)
+**And** removing a target from the shadow team does not delete the scouting report
+**And** a sidebar or panel lists all targets grouped by category with quick-add/remove actions
+
+### Story 10.3: Drag-and-Drop Ranking
+
+As a scout or admin,
+I want to rank targets within each position using drag-and-drop,
+So that the preferred order of targets is clear for transfer discussions.
+
+**Acceptance Criteria:**
+
+**Given** multiple targets are assigned to the same position on the shadow team
+**When** the user drags a target card up or down within the position list
+**Then** the ranking order is updated in real time and persisted
+**And** the rank number is displayed next to each target (1st choice, 2nd choice, etc.)
+**And** ranking changes are reflected immediately for all connected users (Convex real-time)
+**And** the drag-and-drop interaction works on both desktop and tablet viewports
+
+---
+
+## Epic 11: Notifications & WhatsApp Integration
+
+A unified notification system that extends the existing in-app notification center (Story 3.7) with WhatsApp Business API integration for external push notifications. Admins can manage templates, broadcast messages, and users can control their notification preferences.
+
+**Proposal reference:** Sprint 3 "WhatsApp Notifications".
+**Builds on:** Story 3.7 (sprint3-3-7-in-app-notification-center.md) — in-app notification center already implemented.
+
+### Story 11.1: WhatsApp Business API Integration
+
+As a developer,
+I want to integrate the WhatsApp Business API with the platform backend,
+So that the system can send automated and manual WhatsApp messages to users.
+
+**Acceptance Criteria:**
+
+**Given** the WhatsApp Business API credentials are configured (see prerequisites)
+**When** the backend sends a message via the WhatsApp API
+**Then** the message is delivered to the recipient's WhatsApp number
+**And** delivery status is tracked (sent, delivered, read, failed) via webhook callbacks
+**And** failed messages are logged with error details for admin review
+**And** API credentials are stored securely (Convex environment variables, not in code)
+**And** the integration includes rate limiting to respect WhatsApp API quotas
+
+> **Depends on:** [Q-S3-03](sprint2-3-open-questions.md#q-s3-03-whatsapp-business-api-setup) — **Hard blocker.** WhatsApp Business account must be set up and verified before this story can start. Prerequisites checklist in the question document.
+
+### Story 11.2: Automated Notification Triggers
+
+As a user,
+I want to receive WhatsApp notifications for important events (new calendar events, schedule changes, reminders),
+So that I stay informed even when I'm not logged into the platform.
+
+**Acceptance Criteria:**
+
+**Given** the WhatsApp API integration is operational (Story 11.1)
+**And** the user has opted in to WhatsApp notifications (Story 11.4)
+**When** an admin creates a new calendar event that includes the user
+**Then** the user receives a WhatsApp message with the event name, date/time, and location
+**When** an event the user is invited to is updated or cancelled
+**Then** the user receives a WhatsApp notification about the change
+**And** a reminder is sent 24 hours before each event the user is attending
+**And** each WhatsApp notification uses a pre-approved message template
+**And** the corresponding in-app notification (Story 3.7) is also created (dual-channel)
+
+> **Depends on:** [Q-S3-04](sprint2-3-open-questions.md#q-s3-04-whatsapp-notification-triggers) — Additional trigger types may be added based on client input. Default: calendar events only.
+
+### Story 11.3: Admin Broadcast & Message Templates
+
+As an admin,
+I want to send manual WhatsApp broadcasts to groups of users and manage message templates,
+So that I can communicate important club information outside of scheduled events.
+
+**Acceptance Criteria:**
+
+**Given** the admin navigates to a notification management page
+**When** the admin creates a new broadcast
+**Then** they can select recipients by role, by individual users, or "All staff"
+**And** they can choose from pre-built message templates or compose a free-form message
+**And** the broadcast is sent to all selected recipients who have opted in to WhatsApp
+**And** a delivery report shows sent/delivered/read/failed counts
+**And** message templates can be created and edited by admins (subject to WhatsApp template approval process)
+**And** template variables are supported (e.g., {player_name}, {event_date}) and auto-populated at send time
+
+> **Depends on:** [Q-S3-05](sprint2-3-open-questions.md#q-s3-05-whatsapp-message-templates--language) — Template language (English/Italian/both) and customization needs affect template design.
+
+### Story 11.4: User Notification Preferences & Privacy
+
+As a user,
+I want to control which notifications I receive and through which channels (in-app, WhatsApp),
+So that I'm not overwhelmed by messages and my privacy preferences are respected.
+
+**Acceptance Criteria:**
+
+**Given** the user navigates to their profile settings
+**When** they open the "Notifications" section
+**Then** they can toggle WhatsApp notifications on/off (opt-in model by default)
+**And** when enabling WhatsApp, they must confirm their phone number
+**And** they can choose notification categories: Calendar events, Schedule changes, Reminders, Broadcasts
+**And** each category can be independently enabled/disabled per channel (in-app / WhatsApp)
+**And** the opt-in choice is recorded with timestamp for GDPR compliance
+**And** users can revoke WhatsApp consent at any time, which immediately stops all WhatsApp messages
+**And** in-app notifications (Story 3.7) remain always active regardless of WhatsApp preferences
+
+> **Depends on:** [Q-S3-06](sprint2-3-open-questions.md#q-s3-06-notification-opt-inopt-out-scope) — Opt-in vs opt-out default may change based on client's privacy policy.

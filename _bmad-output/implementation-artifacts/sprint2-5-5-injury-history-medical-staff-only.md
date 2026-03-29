@@ -1,6 +1,9 @@
 # Story 5.5: Injury History (Medical Staff Only)
 
-Status: ready-for-dev
+Status: done
+Sprint: 2
+Epic: 8 (Injury Reporting)
+Note: This story provides the foundation for Epic 8. Stories 8.1–8.4 extend this with clinical classification, timeline tracking, color-coded statuses, and a medical dashboard.
 Story Type: fullstack
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.

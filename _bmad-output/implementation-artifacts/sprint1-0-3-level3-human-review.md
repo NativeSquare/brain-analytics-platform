@@ -1,6 +1,6 @@
 # Story 0.3 — Validation Level 3 (Human review workflow)
 
-Status: in-progress
+Status: done
 
 ## Story
 

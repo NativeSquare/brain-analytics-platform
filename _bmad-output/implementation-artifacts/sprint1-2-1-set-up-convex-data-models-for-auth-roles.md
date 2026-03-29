@@ -1,6 +1,6 @@
 # Story 2.1: Set Up Convex Data Models for Auth & Roles
 
-Status: complete
+Status: done
 Story Type: backend
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.

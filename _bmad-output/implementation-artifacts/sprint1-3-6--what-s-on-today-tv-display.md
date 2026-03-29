@@ -1,6 +1,6 @@
 # Story 3.6: "What's on Today" TV Display
 
-Status: dev-complete
+Status: done
 
 Story Type: frontend
 

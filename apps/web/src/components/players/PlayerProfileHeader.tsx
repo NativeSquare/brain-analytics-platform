@@ -93,6 +93,7 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
               <h1 className="text-2xl font-semibold">
                 {player.firstName} {player.lastName}
               </h1>
+              {/* [Sprint 2 — Story 5.5] Injury status icon hidden until Sprint 2 delivery
               {injuryStatus?.hasCurrentInjury && (
                 <TooltipProvider>
                   <Tooltip>
@@ -103,6 +104,7 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
                   </Tooltip>
                 </TooltipProvider>
               )}
+              */}
               {inviteStatus === "pending" && (
                 <Badge variant="secondary" className="text-xs">
                   Invited — awaiting response

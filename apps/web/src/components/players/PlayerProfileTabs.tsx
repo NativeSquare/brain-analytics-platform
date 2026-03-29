@@ -112,12 +112,14 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
           <IconHeartbeat className="mr-1.5 size-4" />
           Fitness
         </TabsTrigger>
+        {/* [Sprint 2 — Story 5.5] Injury tab hidden until Sprint 2 delivery
         {tabAccess.showInjuries && (
           <TabsTrigger value="injuries">
             <IconFirstAidKit className="mr-1.5 size-4" />
             Injuries
           </TabsTrigger>
         )}
+        */}
         {/* Story 6.2 AC7: canViewContract is single source of truth for tab visibility */}
         {canViewContract === true && (
           <TabsTrigger value="contract">
@@ -210,11 +212,13 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
         <FitnessLog playerId={playerId} canEdit={canEditFitness} />
       </TabsContent>
 
+      {/* [Sprint 2 — Story 5.5] Injury tab content hidden until Sprint 2 delivery
       {tabAccess.showInjuries && (
         <TabsContent value="injuries">
           <InjuryLog playerId={playerId} />
         </TabsContent>
       )}
+      */}
 
       {/* Story 6.2 AC1,3,7: Contract tab completely omitted from DOM for unauthorized users */}
       {canViewContract === true && (

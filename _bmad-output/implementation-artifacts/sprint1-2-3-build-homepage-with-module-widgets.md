@@ -1,6 +1,6 @@
 # Story 2.3: Build Homepage with Module Widgets
 
-Status: dev-complete
+Status: done
 Story Type: frontend
 
 > **PROJECT SCOPE:** This story targets the admin app at `apps/admin/`. All UI components, pages, layouts, and routes for this story go in `apps/admin/`.

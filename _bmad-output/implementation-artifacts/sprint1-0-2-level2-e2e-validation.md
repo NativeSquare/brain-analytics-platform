@@ -1,6 +1,6 @@
 # Story 0.2 — Validation Level 2 (E2E / CI-CD pipeline)
 
-Status: in-progress
+Status: done
 
 ## Story
 

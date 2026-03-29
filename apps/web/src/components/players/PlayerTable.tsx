@@ -83,6 +83,7 @@ const PlayerRow = React.memo(function PlayerRow({
               Invited
             </Badge>
           )}
+          {/* [Sprint 2 — Story 5.5] Injury icon hidden until Sprint 2 delivery
           {hasCurrentInjury && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -91,6 +92,7 @@ const PlayerRow = React.memo(function PlayerRow({
               <TooltipContent>Currently injured</TooltipContent>
             </Tooltip>
           )}
+          */}
         </span>
       </TableCell>
       <TableCell>{player.position}</TableCell>

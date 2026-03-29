@@ -1,9 +1,23 @@
 "use client";
 
+/* [Sprint 3 — Story 3.7] Full notification center commented out until Sprint 3 delivery.
+ * Bell icon + placeholder dropdown kept visible (client already informed notifications are in progress).
+ * To restore: uncomment the original imports/logic below and remove the placeholder.
+ */
+
+import { IconBell } from "@tabler/icons-react";
+import { Inbox } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+
+/* [Sprint 3 — Story 3.7] Original imports — uncomment when restoring
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconBell } from "@tabler/icons-react";
-import { Check, Inbox, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useQuery, useMutation } from "convex/react";
 import { toast } from "sonner";
@@ -12,16 +26,12 @@ import { ConvexError } from "convex/values";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { api } from "@packages/backend/convex/_generated/api";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+*/
 
 function NotificationCenter() {
+  /* [Sprint 3 — Story 3.7] Original logic — uncomment when restoring
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,9 +82,10 @@ function NotificationCenter() {
       : unreadCount > 9
         ? "9+"
         : unreadCount;
+  */
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -83,19 +94,21 @@ function NotificationCenter() {
           aria-label="Notifications"
         >
           <IconBell className="h-4 w-4" />
-          {unreadCount !== undefined && unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center px-1 text-[10px]"
-            >
-              {displayCount}
-            </Badge>
-          )}
         </Button>
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-80 p-0">
-        {/* Header */}
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h3 className="text-sm font-semibold">Notifications</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+          <Inbox className="size-8" />
+          <p className="text-sm">Notifications will be available soon</p>
+        </div>
+      </PopoverContent>
+
+      {/* [Sprint 3 — Story 3.7] Original popover content — uncomment when restoring
+      <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h3 className="text-sm font-semibold">Notifications</h3>
           {unreadCount !== undefined && unreadCount > 0 && (
@@ -110,7 +123,6 @@ function NotificationCenter() {
           )}
         </div>
 
-        {/* Notification list */}
         <ScrollArea className="max-h-80">
           {notifications === undefined ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
@@ -163,6 +175,7 @@ function NotificationCenter() {
           )}
         </ScrollArea>
       </PopoverContent>
+      */}
     </Popover>
   );
 }

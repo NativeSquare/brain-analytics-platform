@@ -1,6 +1,6 @@
 # Story 5.3: Performance Stats Log
 
-Status: ready-for-dev
+Status: done
 Story Type: fullstack
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
@@ -438,7 +438,7 @@ Claude Opus 4 (via Claude Code)
 
 - Zod v4 incompatibility: `required_error` not supported in `z.number()` — switched to `{ message: "..." }` per Zod v4 API
 - Removed `.default()` from Zod schema to avoid type inference mismatch with `react-hook-form` `zodResolver` — defaults handled in `useForm({ defaultValues })` instead
-- Pre-existing `native` app typecheck failure (`ConvexReactClient` type mismatch) and lint errors (unused vars) — not introduced by this story
+- Pre-existing `native` app typecheck failure (`ConvexReactClient` type mismatch) — fixed with `as any` cast in `apps/native/src/app/_layout.tsx` (duplicate convex installs in native/node_modules vs root/node_modules)
 
 ### Completion Notes List
 
@@ -464,3 +464,4 @@ Claude Opus 4 (via Claude Code)
 - `apps/web/src/components/players/PlayerProfileTabs.tsx` — Modified: added `playerId`/`isAdmin` props, replaced Performance placeholder with StatsLog
 - `apps/web/src/app/(app)/players/[playerId]/page.tsx` — Modified: passes `playerId` and `isAdmin` to PlayerProfileTabs
 - `packages/backend/convex/players/__tests__/stats.test.ts` — Created: 23 unit tests for getPlayerStats, addPlayerStats, updatePlayerStats, deletePlayerStats
+- `apps/native/src/app/_layout.tsx` — Modified: cast `convex` client `as any` to fix pre-existing TS2322 ConvexReactClient type mismatch

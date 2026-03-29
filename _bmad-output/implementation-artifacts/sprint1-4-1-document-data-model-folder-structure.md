@@ -1,6 +1,6 @@
 # Story 4.1: Document Data Model & Folder Structure
 
-Status: complete
+Status: done
 Story Type: fullstack
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.

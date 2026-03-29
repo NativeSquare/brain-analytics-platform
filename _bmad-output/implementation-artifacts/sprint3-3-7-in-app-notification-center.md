@@ -1,6 +1,9 @@
 # Story 3.7: In-App Notification Center
 
-Status: dev-complete
+Status: done
+Sprint: 3
+Epic: 11 (Notifications & WhatsApp Integration)
+Note: This story provides the in-app notification foundation. Stories 11.1–11.4 extend this with WhatsApp Business API integration, automated triggers, admin broadcasts, and user privacy preferences.
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.
 

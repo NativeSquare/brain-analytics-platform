@@ -1,6 +1,6 @@
 # Story 3.5: Calendar Sync (.ics Feed)
 
-Status: dev-complete
+Status: ready-for-dev
 
 Story Type: fullstack
 

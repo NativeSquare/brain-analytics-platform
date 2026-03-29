@@ -1,6 +1,6 @@
 # Story 1.3: Build Core Layout & Sidebar Navigation
 
-Status: review
+Status: done
 Story Type: frontend
 
 > **PROJECT SCOPE:** All frontend work targets the client-facing web app at `apps/web/`. Do NOT modify `apps/admin/` — that is a separate internal admin panel. All UI components, pages, layouts, and routes go in `apps/web/`.

@@ -3,7 +3,8 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
-import { Plus, CalendarSync } from "lucide-react";
+import Link from "next/link";
+import { Monitor, Plus, CalendarSync } from "lucide-react";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,12 @@ export default function CalendarPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/calendar/today" target="_blank">
+              <Monitor className="mr-2 size-4" />
+              TV Display
+            </Link>
+          </Button>
           <Button
             variant="outline"
             onClick={() => setIsSyncDialogOpen(true)}

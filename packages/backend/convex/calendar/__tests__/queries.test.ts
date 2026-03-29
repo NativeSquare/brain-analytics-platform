@@ -531,6 +531,147 @@ describe("getDayEvents", () => {
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe("Player Invited");
   });
+
+  it("excludes cancelled events", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const march15 = new Date(2026, 2, 15, 0, 0, 0).getTime();
+
+    await seedEvent(t, teamId, userId, {
+      name: "Active Event",
+      startsAt: new Date(2026, 2, 15, 9, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 10, 0).getTime(),
+    });
+    await seedEvent(t, teamId, userId, {
+      name: "Cancelled Event",
+      startsAt: new Date(2026, 2, 15, 11, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 12, 0).getTime(),
+      isCancelled: true,
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDayEvents,
+      { date: march15 },
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("Active Event");
+  });
+
+  it("returns events sorted by startsAt ascending", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const march15 = new Date(2026, 2, 15, 0, 0, 0).getTime();
+
+    // Insert in reverse order to verify sorting
+    await seedEvent(t, teamId, userId, {
+      name: "Afternoon Event",
+      startsAt: new Date(2026, 2, 15, 14, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 16, 0).getTime(),
+    });
+    await seedEvent(t, teamId, userId, {
+      name: "Morning Event",
+      startsAt: new Date(2026, 2, 15, 8, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 9, 0).getTime(),
+    });
+    await seedEvent(t, teamId, userId, {
+      name: "Midday Event",
+      startsAt: new Date(2026, 2, 15, 12, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 13, 0).getTime(),
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDayEvents,
+      { date: march15 },
+    );
+
+    expect(result).toHaveLength(3);
+    expect(result[0].name).toBe("Morning Event");
+    expect(result[1].name).toBe("Midday Event");
+    expect(result[2].name).toBe("Afternoon Event");
+  });
+
+  it("admin sees all team events regardless of invitation", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const ownerId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        name: "Coach Owner",
+        email: "coach-owner@example.com",
+        role: "coach",
+        status: "active",
+        teamId,
+      });
+    });
+
+    const march15 = new Date(2026, 2, 15, 0, 0, 0).getTime();
+
+    await seedEvent(t, teamId, ownerId, {
+      name: "Player Only Event",
+      invitedRoles: ["player"],
+      startsAt: new Date(2026, 2, 15, 10, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 12, 0).getTime(),
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDayEvents,
+      { date: march15 },
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("Player Only Event");
+  });
+
+  it("does not return events from a different team", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "admin" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const march15 = new Date(2026, 2, 15, 0, 0, 0).getTime();
+
+    // Event on user's team
+    await seedEvent(t, teamId, userId, {
+      name: "Own Team Event",
+      startsAt: new Date(2026, 2, 15, 10, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 12, 0).getTime(),
+    });
+
+    // Event on a different team
+    const otherTeamId = await t.run(async (ctx) => {
+      return await ctx.db.insert("teams", {
+        name: "Other Club",
+        slug: "other-club-day",
+      });
+    });
+    const otherOwnerId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        name: "Other Owner",
+        email: "other-day@example.com",
+        role: "admin",
+        status: "active",
+        teamId: otherTeamId,
+      });
+    });
+    await seedEvent(t, otherTeamId, otherOwnerId, {
+      name: "Other Team Event",
+      startsAt: new Date(2026, 2, 15, 10, 0).getTime(),
+      endsAt: new Date(2026, 2, 15, 12, 0).getTime(),
+    });
+
+    const result = await t.query(
+      (await import("../queries")).getDayEvents,
+      { date: march15 },
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("Own Team Event");
+  });
 });
 
 // ---------------------------------------------------------------------------

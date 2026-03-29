@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requireRole } from "../lib/auth";
 
 /**
  * Get fitness entries for a specific player.
@@ -180,6 +180,89 @@ export const getPlayerById = query({
       ...player,
       photoUrl,
     };
+  },
+});
+
+/**
+ * Get injury entries for a specific player. Medical/admin only.
+ *
+ * Story 5.5 AC #2: Returns array of playerInjuries sorted by date descending.
+ * Story 5.5 AC #14, #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const getPlayerInjuries = query({
+  args: { playerId: v.id("players") },
+  handler: async (ctx, { playerId }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
+    }
+
+    const entries = await ctx.db
+      .query("playerInjuries")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+
+    // Sort by date descending (most recent first)
+    return entries.sort((a, b) => b.date - a.date);
+  },
+});
+
+/**
+ * Get injury status for a player. Any authenticated team member.
+ *
+ * Story 5.5 AC #12: Returns { hasCurrentInjury: boolean } only.
+ * Story 5.5 AC #15: Does NOT return any injury details — boolean flag only.
+ */
+export const getPlayerInjuryStatus = query({
+  args: { playerId: v.id("players") },
+  handler: async (ctx, { playerId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
+    }
+
+    const currentInjuries = await ctx.db
+      .query("playerInjuries")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .filter((q) => q.eq(q.field("status"), "current"))
+      .collect();
+
+    return { hasCurrentInjury: currentInjuries.length > 0 };
+  },
+});
+
+/**
+ * Batch query: get injury status for multiple players at once.
+ *
+ * Story 5.5 AC #12, Task 11.2: Avoids N+1 queries in the player table.
+ * Returns a map of playerId → hasCurrentInjury.
+ */
+export const getPlayersInjuryStatuses = query({
+  args: { playerIds: v.array(v.id("players")) },
+  handler: async (ctx, { playerIds }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const result: Record<string, boolean> = {};
+
+    // Fetch all team injuries in one go using teamId index
+    const allInjuries = await ctx.db
+      .query("playerInjuries")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .filter((q) => q.eq(q.field("status"), "current"))
+      .collect();
+
+    // Build a set of playerIds that have current injuries
+    const injuredPlayerIds = new Set(allInjuries.map((i) => i.playerId));
+
+    for (const playerId of playerIds) {
+      result[playerId] = injuredPlayerIds.has(playerId);
+    }
+
+    return result;
   },
 });
 

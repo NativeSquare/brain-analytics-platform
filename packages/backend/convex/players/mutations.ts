@@ -161,6 +161,193 @@ export const deletePlayerFitness = mutation({
 });
 
 // ---------------------------------------------------------------------------
+// Injury field validation helper
+// ---------------------------------------------------------------------------
+
+function validateInjuryFields(args: {
+  injuryType: string;
+  severity: string;
+  estimatedRecovery?: string;
+  notes?: string;
+  status?: string;
+}) {
+  // Validate injuryType
+  if (!args.injuryType || args.injuryType.trim().length === 0) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Injury type is required",
+    });
+  }
+  if (args.injuryType.length > 200) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Injury type cannot exceed 200 characters",
+    });
+  }
+
+  // Validate severity
+  if (!VALID_SEVERITIES.includes(args.severity as any)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Severity must be minor, moderate, or severe",
+    });
+  }
+
+  // Validate estimatedRecovery length
+  if (args.estimatedRecovery && args.estimatedRecovery.length > 200) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Estimated recovery cannot exceed 200 characters",
+    });
+  }
+
+  // Validate notes length
+  if (args.notes && args.notes.length > 2000) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Notes cannot exceed 2000 characters",
+    });
+  }
+
+  // Validate status if provided
+  if (args.status !== undefined && !VALID_STATUSES.includes(args.status as any)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Status must be current or recovered",
+    });
+  }
+}
+
+const VALID_SEVERITIES = ["minor", "moderate", "severe"] as const;
+const VALID_STATUSES = ["current", "recovered"] as const;
+
+// ---------------------------------------------------------------------------
+// Injury CRUD mutations (Story 5.5 AC #6, #9, #11, #14, #15)
+// ---------------------------------------------------------------------------
+
+/**
+ * Log a new injury for a player. Admin or physio only.
+ *
+ * Story 5.5 AC #6: Creates a playerInjuries entry with validation.
+ * Story 5.5 AC #14, #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const logInjury = mutation({
+  args: {
+    playerId: v.id("players"),
+    date: v.number(),
+    injuryType: v.string(),
+    severity: v.string(),
+    estimatedRecovery: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const player = await ctx.db.get(args.playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Player not found",
+      });
+    }
+
+    validateInjuryFields(args);
+
+    const now = Date.now();
+    return await ctx.db.insert("playerInjuries", {
+      teamId,
+      playerId: args.playerId,
+      date: args.date,
+      injuryType: args.injuryType,
+      severity: args.severity,
+      estimatedRecovery: args.estimatedRecovery,
+      notes: args.notes,
+      status: "current",
+      clearanceDate: undefined,
+      createdBy: user._id,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+/**
+ * Update an existing injury entry. Admin or physio only.
+ *
+ * Story 5.5 AC #9: Patches all fields + updatedAt.
+ * Story 5.5 AC #14, #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const updateInjury = mutation({
+  args: {
+    injuryId: v.id("playerInjuries"),
+    date: v.number(),
+    injuryType: v.string(),
+    severity: v.string(),
+    estimatedRecovery: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    status: v.string(),
+    clearanceDate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const entry = await ctx.db.get(args.injuryId);
+    if (!entry || entry.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Injury entry not found",
+      });
+    }
+
+    validateInjuryFields({
+      injuryType: args.injuryType,
+      severity: args.severity,
+      estimatedRecovery: args.estimatedRecovery,
+      notes: args.notes,
+      status: args.status,
+    });
+
+    await ctx.db.patch(args.injuryId, {
+      date: args.date,
+      injuryType: args.injuryType,
+      severity: args.severity,
+      estimatedRecovery: args.estimatedRecovery,
+      notes: args.notes,
+      status: args.status,
+      clearanceDate: args.clearanceDate,
+      updatedAt: Date.now(),
+    });
+
+    return args.injuryId;
+  },
+});
+
+/**
+ * Delete an injury entry. Admin or physio only.
+ *
+ * Story 5.5 AC #11: Removes the playerInjuries document.
+ * Story 5.5 AC #14, #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const deleteInjury = mutation({
+  args: {
+    injuryId: v.id("playerInjuries"),
+  },
+  handler: async (ctx, { injuryId }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const entry = await ctx.db.get(injuryId);
+    if (!entry || entry.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Injury entry not found",
+      });
+    }
+
+    await ctx.db.delete(injuryId);
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Stats field validation helper
 // ---------------------------------------------------------------------------
 

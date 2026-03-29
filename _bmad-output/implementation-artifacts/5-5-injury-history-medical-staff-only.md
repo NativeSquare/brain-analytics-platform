@@ -47,71 +47,71 @@ so that the medical team has a complete record of each player's injury history a
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Create `getPlayerInjuries` query** (AC: #2, #14, #15)
-  - [ ] 1.1: In `packages/backend/convex/players/queries.ts`, implement `getPlayerInjuries` query: accepts `{ playerId: v.id("players") }`, calls `requireRole(ctx, ["admin", "physio"])`. Fetches the player via `ctx.db.get(playerId)`, validates `teamId` matches the authenticated user's team (throw `NOT_FOUND` if not). Queries `playerInjuries` table using the `by_playerId` index filtering by `playerId`. Sorts results by `date` descending. Returns the array of injury entry objects.
-  - [ ] 1.2: Verify query returns an empty array (not `null`) when no injury entries exist for the player.
-  - [ ] 1.3: Verify query throws `NOT_AUTHORIZED` when called by a non-admin/non-physio user.
+- [x] **Task 1: Create `getPlayerInjuries` query** (AC: #2, #14, #15)
+  - [x] 1.1: In `packages/backend/convex/players/queries.ts`, implement `getPlayerInjuries` query: accepts `{ playerId: v.id("players") }`, calls `requireRole(ctx, ["admin", "physio"])`. Fetches the player via `ctx.db.get(playerId)`, validates `teamId` matches the authenticated user's team (throw `NOT_FOUND` if not). Queries `playerInjuries` table using the `by_playerId` index filtering by `playerId`. Sorts results by `date` descending. Returns the array of injury entry objects.
+  - [x] 1.2: Verify query returns an empty array (not `null`) when no injury entries exist for the player.
+  - [x] 1.3: Verify query throws `NOT_AUTHORIZED` when called by a non-admin/non-physio user.
 
-- [ ] **Task 2: Create `getPlayerInjuryStatus` query** (AC: #12, #14, #15)
-  - [ ] 2.1: In `packages/backend/convex/players/queries.ts`, implement `getPlayerInjuryStatus` query: accepts `{ playerId: v.id("players") }`, calls `requireAuth(ctx)` (any authenticated user). Fetches the player via `ctx.db.get(playerId)`, validates `teamId` matches (throw `NOT_FOUND` if not). Queries `playerInjuries` using `by_playerId` index. Checks if any entry has `status === "current"`. Returns `{ hasCurrentInjury: boolean }`.
-  - [ ] 2.2: This query MUST NOT return any injury detail fields — only the boolean flag. This is the boundary between medical and non-medical data access.
+- [x] **Task 2: Create `getPlayerInjuryStatus` query** (AC: #12, #14, #15)
+  - [x] 2.1: In `packages/backend/convex/players/queries.ts`, implement `getPlayerInjuryStatus` query: accepts `{ playerId: v.id("players") }`, calls `requireAuth(ctx)` (any authenticated user). Fetches the player via `ctx.db.get(playerId)`, validates `teamId` matches (throw `NOT_FOUND` if not). Queries `playerInjuries` using `by_playerId` index. Checks if any entry has `status === "current"`. Returns `{ hasCurrentInjury: boolean }`.
+  - [x] 2.2: This query MUST NOT return any injury detail fields — only the boolean flag. This is the boundary between medical and non-medical data access.
 
-- [ ] **Task 3: Create `logInjury` mutation** (AC: #6, #14, #15)
-  - [ ] 3.1: In `packages/backend/convex/players/mutations.ts`, implement `logInjury` mutation: accepts `{ playerId: v.id("players"), date: v.number(), injuryType: v.string(), severity: v.string(), estimatedRecovery: v.optional(v.string()), notes: v.optional(v.string()) }`. Calls `requireRole(ctx, ["admin", "physio"])`. Fetches the player via `ctx.db.get(playerId)`, validates `teamId` matches (throw `NOT_FOUND` if not). Validates `severity` is one of `"minor"`, `"moderate"`, `"severe"` (throw `VALIDATION_ERROR` with message "Severity must be minor, moderate, or severe"). Validates `injuryType` is non-empty and ≤ 200 chars. Validates `estimatedRecovery` ≤ 200 chars if provided. Validates `notes` ≤ 2000 chars if provided. Inserts into `playerInjuries` with `teamId`, `playerId`, all fields, `status: "current"`, `clearanceDate: undefined`, `createdBy: user._id`, `createdAt: Date.now()`, `updatedAt: Date.now()`. Returns the new `_id`.
+- [x] **Task 3: Create `logInjury` mutation** (AC: #6, #14, #15)
+  - [x] 3.1: In `packages/backend/convex/players/mutations.ts`, implement `logInjury` mutation: accepts `{ playerId: v.id("players"), date: v.number(), injuryType: v.string(), severity: v.string(), estimatedRecovery: v.optional(v.string()), notes: v.optional(v.string()) }`. Calls `requireRole(ctx, ["admin", "physio"])`. Fetches the player via `ctx.db.get(playerId)`, validates `teamId` matches (throw `NOT_FOUND` if not). Validates `severity` is one of `"minor"`, `"moderate"`, `"severe"` (throw `VALIDATION_ERROR` with message "Severity must be minor, moderate, or severe"). Validates `injuryType` is non-empty and ≤ 200 chars. Validates `estimatedRecovery` ≤ 200 chars if provided. Validates `notes` ≤ 2000 chars if provided. Inserts into `playerInjuries` with `teamId`, `playerId`, all fields, `status: "current"`, `clearanceDate: undefined`, `createdBy: user._id`, `createdAt: Date.now()`, `updatedAt: Date.now()`. Returns the new `_id`.
 
-- [ ] **Task 4: Create `updateInjury` mutation** (AC: #9, #14, #15)
-  - [ ] 4.1: In `packages/backend/convex/players/mutations.ts`, implement `updateInjury` mutation: accepts `{ injuryId: v.id("playerInjuries"), date: v.number(), injuryType: v.string(), severity: v.string(), estimatedRecovery: v.optional(v.string()), notes: v.optional(v.string()), status: v.string(), clearanceDate: v.optional(v.number()) }`. Calls `requireRole(ctx, ["admin", "physio"])`. Fetches the injury entry via `ctx.db.get(injuryId)`, validates it exists and `teamId` matches (throw `NOT_FOUND` if not). Validates `severity` is one of `"minor"`, `"moderate"`, `"severe"`. Validates `status` is one of `"current"`, `"recovered"` (throw `VALIDATION_ERROR` if not). Validates field length limits. Patches the document with all provided fields plus `updatedAt: Date.now()`. Returns the `injuryId`.
+- [x] **Task 4: Create `updateInjury` mutation** (AC: #9, #14, #15)
+  - [x] 4.1: In `packages/backend/convex/players/mutations.ts`, implement `updateInjury` mutation: accepts `{ injuryId: v.id("playerInjuries"), date: v.number(), injuryType: v.string(), severity: v.string(), estimatedRecovery: v.optional(v.string()), notes: v.optional(v.string()), status: v.string(), clearanceDate: v.optional(v.number()) }`. Calls `requireRole(ctx, ["admin", "physio"])`. Fetches the injury entry via `ctx.db.get(injuryId)`, validates it exists and `teamId` matches (throw `NOT_FOUND` if not). Validates `severity` is one of `"minor"`, `"moderate"`, `"severe"`. Validates `status` is one of `"current"`, `"recovered"` (throw `VALIDATION_ERROR` if not). Validates field length limits. Patches the document with all provided fields plus `updatedAt: Date.now()`. Returns the `injuryId`.
 
-- [ ] **Task 5: Create `deleteInjury` mutation** (AC: #11, #14, #15)
-  - [ ] 5.1: In `packages/backend/convex/players/mutations.ts`, implement `deleteInjury` mutation: accepts `{ injuryId: v.id("playerInjuries") }`. Calls `requireRole(ctx, ["admin", "physio"])`. Fetches the injury entry via `ctx.db.get(injuryId)`, validates it exists and `teamId` matches (throw `NOT_FOUND` if not). Calls `ctx.db.delete(injuryId)`.
+- [x] **Task 5: Create `deleteInjury` mutation** (AC: #11, #14, #15)
+  - [x] 5.1: In `packages/backend/convex/players/mutations.ts`, implement `deleteInjury` mutation: accepts `{ injuryId: v.id("playerInjuries") }`. Calls `requireRole(ctx, ["admin", "physio"])`. Fetches the injury entry via `ctx.db.get(injuryId)`, validates it exists and `teamId` matches (throw `NOT_FOUND` if not). Calls `ctx.db.delete(injuryId)`.
 
-- [ ] **Task 6: Create Zod validation schema for injury form** (AC: #5)
-  - [ ] 6.1: Create a shared Zod schema for the injury entry form (co-located with the `InjuryLog` component or in a dedicated file). Schema for create mode: `date: z.number({ required_error: "Date is required" })`, `injuryType: z.string().min(1, "Injury type is required").max(200, "Injury type cannot exceed 200 characters")`, `severity: z.enum(["minor", "moderate", "severe"], { required_error: "Severity is required" })`, `estimatedRecovery: z.string().max(200, "Estimated recovery cannot exceed 200 characters").optional().or(z.literal(""))`, `notes: z.string().max(2000, "Notes cannot exceed 2000 characters").optional()`.
-  - [ ] 6.2: Create an extended schema for edit mode that adds: `status: z.enum(["current", "recovered"])`, `clearanceDate: z.number().optional()`. Add a `.refine()` that warns (not blocks) if status is "recovered" but no clearance date is provided.
+- [x] **Task 6: Create Zod validation schema for injury form** (AC: #5)
+  - [x] 6.1: Create a shared Zod schema for the injury entry form (co-located with the `InjuryLog` component or in a dedicated file). Schema for create mode: `date: z.number({ required_error: "Date is required" })`, `injuryType: z.string().min(1, "Injury type is required").max(200, "Injury type cannot exceed 200 characters")`, `severity: z.enum(["minor", "moderate", "severe"], { required_error: "Severity is required" })`, `estimatedRecovery: z.string().max(200, "Estimated recovery cannot exceed 200 characters").optional().or(z.literal(""))`, `notes: z.string().max(2000, "Notes cannot exceed 2000 characters").optional()`.
+  - [x] 6.2: Create an extended schema for edit mode that adds: `status: z.enum(["current", "recovered"])`, `clearanceDate: z.number().optional()`. Add a `.refine()` that warns (not blocks) if status is "recovered" but no clearance date is provided.
 
-- [ ] **Task 7: Build InjuryLog component** (AC: #1, #3, #4, #13, #16)
-  - [ ] 7.1: Create `apps/web/src/components/players/InjuryLog.tsx`. Accepts `playerId: Id<"players">` prop. (No `canEdit` prop needed — only medical/admin users can even see this component, so all viewers can edit.)
-  - [ ] 7.2: Call `useQuery(api.players.queries.getPlayerInjuries, { playerId })`. Handle loading state with `Skeleton` components. Handle empty state with a centered message ("No injury records") and a medical icon.
-  - [ ] 7.3: Render the current injury summary section above the table: stat cards showing "Current Injuries: {count}" (with red accent if > 0), "Recovered: {count}", "Total Records: {count}". Below the stat cards, if any current injuries exist, list them as compact items: "{injuryType} — {date}". Compute using `useMemo`.
-  - [ ] 7.4: Render the data table with columns: Date (formatted via `date-fns` `format(new Date(date), "dd MMM yyyy")`), Injury Type, Severity (badge — `minor` = yellow variant, `moderate` = orange variant, `severe` = red/destructive variant), Status (badge — `current` = red/destructive, `recovered` = green/success), Est. Recovery (string or "—"), Clearance Date (formatted date or "—"), Actions column with a `DropdownMenu` containing "Edit" and "Delete" options.
-  - [ ] 7.5: Render a "Log Injury" button above the table (aligned right, next to or above the summary section).
+- [x] **Task 7: Build InjuryLog component** (AC: #1, #3, #4, #13, #16)
+  - [x] 7.1: Create `apps/web/src/components/players/InjuryLog.tsx`. Accepts `playerId: Id<"players">` prop. (No `canEdit` prop needed — only medical/admin users can even see this component, so all viewers can edit.)
+  - [x] 7.2: Call `useQuery(api.players.queries.getPlayerInjuries, { playerId })`. Handle loading state with `Skeleton` components. Handle empty state with a centered message ("No injury records") and a medical icon.
+  - [x] 7.3: Render the current injury summary section above the table: stat cards showing "Current Injuries: {count}" (with red accent if > 0), "Recovered: {count}", "Total Records: {count}". Below the stat cards, if any current injuries exist, list them as compact items: "{injuryType} — {date}". Compute using `useMemo`.
+  - [x] 7.4: Render the data table with columns: Date (formatted via `date-fns` `format(new Date(date), "dd MMM yyyy")`), Injury Type, Severity (badge — `minor` = yellow variant, `moderate` = orange variant, `severe` = red/destructive variant), Status (badge — `current` = red/destructive, `recovered` = green/success), Est. Recovery (string or "—"), Clearance Date (formatted date or "—"), Actions column with a `DropdownMenu` containing "Edit" and "Delete" options.
+  - [x] 7.5: Render a "Log Injury" button above the table (aligned right, next to or above the summary section).
 
-- [ ] **Task 8: Build InjuryFormDialog component** (AC: #5, #7, #8)
-  - [ ] 8.1: Create `apps/web/src/components/players/InjuryFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingEntry?: PlayerInjury` (for edit mode), `open: boolean`, `onClose: () => void`.
-  - [ ] 8.2: Use `react-hook-form` with `zodResolver` and the appropriate Zod schema (create schema for new entries, edit schema for existing). In edit mode, pre-populate `defaultValues` from `existingEntry`. In create mode, default `date` to today's timestamp.
-  - [ ] 8.3: Render the form inside a shadcn `Dialog` (or `Sheet`) with title "Log Injury" (create mode) or "Update Injury" (edit mode).
-  - [ ] 8.4: Create mode form fields: Date picker for `date` (using `react-day-picker` calendar inside a `Popover`, matching date picker patterns from Story 5.3/5.4), `Input` for injury type (text, required), `Select` for severity (options: "Minor", "Moderate", "Severe" — values: "minor", "moderate", "severe"), `Input` for estimated recovery (optional, text), `Textarea` for notes (optional). Display inline validation errors.
-  - [ ] 8.5: Edit mode form fields: Same as create mode PLUS `Select` for status (options: "Current", "Recovered" — values: "current", "recovered"), Date picker for clearance date (optional — visually enabled/highlighted when status is "Recovered"). When status changes to "recovered", prompt or auto-suggest today's date for clearance if not already set.
-  - [ ] 8.6: Submit button calls `logInjury` mutation (create mode) or `updateInjury` mutation (edit mode). On success: show toast ("Injury logged" or "Injury updated"), close the dialog. On error: catch `ConvexError` and display via toast.
-  - [ ] 8.7: "Cancel" button closes the dialog without saving.
+- [x] **Task 8: Build InjuryFormDialog component** (AC: #5, #7, #8)
+  - [x] 8.1: Create `apps/web/src/components/players/InjuryFormDialog.tsx`. Accepts props: `playerId: Id<"players">`, `existingEntry?: PlayerInjury` (for edit mode), `open: boolean`, `onClose: () => void`.
+  - [x] 8.2: Use `react-hook-form` with `zodResolver` and the appropriate Zod schema (create schema for new entries, edit schema for existing). In edit mode, pre-populate `defaultValues` from `existingEntry`. In create mode, default `date` to today's timestamp.
+  - [x] 8.3: Render the form inside a shadcn `Dialog` (or `Sheet`) with title "Log Injury" (create mode) or "Update Injury" (edit mode).
+  - [x] 8.4: Create mode form fields: Date picker for `date` (using `react-day-picker` calendar inside a `Popover`, matching date picker patterns from Story 5.3/5.4), `Input` for injury type (text, required), `Select` for severity (options: "Minor", "Moderate", "Severe" — values: "minor", "moderate", "severe"), `Input` for estimated recovery (optional, text), `Textarea` for notes (optional). Display inline validation errors.
+  - [x] 8.5: Edit mode form fields: Same as create mode PLUS `Select` for status (options: "Current", "Recovered" — values: "current", "recovered"), Date picker for clearance date (optional — visually enabled/highlighted when status is "Recovered"). When status changes to "recovered", prompt or auto-suggest today's date for clearance if not already set.
+  - [x] 8.6: Submit button calls `logInjury` mutation (create mode) or `updateInjury` mutation (edit mode). On success: show toast ("Injury logged" or "Injury updated"), close the dialog. On error: catch `ConvexError` and display via toast.
+  - [x] 8.7: "Cancel" button closes the dialog without saving.
 
-- [ ] **Task 9: Build DeleteInjuryDialog component** (AC: #10)
-  - [ ] 9.1: Create `apps/web/src/components/players/DeleteInjuryDialog.tsx`. Accepts props: `injuryId: Id<"playerInjuries">`, `date: number`, `open: boolean`, `onClose: () => void`.
-  - [ ] 9.2: Render a shadcn `AlertDialog` with title "Delete Injury Record" and description "Delete injury record from {formatted date}? This action cannot be undone."
-  - [ ] 9.3: "Delete" button (destructive variant) calls `deleteInjury` mutation. On success: show toast ("Injury record deleted"), close the dialog. On error: catch `ConvexError` and display via toast.
-  - [ ] 9.4: "Cancel" button closes the dialog.
+- [x] **Task 9: Build DeleteInjuryDialog component** (AC: #10)
+  - [x] 9.1: Create `apps/web/src/components/players/DeleteInjuryDialog.tsx`. Accepts props: `injuryId: Id<"playerInjuries">`, `date: number`, `open: boolean`, `onClose: () => void`.
+  - [x] 9.2: Render a shadcn `AlertDialog` with title "Delete Injury Record" and description "Delete injury record from {formatted date}? This action cannot be undone."
+  - [x] 9.3: "Delete" button (destructive variant) calls `deleteInjury` mutation. On success: show toast ("Injury record deleted"), close the dialog. On error: catch `ConvexError` and display via toast.
+  - [x] 9.4: "Cancel" button closes the dialog.
 
-- [ ] **Task 10: Integrate InjuryLog into the Player Profile page** (AC: #1)
-  - [ ] 10.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, replace the "Injuries" tab placeholder content with the `InjuryLog` component. Pass `playerId` from the profile context. The Injuries tab is already conditionally rendered based on `tabAccess.showInjuries` (from Story 5.1).
-  - [ ] 10.2: Ensure the Injuries tab correctly receives the player ID from the parent page component and passes it down.
+- [x] **Task 10: Integrate InjuryLog into the Player Profile page** (AC: #1)
+  - [x] 10.1: In `apps/web/src/components/players/PlayerProfileTabs.tsx`, replace the "Injuries" tab placeholder content with the `InjuryLog` component. Pass `playerId` from the profile context. The Injuries tab is already conditionally rendered based on `tabAccess.showInjuries` (from Story 5.1).
+  - [x] 10.2: Ensure the Injuries tab correctly receives the player ID from the parent page component and passes it down.
 
-- [ ] **Task 11: Add injury status indicator to PlayerTable and PlayerProfileHeader** (AC: #12)
-  - [ ] 11.1: In `apps/web/src/components/players/PlayerTable.tsx`, for each player row call `useQuery(api.players.queries.getPlayerInjuryStatus, { playerId: player._id })`. If `hasCurrentInjury` is `true`, render a small injury indicator icon next to the player name or status badge. Use a Lucide icon such as `HeartPulse`, `Cross`, or `Activity` in red/destructive color. Wrap in a `Tooltip` with text "Currently injured".
-  - [ ] 11.2: **Performance consideration:** If the player list can have many rows and per-row queries are a concern, consider an alternative: create a batch query `getPlayersInjuryStatuses` that accepts `{ playerIds: Id<"players">[] }` and returns a map of `{ [playerId]: boolean }`. Call it once from the PlayerTable with all visible player IDs. This avoids N+1 queries. Choose whichever approach fits the current codebase pattern.
-  - [ ] 11.3: In `apps/web/src/components/players/PlayerProfileHeader.tsx`, also call `getPlayerInjuryStatus` and display the injury indicator icon next to the player name if currently injured. This is visible to all roles as a non-detailed status signal.
+- [x] **Task 11: Add injury status indicator to PlayerTable and PlayerProfileHeader** (AC: #12)
+  - [x] 11.1: In `apps/web/src/components/players/PlayerTable.tsx`, for each player row call `useQuery(api.players.queries.getPlayerInjuryStatus, { playerId: player._id })`. If `hasCurrentInjury` is `true`, render a small injury indicator icon next to the player name or status badge. Use a Lucide icon such as `HeartPulse`, `Cross`, or `Activity` in red/destructive color. Wrap in a `Tooltip` with text "Currently injured".
+  - [x] 11.2: **Performance consideration:** If the player list can have many rows and per-row queries are a concern, consider an alternative: create a batch query `getPlayersInjuryStatuses` that accepts `{ playerIds: Id<"players">[] }` and returns a map of `{ [playerId]: boolean }`. Call it once from the PlayerTable with all visible player IDs. This avoids N+1 queries. Choose whichever approach fits the current codebase pattern.
+  - [x] 11.3: In `apps/web/src/components/players/PlayerProfileHeader.tsx`, also call `getPlayerInjuryStatus` and display the injury indicator icon next to the player name if currently injured. This is visible to all roles as a non-detailed status signal.
 
-- [ ] **Task 12: Write backend unit tests** (AC: #2, #6, #9, #11, #12, #14, #15)
-  - [ ] 12.1: Create `packages/backend/convex/players/__tests__/injuries.test.ts` using `@convex-dev/test` + `vitest`.
-  - [ ] 12.2: Test `getPlayerInjuries`: (a) admin can retrieve injury entries for a player on their team sorted by date descending, (b) physio can retrieve injury entries, (c) coach gets `NOT_AUTHORIZED` error, (d) player gets `NOT_AUTHORIZED` error, (e) analyst gets `NOT_AUTHORIZED` error, (f) returns empty array when no entries exist, (g) does not return entries for a player on a different team (throws `NOT_FOUND`), (h) unauthenticated user throws error.
-  - [ ] 12.3: Test `getPlayerInjuryStatus`: (a) any authenticated team member can call it and gets `{ hasCurrentInjury: boolean }`, (b) returns `true` when a "current" injury exists, (c) returns `false` when only "recovered" injuries exist, (d) returns `false` when no injuries exist, (e) does not return any injury detail fields (response shape is exactly `{ hasCurrentInjury: boolean }`), (f) wrong team player throws `NOT_FOUND`.
-  - [ ] 12.4: Test `logInjury`: (a) admin can log injury for a player on their team — returns a valid ID, (b) physio can log injury — returns a valid ID, (c) coach gets `NOT_AUTHORIZED`, (d) player gets `NOT_AUTHORIZED`, (e) wrong team player throws `NOT_FOUND`, (f) invalid severity value throws `VALIDATION_ERROR`, (g) empty injuryType throws `VALIDATION_ERROR`, (h) injuryType > 200 chars throws `VALIDATION_ERROR`, (i) notes > 2000 chars throws `VALIDATION_ERROR`, (j) estimatedRecovery > 200 chars throws `VALIDATION_ERROR`, (k) created entry has `status: "current"`, `clearanceDate: undefined`, correct `createdBy`, `createdAt`, `teamId`.
-  - [ ] 12.5: Test `updateInjury`: (a) admin can update an existing injury entry, (b) physio can update an existing injury entry, (c) coach gets `NOT_AUTHORIZED`, (d) updating entry from different team throws `NOT_FOUND`, (e) can change status from "current" to "recovered" with clearanceDate, (f) can change status from "recovered" back to "current" (clearanceDate cleared or kept), (g) invalid status value throws `VALIDATION_ERROR`, (h) `updatedAt` is refreshed on update, (i) non-existent injuryId throws `NOT_FOUND`, (j) invalid severity throws `VALIDATION_ERROR`.
-  - [ ] 12.6: Test `deleteInjury`: (a) admin can delete an injury entry, (b) physio can delete an injury entry, (c) coach gets `NOT_AUTHORIZED`, (d) deleting entry from different team throws `NOT_FOUND`, (e) deleted entry no longer appears in `getPlayerInjuries` results, (f) deleted entry makes `getPlayerInjuryStatus` return `false` if it was the only "current" injury, (g) non-existent injuryId throws `NOT_FOUND`.
+- [x] **Task 12: Write backend unit tests** (AC: #2, #6, #9, #11, #12, #14, #15)
+  - [x] 12.1: Create `packages/backend/convex/players/__tests__/injuries.test.ts` using `@convex-dev/test` + `vitest`.
+  - [x] 12.2: Test `getPlayerInjuries`: (a) admin can retrieve injury entries for a player on their team sorted by date descending, (b) physio can retrieve injury entries, (c) coach gets `NOT_AUTHORIZED` error, (d) player gets `NOT_AUTHORIZED` error, (e) analyst gets `NOT_AUTHORIZED` error, (f) returns empty array when no entries exist, (g) does not return entries for a player on a different team (throws `NOT_FOUND`), (h) unauthenticated user throws error.
+  - [x] 12.3: Test `getPlayerInjuryStatus`: (a) any authenticated team member can call it and gets `{ hasCurrentInjury: boolean }`, (b) returns `true` when a "current" injury exists, (c) returns `false` when only "recovered" injuries exist, (d) returns `false` when no injuries exist, (e) does not return any injury detail fields (response shape is exactly `{ hasCurrentInjury: boolean }`), (f) wrong team player throws `NOT_FOUND`.
+  - [x] 12.4: Test `logInjury`: (a) admin can log injury for a player on their team — returns a valid ID, (b) physio can log injury — returns a valid ID, (c) coach gets `NOT_AUTHORIZED`, (d) player gets `NOT_AUTHORIZED`, (e) wrong team player throws `NOT_FOUND`, (f) invalid severity value throws `VALIDATION_ERROR`, (g) empty injuryType throws `VALIDATION_ERROR`, (h) injuryType > 200 chars throws `VALIDATION_ERROR`, (i) notes > 2000 chars throws `VALIDATION_ERROR`, (j) estimatedRecovery > 200 chars throws `VALIDATION_ERROR`, (k) created entry has `status: "current"`, `clearanceDate: undefined`, correct `createdBy`, `createdAt`, `teamId`.
+  - [x] 12.5: Test `updateInjury`: (a) admin can update an existing injury entry, (b) physio can update an existing injury entry, (c) coach gets `NOT_AUTHORIZED`, (d) updating entry from different team throws `NOT_FOUND`, (e) can change status from "current" to "recovered" with clearanceDate, (f) can change status from "recovered" back to "current" (clearanceDate cleared or kept), (g) invalid status value throws `VALIDATION_ERROR`, (h) `updatedAt` is refreshed on update, (i) non-existent injuryId throws `NOT_FOUND`, (j) invalid severity throws `VALIDATION_ERROR`.
+  - [x] 12.6: Test `deleteInjury`: (a) admin can delete an injury entry, (b) physio can delete an injury entry, (c) coach gets `NOT_AUTHORIZED`, (d) deleting entry from different team throws `NOT_FOUND`, (e) deleted entry no longer appears in `getPlayerInjuries` results, (f) deleted entry makes `getPlayerInjuryStatus` return `false` if it was the only "current" injury, (g) non-existent injuryId throws `NOT_FOUND`.
 
-- [ ] **Task 13: Final validation** (AC: all)
-  - [ ] 13.1: Run `pnpm typecheck` — must pass with zero errors.
-  - [ ] 13.2: Run `pnpm lint` — must pass with zero errors.
-  - [ ] 13.3: Run backend tests (`vitest run` in packages/backend) — all new tests pass, all existing tests still pass.
+- [x] **Task 13: Final validation** (AC: all)
+  - [x] 13.1: Run `pnpm typecheck` — must pass with zero errors.
+  - [x] 13.2: Run `pnpm lint` — must pass with zero errors.
+  - [x] 13.3: Run backend tests (`vitest run` in packages/backend) — all new tests pass, all existing tests still pass.
   - [ ] 13.4: Start the dev server — log in as admin. Navigate to `/players/[playerId]`, verify "Injuries" tab is visible. Click it — verify the empty state ("No injury records").
   - [ ] 13.5: Click "Log Injury" — verify the form dialog opens with all fields and correct defaults (date = today, severity select, etc.).
   - [ ] 13.6: Submit with valid data (injuryType="Hamstring strain", severity="moderate", estimatedRecovery="4-6 weeks", notes="Occurred during training") — verify entry appears in the table with correct formatting and severity/status badges. Verify success toast.
@@ -468,10 +468,36 @@ const injuryStatus = useQuery(api.players.queries.getPlayerInjuryStatus, { playe
 
 ### Agent Model Used
 
-(to be filled during implementation)
+Claude Opus 4.6 (Amelia, Senior Software Engineer)
 
 ### Debug Log References
 
+- Zod v4 compatibility: `required_error` param not supported in Zod v4 `z.number()` and `z.enum()`. Fixed to use `message` param instead (matching existing `fitnessFormSchema.ts` pattern).
+- `IconHeartPulse` (Lucide icon) not available in `@tabler/icons-react`. Replaced with `IconActivityHeartbeat`.
+- `useForm` resolver type mismatch when conditionally using create vs edit schema. Fixed by always using `injuryEditSchema` (superset) as the form type and resolver, with sane defaults for status/clearanceDate in create mode.
+- Chose batch query `getPlayersInjuryStatuses` (Task 11.2) for PlayerTable to avoid N+1 per-row queries. Uses `by_teamId` index on `playerInjuries` to fetch all current injuries in a single query.
+
 ### Completion Notes List
 
+- All 42 new injury tests pass (injuries.test.ts)
+- All 419 existing backend tests still pass (20 test files, 0 regressions)
+- TypeScript compilation passes for both `packages/backend` and `apps/web`
+- ESLint passes for all changed web files
+- `getPlayerInjuries` uses `requireRole(["admin", "physio"])` — role-gated reads (AC #15, NFR7)
+- `getPlayerInjuryStatus` uses `requireAuth()` and returns ONLY `{ hasCurrentInjury: boolean }` — no detail leakage (AC #12, #15)
+- Injury tab visibility controlled by existing `tabAccess.showInjuries` from Story 5.1 (AC #1)
+- All mutations use `requireRole(["admin", "physio"])` with `teamId` scoping (AC #14, #15)
+- Real-time updates via Convex `useQuery` subscriptions (AC #16)
+
 ### File List
+
+- `packages/backend/convex/players/queries.ts` — Modified: added `getPlayerInjuries`, `getPlayerInjuryStatus`, `getPlayersInjuryStatuses` queries
+- `packages/backend/convex/players/mutations.ts` — Modified: added `logInjury`, `updateInjury`, `deleteInjury` mutations + `validateInjuryFields` helper
+- `apps/web/src/components/players/InjuryLog.tsx` — Created: injury data table + summary section
+- `apps/web/src/components/players/InjuryFormDialog.tsx` — Created: log/edit injury form dialog
+- `apps/web/src/components/players/DeleteInjuryDialog.tsx` — Created: injury deletion confirmation dialog
+- `apps/web/src/components/players/injuryFormSchema.ts` — Created: Zod schemas for create and edit forms
+- `apps/web/src/components/players/PlayerProfileTabs.tsx` — Modified: replaced Injuries tab placeholder with InjuryLog component
+- `apps/web/src/components/players/PlayerTable.tsx` — Modified: added batch injury status query + indicator icon
+- `apps/web/src/components/players/PlayerProfileHeader.tsx` — Modified: added injury status indicator icon
+- `packages/backend/convex/players/__tests__/injuries.test.ts` — Created: 42 unit tests for injury CRUD operations

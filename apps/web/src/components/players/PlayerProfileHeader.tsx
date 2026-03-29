@@ -2,12 +2,21 @@
 
 import React from "react";
 import Link from "next/link";
-import { IconArrowLeft, IconMail } from "@tabler/icons-react";
+import { useQuery } from "convex/react";
+import { api } from "@packages/backend/convex/_generated/api";
+import type { Id } from "@packages/backend/convex/_generated/dataModel";
+import { IconArrowLeft, IconMail, IconActivityHeartbeat } from "@tabler/icons-react";
 import type { PlayerStatus } from "@packages/shared/players";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PlayerStatusBadge } from "@/components/shared/PlayerStatusBadge";
 
 export interface PlayerProfileData {
@@ -41,6 +50,12 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
   showInviteButton,
   onInviteClick,
 }: PlayerProfileHeaderProps) {
+  // Story 5.5 AC #12: Injury status indicator for all roles
+  const injuryStatus = useQuery(
+    api.players.queries.getPlayerInjuryStatus,
+    { playerId: player._id as Id<"players"> }
+  );
+
   return (
     <div className="space-y-4">
       <Button variant="ghost" size="sm" asChild>
@@ -69,6 +84,16 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
               <h1 className="text-2xl font-semibold">
                 {player.firstName} {player.lastName}
               </h1>
+              {injuryStatus?.hasCurrentInjury && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <IconActivityHeartbeat className="size-5 text-destructive" />
+                    </TooltipTrigger>
+                    <TooltipContent>Currently injured</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               {inviteStatus === "pending" && (
                 <Badge variant="secondary" className="text-xs">
                   Invited — awaiting response

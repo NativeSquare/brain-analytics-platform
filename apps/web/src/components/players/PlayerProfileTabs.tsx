@@ -25,6 +25,7 @@ import {
 
 import { StatsLog } from "./StatsLog";
 import { FitnessLog } from "./FitnessLog";
+import { InjuryLog } from "./InjuryLog";
 
 interface TabAccess {
   showInjuries: boolean;
@@ -170,7 +171,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
 
       {tabAccess.showInjuries && (
         <TabsContent value="injuries">
-          <PlaceholderTab icon={IconFirstAidKit} name="Injuries" />
+          <InjuryLog playerId={playerId} />
         </TabsContent>
       )}
 

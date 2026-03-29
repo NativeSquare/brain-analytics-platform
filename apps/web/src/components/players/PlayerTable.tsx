@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import type { PlayerStatus } from "@packages/shared/players";
+import { IconActivityHeartbeat } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PlayerStatusBadge } from "@/components/shared/PlayerStatusBadge";
 
 export interface PlayerSummary {
@@ -41,9 +50,11 @@ function getInitials(firstName: string, lastName: string): string {
 const PlayerRow = React.memo(function PlayerRow({
   player,
   onPlayerClick,
+  hasCurrentInjury,
 }: {
   player: PlayerSummary;
   onPlayerClick: (playerId: Id<"players">) => void;
+  hasCurrentInjury?: boolean;
 }) {
   const handleClick = useCallback(() => {
     onPlayerClick(player._id);
@@ -72,6 +83,14 @@ const PlayerRow = React.memo(function PlayerRow({
               Invited
             </Badge>
           )}
+          {hasCurrentInjury && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <IconActivityHeartbeat className="size-4 text-destructive" />
+              </TooltipTrigger>
+              <TooltipContent>Currently injured</TooltipContent>
+            </Tooltip>
+          )}
         </span>
       </TableCell>
       <TableCell>{player.position}</TableCell>
@@ -89,27 +108,41 @@ const PlayerRow = React.memo(function PlayerRow({
 });
 
 export function PlayerTable({ players, onPlayerClick }: PlayerTableProps) {
+  // Story 5.5 AC #12, Task 11.2: Batch query to avoid N+1 per-row queries
+  const playerIds = useMemo(
+    () => players.map((p) => p._id),
+    [players]
+  );
+
+  const injuryStatuses = useQuery(
+    api.players.queries.getPlayersInjuryStatuses,
+    playerIds.length > 0 ? { playerIds } : "skip"
+  );
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-12"></TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead>Position</TableHead>
-          <TableHead className="text-center">#</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Nationality</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {players.map((player) => (
-          <PlayerRow
-            key={player._id}
-            player={player}
-            onPlayerClick={onPlayerClick}
-          />
-        ))}
-      </TableBody>
-    </Table>
+    <TooltipProvider>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12"></TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Position</TableHead>
+            <TableHead className="text-center">#</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Nationality</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {players.map((player) => (
+            <PlayerRow
+              key={player._id}
+              player={player}
+              onPlayerClick={onPlayerClick}
+              hasCurrentInjury={injuryStatuses?.[player._id] ?? false}
+            />
+          ))}
+        </TableBody>
+      </Table>
+    </TooltipProvider>
   );
 }

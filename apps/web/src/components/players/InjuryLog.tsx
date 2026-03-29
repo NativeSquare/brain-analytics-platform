@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id, Doc } from "@packages/backend/convex/_generated/dataModel";
@@ -65,12 +65,115 @@ const statusClasses: Record<string, string> = {
   recovered: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
 };
 
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// ---------------------------------------------------------------------------
+// Memoized table row to prevent re-renders when sibling rows change.
+// ---------------------------------------------------------------------------
+
+const InjuryRow = React.memo(function InjuryRow({
+  entry,
+  onEdit,
+  onDelete,
+}: {
+  entry: PlayerInjury;
+  onEdit: (entry: PlayerInjury) => void;
+  onDelete: (entry: PlayerInjury) => void;
+}) {
+  const handleEdit = useCallback(() => onEdit(entry), [onEdit, entry]);
+  const handleDelete = useCallback(() => onDelete(entry), [onDelete, entry]);
+
+  return (
+    <TableRow>
+      <TableCell>
+        {format(new Date(entry.date), "dd MMM yyyy")}
+      </TableCell>
+      <TableCell>
+        <NotesCell text={entry.injuryType} maxLen={40} />
+      </TableCell>
+      <TableCell>
+        <Badge
+          variant="outline"
+          className={severityClasses[entry.severity] ?? ""}
+        >
+          {capitalize(entry.severity)}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <Badge
+          variant={statusVariant[entry.status] ?? "default"}
+          className={statusClasses[entry.status] ?? ""}
+        >
+          {capitalize(entry.status)}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        {entry.estimatedRecovery || "\u2014"}
+      </TableCell>
+      <TableCell>
+        {entry.clearanceDate
+          ? format(new Date(entry.clearanceDate), "dd MMM yyyy")
+          : "\u2014"}
+      </TableCell>
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon-sm">
+              <IconDots className="size-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleEdit}>
+              <IconPencil className="mr-2 size-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={handleDelete}
+            >
+              <IconTrash className="mr-2 size-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+});
+
 export function InjuryLog({ playerId }: InjuryLogProps) {
   const entries = useQuery(api.players.queries.getPlayerInjuries, { playerId });
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<PlayerInjury | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<PlayerInjury | undefined>(undefined);
+
+  // Memoized callbacks to avoid re-creating on every render
+  const handleOpenCreate = useCallback(() => {
+    setEditingEntry(undefined);
+    setFormOpen(true);
+  }, []);
+
+  const handleEdit = useCallback((entry: PlayerInjury) => {
+    setEditingEntry(entry);
+    setFormOpen(true);
+  }, []);
+
+  const handleDelete = useCallback((entry: PlayerInjury) => {
+    setDeleteTarget(entry);
+  }, []);
+
+  const handleFormClose = useCallback(() => {
+    setFormOpen(false);
+    setEditingEntry(undefined);
+  }, []);
+
+  const handleDeleteClose = useCallback(() => {
+    setDeleteTarget(undefined);
+  }, []);
 
   // AC #13: Current injury summary computation
   const summary = useMemo(() => {
@@ -106,7 +209,7 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
     return (
       <div className="space-y-4">
         <div className="flex justify-end">
-          <Button onClick={() => setFormOpen(true)}>
+          <Button onClick={handleOpenCreate}>
             <IconPlus className="mr-1.5 size-4" />
             Log Injury
           </Button>
@@ -121,7 +224,7 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
         <InjuryFormDialog
           playerId={playerId}
           open={formOpen}
-          onClose={() => setFormOpen(false)}
+          onClose={handleFormClose}
         />
       </div>
     );
@@ -162,10 +265,7 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
           </div>
         )}
         <Button
-          onClick={() => {
-            setEditingEntry(undefined);
-            setFormOpen(true);
-          }}
+          onClick={handleOpenCreate}
           className="shrink-0"
         >
           <IconPlus className="mr-1.5 size-4" />
@@ -191,66 +291,12 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
               </TableHeader>
               <TableBody>
                 {entries.map((entry) => (
-                  <TableRow key={entry._id}>
-                    <TableCell>
-                      {format(new Date(entry.date), "dd MMM yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <NotesCell text={entry.injuryType} maxLen={40} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={severityClasses[entry.severity] ?? ""}
-                      >
-                        {capitalize(entry.severity)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={statusVariant[entry.status] ?? "default"}
-                        className={statusClasses[entry.status] ?? ""}
-                      >
-                        {capitalize(entry.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {entry.estimatedRecovery || "—"}
-                    </TableCell>
-                    <TableCell>
-                      {entry.clearanceDate
-                        ? format(new Date(entry.clearanceDate), "dd MMM yyyy")
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm">
-                            <IconDots className="size-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditingEntry(entry);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <IconPencil className="mr-2 size-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setDeleteTarget(entry)}
-                          >
-                            <IconTrash className="mr-2 size-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                  <InjuryRow
+                    key={entry._id}
+                    entry={entry}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -263,17 +309,14 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
         playerId={playerId}
         existingEntry={editingEntry}
         open={formOpen}
-        onClose={() => {
-          setFormOpen(false);
-          setEditingEntry(undefined);
-        }}
+        onClose={handleFormClose}
       />
       {deleteTarget && (
         <DeleteInjuryDialog
           injuryId={deleteTarget._id}
           date={deleteTarget.date}
           open={!!deleteTarget}
-          onClose={() => setDeleteTarget(undefined)}
+          onClose={handleDeleteClose}
         />
       )}
     </div>
@@ -313,15 +356,11 @@ function NotesCell({ text, maxLen }: { text: string; maxLen: number }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="cursor-help">{text.slice(0, maxLen)}…</span>
+        <span className="cursor-help">{text.slice(0, maxLen)}\u2026</span>
       </TooltipTrigger>
       <TooltipContent className="max-w-sm">
         <p>{text}</p>
       </TooltipContent>
     </Tooltip>
   );
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

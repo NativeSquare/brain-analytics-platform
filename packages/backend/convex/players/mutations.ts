@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import { mutation } from "../_generated/server";
 import { requireRole } from "../lib/auth";
+import { INJURY_SEVERITIES, INJURY_STATUSES } from "@packages/shared/players";
 
 /**
  * Valid player positions — must match shared/players.ts PLAYER_POSITIONS.
@@ -185,8 +186,8 @@ function validateInjuryFields(args: {
     });
   }
 
-  // Validate severity
-  if (!VALID_SEVERITIES.includes(args.severity as any)) {
+  // Validate severity (using shared constants)
+  if (!(INJURY_SEVERITIES as readonly string[]).includes(args.severity)) {
     throw new ConvexError({
       code: "VALIDATION_ERROR" as const,
       message: "Severity must be minor, moderate, or severe",
@@ -209,17 +210,14 @@ function validateInjuryFields(args: {
     });
   }
 
-  // Validate status if provided
-  if (args.status !== undefined && !VALID_STATUSES.includes(args.status as any)) {
+  // Validate status if provided (using shared constants)
+  if (args.status !== undefined && !(INJURY_STATUSES as readonly string[]).includes(args.status)) {
     throw new ConvexError({
       code: "VALIDATION_ERROR" as const,
       message: "Status must be current or recovered",
     });
   }
 }
-
-const VALID_SEVERITIES = ["minor", "moderate", "severe"] as const;
-const VALID_STATUSES = ["current", "recovered"] as const;
 
 // ---------------------------------------------------------------------------
 // Injury CRUD mutations (Story 5.5 AC #6, #9, #11, #14, #15)

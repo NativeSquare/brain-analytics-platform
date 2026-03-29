@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { INJURY_SEVERITIES, INJURY_STATUSES } from "@packages/shared/players";
 
 /**
  * Zod schema for the "Log Injury" create form.
@@ -6,6 +7,8 @@ import * as z from "zod";
  * Story 5.5 AC #5: date (required), injuryType (required, max 200),
  * severity (required enum), estimatedRecovery (optional, max 200),
  * notes (optional, max 2000).
+ *
+ * Uses shared constants from @packages/shared/players per Dev Notes.
  */
 export const injuryCreateSchema = z.object({
   date: z.number({ message: "Date is required" }),
@@ -13,7 +16,7 @@ export const injuryCreateSchema = z.object({
     .string()
     .min(1, "Injury type is required")
     .max(200, "Injury type cannot exceed 200 characters"),
-  severity: z.enum(["minor", "moderate", "severe"] as const, {
+  severity: z.enum(INJURY_SEVERITIES, {
     message: "Severity is required",
   }),
   estimatedRecovery: z
@@ -33,9 +36,10 @@ export type InjuryCreateFormData = z.infer<typeof injuryCreateSchema>;
  * Extended Zod schema for the "Update Injury" edit form.
  *
  * Story 5.5 AC #8: Adds status (current/recovered) and optional clearanceDate.
+ * Uses shared constants from @packages/shared/players per Dev Notes.
  */
 export const injuryEditSchema = injuryCreateSchema.extend({
-  status: z.enum(["current", "recovered"] as const, {
+  status: z.enum(INJURY_STATUSES, {
     message: "Status is required",
   }),
   clearanceDate: z.number().optional(),

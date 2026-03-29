@@ -267,6 +267,37 @@ export const getPlayersInjuryStatuses = query({
 });
 
 /**
+ * Get the authenticated player's own profile.
+ *
+ * Story 5.6 AC #7: Derives player from authenticated user's userId.
+ * Returns null for users with no linked player profile.
+ * Story 5.6 AC #14: Team-scoped defensive check.
+ */
+export const getOwnPlayerProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .first();
+
+    if (!player) return null;
+
+    if (player.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
+    }
+
+    const photoUrl = player.photo
+      ? await ctx.storage.getUrl(player.photo as Parameters<typeof ctx.storage.getUrl>[0])
+      : null;
+
+    return { ...player, photoUrl };
+  },
+});
+
+/**
  * Get tab access permissions for a player profile.
  *
  * Controls conditional tab visibility based on user role:

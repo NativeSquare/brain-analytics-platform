@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { format } from "date-fns";
 import {
   IconUser,
@@ -8,6 +9,7 @@ import {
   IconFirstAidKit,
   IconFileText,
   IconLink,
+  IconPencil,
 } from "@tabler/icons-react";
 import {
   PLAYER_STATUS_LABELS,
@@ -15,6 +17,7 @@ import {
 } from "@packages/shared/players";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Tabs,
@@ -26,6 +29,7 @@ import {
 import { StatsLog } from "./StatsLog";
 import { FitnessLog } from "./FitnessLog";
 import { InjuryLog } from "./InjuryLog";
+import { ContactInfoEditDialog } from "./ContactInfoEditDialog";
 
 interface TabAccess {
   showInjuries: boolean;
@@ -80,6 +84,13 @@ function PlaceholderTab({ icon: Icon, name }: { icon: React.ComponentType<{ clas
 }
 
 export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEditFitness = false }: PlayerProfileTabsProps) {
+  // Story 5.6 AC #9: Self-service contact info edit dialog state
+  const [contactEditOpen, setContactEditOpen] = React.useState(false);
+
+  // Story 5.6 AC #9: Player self-service shows "Edit Contact Info"
+  // Story 5.6 AC #12: Admin sees full "Edit Profile" (not implemented here — deferred to Story 5.2 ProfileForm)
+  const showSelfServiceEdit = tabAccess.isSelf && !isAdmin;
+
   return (
     <Tabs defaultValue="bio">
       <TabsList variant="line">
@@ -116,6 +127,20 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
       <TabsContent value="bio">
         <Card>
           <CardContent className="pt-6">
+            {/* Story 5.6 AC #9: Self-service edit button for players */}
+            {showSelfServiceEdit && (
+              <div className="mb-4 flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContactEditOpen(true)}
+                >
+                  <IconPencil className="mr-1 size-4" />
+                  Edit Contact Info
+                </Button>
+              </div>
+            )}
+
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               <BioField
                 label="Date of Birth"
@@ -159,6 +184,15 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
             </dl>
           </CardContent>
         </Card>
+
+        {/* Story 5.6 AC #9, #11: Self-service contact info edit dialog */}
+        {showSelfServiceEdit && (
+          <ContactInfoEditDialog
+            player={player}
+            open={contactEditOpen}
+            onClose={() => setContactEditOpen(false)}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="performance">

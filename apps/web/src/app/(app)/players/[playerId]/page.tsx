@@ -80,6 +80,7 @@ export default function PlayerProfilePage({ params }: PlayerProfilePageProps) {
         inviteStatus={inviteStatus}
         showInviteButton={!!showInviteButton}
         onInviteClick={handleInviteClick}
+        isAdmin={isAdmin}
       />
       <PlayerProfileTabs tabAccess={tabAccess} player={player} playerId={typedPlayerId} isAdmin={isAdmin} canEditFitness={currentUser?.role === "admin" || currentUser?.role === "physio"} />
 

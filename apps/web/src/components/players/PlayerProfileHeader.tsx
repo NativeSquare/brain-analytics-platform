@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
-import { IconArrowLeft, IconMail, IconActivityHeartbeat } from "@tabler/icons-react";
+import { IconArrowLeft, IconMail, IconActivityHeartbeat, IconSwitchHorizontal } from "@tabler/icons-react";
 import type { PlayerStatus } from "@packages/shared/players";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PlayerStatusBadge } from "@/components/shared/PlayerStatusBadge";
+import { StatusChangeDialog } from "./StatusChangeDialog";
 
 export interface PlayerProfileData {
   _id: string;
@@ -38,6 +39,8 @@ interface PlayerProfileHeaderProps {
   showInviteButton?: boolean;
   /** Callback when the invite button is clicked. */
   onInviteClick?: () => void;
+  /** Whether the current user is an admin (Story 5.6 AC #1). */
+  isAdmin?: boolean;
 }
 
 function getInitials(firstName: string, lastName: string): string {
@@ -49,12 +52,16 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
   inviteStatus,
   showInviteButton,
   onInviteClick,
+  isAdmin,
 }: PlayerProfileHeaderProps) {
   // Story 5.5 AC #12: Injury status indicator for all roles
   const injuryStatus = useQuery(
     api.players.queries.getPlayerInjuryStatus,
     { playerId: player._id as Id<"players"> }
   );
+
+  // Story 5.6 AC #1: Status change dialog state
+  const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);
 
   return (
     <div className="space-y-4">
@@ -115,13 +122,38 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
           </div>
         </div>
 
-        {showInviteButton && onInviteClick && (
-          <Button variant="outline" size="sm" onClick={onInviteClick}>
-            <IconMail className="mr-1 size-4" />
-            {inviteStatus === "pending" ? "Resend Invite" : "Invite to Platform"}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Story 5.6 AC #1: Admin-only status change button */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setStatusDialogOpen(true)}
+            >
+              <IconSwitchHorizontal className="mr-1 size-4" />
+              Change Status
+            </Button>
+          )}
+
+          {showInviteButton && onInviteClick && (
+            <Button variant="outline" size="sm" onClick={onInviteClick}>
+              <IconMail className="mr-1 size-4" />
+              {inviteStatus === "pending" ? "Resend Invite" : "Invite to Platform"}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Story 5.6 AC #1, #3: Status change confirmation dialog */}
+      {isAdmin && (
+        <StatusChangeDialog
+          playerId={player._id as Id<"players">}
+          currentStatus={player.status}
+          playerName={`${player.firstName} ${player.lastName}`}
+          open={statusDialogOpen}
+          onClose={() => setStatusDialogOpen(false)}
+        />
+      )}
     </div>
   );
 });

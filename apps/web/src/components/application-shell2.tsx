@@ -17,9 +17,12 @@ import {
   IconLogout,
   IconSettings,
   IconShirtSport,
+  IconUserCircle,
   IconUsers,
   IconUsersGroup,
 } from "@tabler/icons-react";
+
+import { useOwnPlayerProfile } from "@/hooks/useOwnPlayerProfile";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -243,6 +246,8 @@ const NavUser = ({
 const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const pathname = usePathname();
   const currentAdmin = useQuery(api.table.admin.currentAdmin);
+  // Story 5.6 AC #13: "My Profile" link for player users
+  const ownProfile = useOwnPlayerProfile();
 
   const user = currentAdmin
     ? {
@@ -251,6 +256,9 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
         avatar: currentAdmin.image || "",
       }
     : null;
+
+  // Story 5.6 AC #13: Derive My Profile href from own player profile
+  const myProfileHref = ownProfile ? `/players/${ownProfile._id}` : null;
 
   return (
     <Sidebar variant="inset" collapsible="icon" {...props}>
@@ -290,6 +298,28 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {/* Story 5.6 AC #13: "My Profile" shortcut for player users */}
+        {myProfileHref && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isRouteActive(pathname, myProfileHref)}
+                    tooltip="My Profile"
+                  >
+                    <Link href={myProfileHref}>
+                      <IconUserCircle className="size-4" />
+                      <span>My Profile</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         {user ? (

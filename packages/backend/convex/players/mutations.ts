@@ -2,8 +2,8 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import { mutation } from "../_generated/server";
-import { requireRole } from "../lib/auth";
-import { INJURY_SEVERITIES, INJURY_STATUSES } from "@packages/shared/players";
+import { requireAuth, requireRole } from "../lib/auth";
+import { INJURY_SEVERITIES, INJURY_STATUSES, PLAYER_STATUSES } from "@packages/shared/players";
 
 /**
  * Valid player positions — must match shared/players.ts PLAYER_POSITIONS.
@@ -540,6 +540,137 @@ export const deletePlayerStats = mutation({
     }
 
     await ctx.db.delete(statsId);
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Player status management (Story 5.6 AC #2, #14, #16)
+// ---------------------------------------------------------------------------
+
+/**
+ * Change a player's status. Admin only.
+ *
+ * Story 5.6 AC #2: Validates player ownership, status value, and deduplication.
+ * Handles account deactivation/reactivation side effects based on new status.
+ * Story 5.6 AC #14: Team-scoped via requireRole.
+ * Story 5.6 AC #16: Updates `updatedAt` timestamp.
+ */
+export const updatePlayerStatus = mutation({
+  args: {
+    playerId: v.id("players"),
+    status: v.string(),
+  },
+  handler: async (ctx, { playerId, status }) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    const player = await ctx.db.get(playerId);
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
+    }
+
+    if (!(PLAYER_STATUSES as readonly string[]).includes(status)) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Status must be active, onLoan, or leftClub",
+      });
+    }
+
+    if (player.status === status) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Player already has this status",
+      });
+    }
+
+    // Update player status
+    await ctx.db.patch(playerId, { status, updatedAt: Date.now() });
+
+    // Handle account side effects (AC #2)
+    if (player.userId) {
+      const linkedUser = await ctx.db.get(player.userId);
+      if (linkedUser) {
+        if (status === "leftClub") {
+          // Deactivate account — uses `banned` field checked by @convex-dev/auth
+          await ctx.db.patch(player.userId, { banned: true });
+        } else if (linkedUser.banned) {
+          // Reactivate account (active or onLoan)
+          await ctx.db.patch(player.userId, { banned: false });
+        }
+      }
+    }
+
+    return playerId;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Player self-service (Story 5.6 AC #10, #14)
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the authenticated player's own contact information.
+ *
+ * Story 5.6 AC #10: Derives playerId from auth — no playerId param.
+ * Only contact fields are accepted (phone, personalEmail, address,
+ * emergency contact fields). All other fields are immutable via this mutation.
+ * Story 5.6 AC #14: Team-scoped via requireAuth + userId lookup.
+ */
+export const updateOwnContactInfo = mutation({
+  args: {
+    phone: v.optional(v.string()),
+    personalEmail: v.optional(v.string()),
+    address: v.optional(v.string()),
+    emergencyContactName: v.optional(v.string()),
+    emergencyContactRelationship: v.optional(v.string()),
+    emergencyContactPhone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    const player = await ctx.db
+      .query("players")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .first();
+
+    if (!player || player.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "No player profile linked to your account",
+      });
+    }
+
+    // Validate email format if provided and non-empty
+    if (args.personalEmail && args.personalEmail.trim() !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(args.personalEmail)) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: "Invalid email format",
+        });
+      }
+    }
+
+    // Validate field lengths (max 500 characters)
+    for (const [key, value] of Object.entries(args)) {
+      if (typeof value === "string" && value.length > 500) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `${key} cannot exceed 500 characters`,
+        });
+      }
+    }
+
+    // Build patch with only provided fields
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    if (args.phone !== undefined) patch.phone = args.phone || undefined;
+    if (args.personalEmail !== undefined) patch.personalEmail = args.personalEmail || undefined;
+    if (args.address !== undefined) patch.address = args.address || undefined;
+    if (args.emergencyContactName !== undefined) patch.emergencyContactName = args.emergencyContactName || undefined;
+    if (args.emergencyContactRelationship !== undefined) patch.emergencyContactRelationship = args.emergencyContactRelationship || undefined;
+    if (args.emergencyContactPhone !== undefined) patch.emergencyContactPhone = args.emergencyContactPhone || undefined;
+
+    await ctx.db.patch(player._id, patch);
+    return player._id;
   },
 });
 

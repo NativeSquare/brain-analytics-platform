@@ -757,8 +757,10 @@ describe("getContractDownloadUrl", () => {
 // ===========================================================================
 // Mutation Guards — Task 4.5
 //
-// Uses the capture-inside-run pattern from status-and-self-service.test.ts:
-// errorCode is captured INSIDE t.run() before the error gets re-thrown.
+// Uses the inline-mirror-handler pattern from status-and-self-service.test.ts:
+// Mirror functions replicate the actual mutation handler logic so that tests
+// exercise the full code path (auth check + DB operations), not just the
+// auth helper in isolation.
 // ===========================================================================
 
 const { requireRole: requireRoleFn } = await import("../../lib/auth");
@@ -768,6 +770,78 @@ function getErrorCode(error: unknown): string | undefined {
     return (error.data as any).code;
   }
   return undefined;
+}
+
+/** Mirrors uploadContract mutation handler */
+async function uploadContractLogic(
+  ctx: any,
+  args: { playerId: Id<"players">; fileId: Id<"_storage"> }
+) {
+  const { teamId } = await requireRoleFn(ctx, ["admin"]);
+
+  const player = await ctx.db.get(args.playerId);
+  if (!player || player.teamId !== teamId) {
+    throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found." });
+  }
+
+  const existing = await ctx.db
+    .query("contracts")
+    .withIndex("by_teamId_playerId", (q: any) =>
+      q.eq("teamId", teamId).eq("playerId", args.playerId)
+    )
+    .first();
+
+  const now = Date.now();
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      fileId: args.fileId,
+      extractionStatus: "pending",
+      extractedData: undefined,
+      extractionError: undefined,
+      updatedAt: now,
+    });
+    return existing._id;
+  }
+
+  return await ctx.db.insert("contracts", {
+    teamId,
+    playerId: args.playerId,
+    fileId: args.fileId,
+    extractionStatus: "pending",
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+/** Mirrors updateContractFields mutation handler */
+async function updateContractFieldsLogic(
+  ctx: any,
+  args: { playerId: Id<"players">; extractedData: Record<string, string | undefined> }
+) {
+  const { teamId } = await requireRoleFn(ctx, ["admin"]);
+
+  const player = await ctx.db.get(args.playerId);
+  if (!player || player.teamId !== teamId) {
+    throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found." });
+  }
+
+  const contract = await ctx.db
+    .query("contracts")
+    .withIndex("by_teamId_playerId", (q: any) =>
+      q.eq("teamId", teamId).eq("playerId", args.playerId)
+    )
+    .first();
+
+  if (!contract) {
+    throw new ConvexError({ code: "NOT_FOUND" as const, message: "No contract found for this player." });
+  }
+
+  await ctx.db.patch(contract._id, {
+    extractedData: args.extractedData,
+    updatedAt: Date.now(),
+  });
+
+  return contract._id;
 }
 
 describe("uploadContract mutation guard", () => {
@@ -800,14 +874,25 @@ describe("uploadContract mutation guard", () => {
 
   it("player → rejects with NOT_AUTHORIZED", async () => {
     const t = convexTest(schema, modules);
-    const { userId } = await seedTeamAndUser(t, { role: "player" });
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "player" });
     mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+      userId,
+    });
+
+    const fileId = await uploadFakeFile(t);
 
     let errorCode: string | undefined;
     await expect(
       t.run(async (ctx) => {
         try {
-          await requireRoleFn(ctx, ["admin"]);
+          await uploadContractLogic(ctx, { playerId, fileId });
         } catch (e) {
           errorCode = getErrorCode(e);
           throw e;
@@ -819,14 +904,24 @@ describe("uploadContract mutation guard", () => {
 
   it("coach → rejects with NOT_AUTHORIZED", async () => {
     const t = convexTest(schema, modules);
-    const { userId } = await seedTeamAndUser(t, { role: "coach" });
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
     mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+
+    const fileId = await uploadFakeFile(t);
 
     let errorCode: string | undefined;
     await expect(
       t.run(async (ctx) => {
         try {
-          await requireRoleFn(ctx, ["admin"]);
+          await uploadContractLogic(ctx, { playerId, fileId });
         } catch (e) {
           errorCode = getErrorCode(e);
           throw e;
@@ -838,14 +933,24 @@ describe("uploadContract mutation guard", () => {
 
   it("physio → rejects with NOT_AUTHORIZED", async () => {
     const t = convexTest(schema, modules);
-    const { userId } = await seedTeamAndUser(t, { role: "physio" });
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "physio" });
     mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+
+    const fileId = await uploadFakeFile(t);
 
     let errorCode: string | undefined;
     await expect(
       t.run(async (ctx) => {
         try {
-          await requireRoleFn(ctx, ["admin"]);
+          await uploadContractLogic(ctx, { playerId, fileId });
         } catch (e) {
           errorCode = getErrorCode(e);
           throw e;
@@ -857,14 +962,24 @@ describe("uploadContract mutation guard", () => {
 
   it("staff → rejects with NOT_AUTHORIZED", async () => {
     const t = convexTest(schema, modules);
-    const { userId } = await seedTeamAndUser(t, { role: "staff" });
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "staff" });
     mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+
+    const fileId = await uploadFakeFile(t);
 
     let errorCode: string | undefined;
     await expect(
       t.run(async (ctx) => {
         try {
-          await requireRoleFn(ctx, ["admin"]);
+          await uploadContractLogic(ctx, { playerId, fileId });
         } catch (e) {
           errorCode = getErrorCode(e);
           throw e;
@@ -909,14 +1024,29 @@ describe("updateContractFields mutation guard", () => {
 
   it("player → rejects with NOT_AUTHORIZED (even for own contract)", async () => {
     const t = convexTest(schema, modules);
-    const { userId } = await seedTeamAndUser(t, { role: "player" });
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "player" });
     mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+      userId,
+    });
+
+    const fileId = await uploadFakeFile(t);
+    await insertContract(t, { teamId, playerId, fileId });
 
     let errorCode: string | undefined;
     await expect(
       t.run(async (ctx) => {
         try {
-          await requireRoleFn(ctx, ["admin"]);
+          await updateContractFieldsLogic(ctx, {
+            playerId,
+            extractedData: { salary: "€999M/year" },
+          });
         } catch (e) {
           errorCode = getErrorCode(e);
           throw e;
@@ -928,14 +1058,28 @@ describe("updateContractFields mutation guard", () => {
 
   it("analyst → rejects with NOT_AUTHORIZED", async () => {
     const t = convexTest(schema, modules);
-    const { userId } = await seedTeamAndUser(t, { role: "analyst" });
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "analyst" });
     mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await insertPlayer(t, {
+      teamId,
+      firstName: "Test",
+      lastName: "Player",
+      position: "Forward",
+      status: "active",
+    });
+
+    const fileId = await uploadFakeFile(t);
+    await insertContract(t, { teamId, playerId, fileId });
 
     let errorCode: string | undefined;
     await expect(
       t.run(async (ctx) => {
         try {
-          await requireRoleFn(ctx, ["admin"]);
+          await updateContractFieldsLogic(ctx, {
+            playerId,
+            extractedData: { salary: "€999M/year" },
+          });
         } catch (e) {
           errorCode = getErrorCode(e);
           throw e;

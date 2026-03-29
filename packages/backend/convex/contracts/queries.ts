@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { query } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
+import type { QueryCtx } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
 
 // ---------------------------------------------------------------------------
@@ -15,14 +17,14 @@ import { requireAuth } from "../lib/auth";
  * 3. Compare that player's _id with the requested playerId
  */
 async function isPlayerSelf(
-  ctx: Parameters<typeof requireAuth>[0],
-  playerId: string,
-  userId: string,
-  teamId: string
+  ctx: QueryCtx,
+  playerId: Id<"players">,
+  userId: Id<"users">,
+  teamId: Id<"teams">
 ): Promise<boolean> {
   const playerRecord = await ctx.db
     .query("players")
-    .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+    .withIndex("by_userId", (q) => q.eq("userId", userId))
     .first();
 
   if (!playerRecord) return false;
@@ -113,7 +115,7 @@ export const getContract = query({
     // Fetch the contract record scoped by team
     const contract = await ctx.db
       .query("contracts")
-      .withIndex("by_teamId_playerId", (q: any) =>
+      .withIndex("by_teamId_playerId", (q) =>
         q.eq("teamId", teamId).eq("playerId", playerId)
       )
       .first();
@@ -171,7 +173,7 @@ export const getContractDownloadUrl = query({
     // Fetch contract
     const contract = await ctx.db
       .query("contracts")
-      .withIndex("by_teamId_playerId", (q: any) =>
+      .withIndex("by_teamId_playerId", (q) =>
         q.eq("teamId", teamId).eq("playerId", playerId)
       )
       .first();

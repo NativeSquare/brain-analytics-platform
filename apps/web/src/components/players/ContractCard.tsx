@@ -155,28 +155,28 @@ function ContractField({
   );
 }
 
+const EXTRACTION_STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  pending: "secondary",
+  processing: "secondary",
+  completed: "default",
+  failed: "destructive",
+};
+
+const EXTRACTION_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  processing: "Processing",
+  completed: "Extracted",
+  failed: "Failed",
+};
+
 function ExtractionStatusBadge({
   status,
 }: {
   status: "pending" | "processing" | "completed" | "failed";
 }) {
-  const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    pending: "secondary",
-    processing: "secondary",
-    completed: "default",
-    failed: "destructive",
-  };
-
-  const labels: Record<string, string> = {
-    pending: "Pending",
-    processing: "Processing",
-    completed: "Extracted",
-    failed: "Failed",
-  };
-
   return (
-    <Badge variant={variants[status] ?? "secondary"}>
-      {labels[status] ?? status}
+    <Badge variant={EXTRACTION_STATUS_VARIANTS[status] ?? "secondary"}>
+      {EXTRACTION_STATUS_LABELS[status] ?? status}
     </Badge>
   );
 }

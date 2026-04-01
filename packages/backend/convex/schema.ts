@@ -22,6 +22,8 @@ import { teams } from "./table/teams";
 import { userPinnedDashboards } from "./table/userPinnedDashboards";
 import { userRecentDashboards } from "./table/userRecentDashboards";
 import { users } from "./table/users";
+import { wyscoutMatchMappings } from "./table/wyscoutMatchMappings";
+import { wyscoutVideoCache } from "./table/wyscoutVideoCache";
 
 export default defineSchema({
   ...authTables,
@@ -47,4 +49,6 @@ export default defineSchema({
   userPinnedDashboards,
   userRecentDashboards,
   users,
+  wyscoutMatchMappings,
+  wyscoutVideoCache,
 });

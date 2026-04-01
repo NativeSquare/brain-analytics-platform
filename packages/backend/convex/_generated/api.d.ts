@@ -61,11 +61,14 @@ import type * as table_teams from "../table/teams.js";
 import type * as table_userPinnedDashboards from "../table/userPinnedDashboards.js";
 import type * as table_userRecentDashboards from "../table/userRecentDashboards.js";
 import type * as table_users from "../table/users.js";
+import type * as table_wyscoutMatchMappings from "../table/wyscoutMatchMappings.js";
+import type * as table_wyscoutVideoCache from "../table/wyscoutVideoCache.js";
 import type * as testing from "../testing.js";
 import type * as userDashboards from "../userDashboards.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
 import type * as utils_generateFunctions from "../utils/generateFunctions.js";
+import type * as wyscoutCache from "../wyscoutCache.js";
 
 import type {
   ApiFromModules,
@@ -127,11 +130,14 @@ declare const fullApi: ApiFromModules<{
   "table/userPinnedDashboards": typeof table_userPinnedDashboards;
   "table/userRecentDashboards": typeof table_userRecentDashboards;
   "table/users": typeof table_users;
+  "table/wyscoutMatchMappings": typeof table_wyscoutMatchMappings;
+  "table/wyscoutVideoCache": typeof table_wyscoutVideoCache;
   testing: typeof testing;
   userDashboards: typeof userDashboards;
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
   "utils/generateFunctions": typeof utils_generateFunctions;
+  wyscoutCache: typeof wyscoutCache;
 }>;
 
 /**

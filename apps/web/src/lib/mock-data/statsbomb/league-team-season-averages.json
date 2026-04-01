@@ -1,0 +1,14 @@
+{
+  "data": [
+    {
+      "team_id": 234, "team_name": "UC Sampdoria", "team_image_url": "",
+      "points": 1.8, "x_points": 1.65, "goals_for": 1.5, "goals_against": 1.2, "goal_difference": 0.3,
+      "shots_for": 12.3, "shots_against": 9.8, "xt_for": 1.2, "xt_against": 0.95, "xt_difference": 0.25,
+      "total_xg_for": 1.54, "total_xg_against": 1.21, "xg_difference": 0.33,
+      "build_up_goals_for": 0.85, "build_up_goals_against": 0.62, "build_up_shots_for": 5.8, "build_up_shots_against": 4.5, "build_up_xt_for": 0.8, "build_up_xt_against": 0.65, "build_up_xg_for": 0.92, "build_up_xg_against": 0.71,
+      "transition_goals_for": 0.32, "transition_goals_against": 0.21, "transition_shots_for": 3.5, "transition_shots_against": 2.8, "transition_xt_for": 0.35, "transition_xt_against": 0.25, "transition_xg_for": 0.38, "transition_xg_against": 0.29,
+      "set_piece_goals_for": 0.28, "set_piece_goals_against": 0.22, "set_piece_shots_for": 2.5, "set_piece_shots_against": 2.1, "set_piece_xt_for": 0.12, "set_piece_xt_against": 0.08, "set_piece_xg_for": 0.24, "set_piece_xg_against": 0.20,
+      "possession_for": 52.3, "possession_against": 47.7, "passes_for": 425, "passes_against": 390, "ppda_for": 8.2, "ppda_against": 9.5
+    }
+  ]
+}

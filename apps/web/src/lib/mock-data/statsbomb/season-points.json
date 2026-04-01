@@ -1,0 +1,14 @@
+{
+  "data": [
+    { "match_id": 4301, "match_date": "2024-08-17", "match_week": 1, "venue": "home", "goals_scored": 2, "goals_conceded": 1, "points": 3, "opponent_team_id": 283, "opponent_image_url": "", "x_points": 2.4, "cumulative_points": 3, "cumulative_x_points": 2.4 },
+    { "match_id": 4302, "match_date": "2024-08-24", "match_week": 2, "venue": "away", "goals_scored": 1, "goals_conceded": 1, "points": 1, "opponent_team_id": 501, "opponent_image_url": "", "x_points": 1.8, "cumulative_points": 4, "cumulative_x_points": 4.2 },
+    { "match_id": 4303, "match_date": "2024-08-31", "match_week": 3, "venue": "home", "goals_scored": 3, "goals_conceded": 0, "points": 3, "opponent_team_id": 410, "opponent_image_url": "", "x_points": 2.1, "cumulative_points": 7, "cumulative_x_points": 6.3 },
+    { "match_id": 4304, "match_date": "2024-09-14", "match_week": 4, "venue": "away", "goals_scored": 0, "goals_conceded": 2, "points": 0, "opponent_team_id": 322, "opponent_image_url": "", "x_points": 0.6, "cumulative_points": 7, "cumulative_x_points": 6.9 },
+    { "match_id": 4305, "match_date": "2024-09-21", "match_week": 5, "venue": "home", "goals_scored": 1, "goals_conceded": 0, "points": 3, "opponent_team_id": 198, "opponent_image_url": "", "x_points": 1.9, "cumulative_points": 10, "cumulative_x_points": 8.8 },
+    { "match_id": 4306, "match_date": "2024-09-28", "match_week": 6, "venue": "away", "goals_scored": 2, "goals_conceded": 2, "points": 1, "opponent_team_id": 445, "opponent_image_url": "", "x_points": 1.2, "cumulative_points": 11, "cumulative_x_points": 10.0 },
+    { "match_id": 4307, "match_date": "2024-10-05", "match_week": 7, "venue": "home", "goals_scored": 1, "goals_conceded": 1, "points": 1, "opponent_team_id": 367, "opponent_image_url": "", "x_points": 1.5, "cumulative_points": 12, "cumulative_x_points": 11.5 },
+    { "match_id": 4308, "match_date": "2024-10-19", "match_week": 8, "venue": "away", "goals_scored": 3, "goals_conceded": 1, "points": 3, "opponent_team_id": 512, "opponent_image_url": "", "x_points": 2.8, "cumulative_points": 15, "cumulative_x_points": 14.3 },
+    { "match_id": 4309, "match_date": "2024-10-26", "match_week": 9, "venue": "home", "goals_scored": 0, "goals_conceded": 1, "points": 0, "opponent_team_id": 389, "opponent_image_url": "", "x_points": 1.1, "cumulative_points": 15, "cumulative_x_points": 15.4 },
+    { "match_id": 4310, "match_date": "2024-11-02", "match_week": 10, "venue": "away", "goals_scored": 2, "goals_conceded": 0, "points": 3, "opponent_team_id": 456, "opponent_image_url": "", "x_points": 2.3, "cumulative_points": 18, "cumulative_x_points": 17.7 }
+  ]
+}

@@ -7,6 +7,7 @@ import {
 } from "./sportmonks-db";
 import { loadQuery } from "./load-query";
 import { rowsToCamel } from "./case-utils";
+import { getMockResponse } from "./mock-data";
 
 export interface SportMonksRouteConfig {
   /** The .sql filename under queries/sportmonks/ */
@@ -30,18 +31,28 @@ export interface SportMonksRouteConfig {
     rows: Record<string, unknown>[],
     params: Record<string, string>,
   ) => unknown;
+  /** Mock data endpoint name. When USE_MOCK_DATA=true, returns mock JSON instead of querying DB. */
+  mockEndpoint?: string;
 }
 
 /**
  * Factory that produces a Next.js GET handler for SportMonks routes.
  *
  * Handles:
+ * - Mock data when USE_MOCK_DATA=true
  * - 503 when `SPORTMONKS_DATABASE_URL` is not configured
  * - 500 on database errors (logs details server-side)
  * - snake_case -> camelCase transformation by default
  */
 export function createSportMonksHandler(config: SportMonksRouteConfig) {
   return async function GET(request: NextRequest) {
+    // Return mock data when enabled (uses mockEndpoint or derives from queryFile)
+    {
+      const endpoint = config.mockEndpoint ?? config.queryFile.replace(".sql", "").replace(/.*\//, "");
+      const mock = getMockResponse("sportmonks", endpoint);
+      if (mock) return mock;
+    }
+
     if (!isSportMonksConfigured()) {
       return NextResponse.json(
         { error: "SportMonks database is not configured" },

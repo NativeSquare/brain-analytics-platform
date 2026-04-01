@@ -1,0 +1,9 @@
+{
+  "data": [
+    { "position": 1, "teamId": 301, "teamName": "Pisa SC", "played": 30, "won": 18, "drawn": 8, "lost": 4, "goalsFor": 45, "goalsAgainst": 22, "goalDifference": 23, "points": 62 },
+    { "position": 2, "teamId": 234, "teamName": "UC Sampdoria", "played": 30, "won": 17, "drawn": 7, "lost": 6, "goalsFor": 42, "goalsAgainst": 25, "goalDifference": 17, "points": 58 },
+    { "position": 3, "teamId": 283, "teamName": "Parma Calcio", "played": 30, "won": 16, "drawn": 8, "lost": 6, "goalsFor": 40, "goalsAgainst": 28, "goalDifference": 12, "points": 56 },
+    { "position": 4, "teamId": 423, "teamName": "Como 1907", "played": 30, "won": 15, "drawn": 9, "lost": 6, "goalsFor": 38, "goalsAgainst": 24, "goalDifference": 14, "points": 54 },
+    { "position": 5, "teamId": 556, "teamName": "Venezia FC", "played": 30, "won": 14, "drawn": 10, "lost": 6, "goalsFor": 36, "goalsAgainst": 26, "goalDifference": 10, "points": 52 }
+  ]
+}

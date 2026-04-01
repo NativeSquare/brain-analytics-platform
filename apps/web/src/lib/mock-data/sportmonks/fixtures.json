@@ -1,0 +1,9 @@
+{
+  "data": [
+    { "fixtureId": 98001, "homeTeamId": 234, "homeTeamName": "UC Sampdoria", "awayTeamId": 301, "awayTeamName": "Pisa SC", "startDate": "2025-04-05T18:00:00Z", "status": "upcoming", "competitionName": "Serie B", "venueName": "Stadio Luigi Ferraris", "homeScore": null, "awayScore": null },
+    { "fixtureId": 98002, "homeTeamId": 290, "homeTeamName": "Bari", "awayTeamId": 234, "awayTeamName": "UC Sampdoria", "startDate": "2025-04-12T15:00:00Z", "status": "upcoming", "competitionName": "Serie B", "venueName": "Stadio San Nicola", "homeScore": null, "awayScore": null },
+    { "fixtureId": 97901, "homeTeamId": 234, "homeTeamName": "UC Sampdoria", "awayTeamId": 283, "awayTeamName": "Parma Calcio", "startDate": "2025-03-29T20:30:00Z", "status": "finished", "competitionName": "Serie B", "venueName": "Stadio Luigi Ferraris", "homeScore": 2, "awayScore": 1 },
+    { "fixtureId": 97902, "homeTeamId": 322, "homeTeamName": "Palermo FC", "awayTeamId": 234, "awayTeamName": "UC Sampdoria", "startDate": "2025-03-22T15:00:00Z", "status": "finished", "competitionName": "Serie B", "venueName": "Stadio Renzo Barbera", "homeScore": 0, "awayScore": 1 },
+    { "fixtureId": 97903, "homeTeamId": 234, "homeTeamName": "UC Sampdoria", "awayTeamId": 198, "awayTeamName": "Brescia Calcio", "startDate": "2025-03-15T18:00:00Z", "status": "finished", "competitionName": "Serie B", "venueName": "Stadio Luigi Ferraris", "homeScore": 3, "awayScore": 0 }
+  ]
+}

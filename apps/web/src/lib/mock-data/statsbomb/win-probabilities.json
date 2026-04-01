@@ -1,0 +1,6 @@
+{
+  "data": [
+    { "match_id": 4301, "team_id": 234, "win_probability": 0.62, "draw_probability": 0.18, "loss_probability": 0.20 },
+    { "match_id": 4301, "team_id": 283, "win_probability": 0.20, "draw_probability": 0.18, "loss_probability": 0.62 }
+  ]
+}

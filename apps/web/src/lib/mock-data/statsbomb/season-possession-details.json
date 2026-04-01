@@ -1,0 +1,24 @@
+{
+  "data": {
+    "buildUp": {
+      "team_id": 234, "bu_minutes": 450, "bu_goals": 12, "bu_shots": 48, "bu_xg": 15.3, "bu_xt": 18.7,
+      "def_third_possessions": 120, "def_third_into_mid_pct": 78.3, "def_third_into_final_pct": 45.2, "def_third_xt": 3.2, "def_third_lost_pct": 18.5,
+      "mid_third_possessions": 95, "mid_third_into_final_pct": 62.1, "mid_third_xt": 8.4, "mid_third_lost_pct": 22.1,
+      "regained_atk_half_pct": 35.8, "final_third_entries": 58, "final_third_into_box_pct": 71.2, "final_third_shot_pct": 48.3, "xg_per_entry": 0.264,
+      "bu_minutes_rank": 4, "bu_goals_rank": 3, "bu_shots_rank": 5, "bu_xg_rank": 3, "bu_xt_rank": 4,
+      "def_third_possessions_rank": 8, "def_third_into_mid_pct_rank": 2, "def_third_into_final_pct_rank": 6, "def_third_xt_rank": 5, "def_third_lost_pct_rank": 11,
+      "mid_third_possessions_rank": 7, "mid_third_into_final_pct_rank": 3, "mid_third_xt_rank": 4, "mid_third_lost_pct_rank": 9,
+      "regained_atk_half_pct_rank": 6, "final_third_entries_rank": 5, "final_third_into_box_pct_rank": 2, "final_third_shot_pct_rank": 4, "xg_per_entry_rank": 5,
+      "total_teams": 20
+    },
+    "transitions": {
+      "team_id": 234, "regains_count": 145, "transitions_count": 320, "transition_goals": 8, "transition_shots": 32, "transition_xg": 9.2, "transition_xt": 12.5,
+      "atk_half_regains": 52, "def_half_turnovers": 28, "transition_entries_pct": 58.4, "transition_turnover_pct": 12.3, "transition_regain_pct": 18.6, "transition_xg_per_entry": 0.287,
+      "ppda": 8.3,
+      "regains_count_rank": 4, "transitions_count_rank": 5, "transition_goals_rank": 4, "transition_shots_rank": 6, "transition_xg_rank": 5, "transition_xt_rank": 4,
+      "atk_half_regains_rank": 3, "def_half_turnovers_rank": 15, "ppda_rank": 3,
+      "transition_entries_pct_rank": 4, "transition_turnover_pct_rank": 12, "transition_regain_pct_rank": 8, "transition_xg_per_entry_rank": 4,
+      "total_teams": 20
+    }
+  }
+}

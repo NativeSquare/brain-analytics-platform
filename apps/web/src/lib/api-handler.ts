@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "./statsbomb-db";
 import { loadQuery } from "./load-query";
+import { getMockResponse } from "./mock-data";
 
 export interface RouteConfig {
   /** The .sql filename under queries/statsbomb/ */
@@ -25,6 +26,8 @@ export interface RouteConfig {
     rows: Record<string, unknown>[],
     params: Record<string, string>,
   ) => unknown;
+  /** Mock data endpoint name (e.g. "matches"). When USE_MOCK_DATA=true, returns mock JSON instead of querying DB. */
+  mockEndpoint?: string;
 }
 
 /**
@@ -32,6 +35,13 @@ export interface RouteConfig {
  */
 export function createStatsBombHandler(config: RouteConfig) {
   return async function GET(request: NextRequest) {
+    // Return mock data when enabled (uses mockEndpoint or derives from queryFile)
+    {
+      const endpoint = config.mockEndpoint ?? config.queryFile.replace(".sql", "").replace(/.*\//, "");
+      const mock = getMockResponse("statsbomb", endpoint);
+      if (mock) return mock;
+    }
+
     try {
       const searchParams = request.nextUrl.searchParams;
       const params: Record<string, string> = {};
@@ -91,6 +101,8 @@ export interface MultiQueryConfig {
     rows: Record<string, unknown>[],
     params: Record<string, string>,
   ) => unknown;
+  /** Mock data endpoint name. When USE_MOCK_DATA=true, returns mock JSON instead of querying DB. */
+  mockEndpoint?: string;
 }
 
 /**
@@ -98,6 +110,12 @@ export interface MultiQueryConfig {
  */
 export function createMultiQueryHandler(config: MultiQueryConfig) {
   return async function GET(request: NextRequest) {
+    // Return mock data when enabled
+    if (config.mockEndpoint) {
+      const mock = getMockResponse("statsbomb", config.mockEndpoint);
+      if (mock) return mock;
+    }
+
     try {
       const searchParams = request.nextUrl.searchParams;
       const params: Record<string, string> = {};

@@ -160,23 +160,43 @@ Admins can organize, upload, and permission club documents in a structured folde
 Admins can upload player contracts and have key terms extracted automatically via AI. Contract data is securely visible only to admins.
 **FRs covered:** FR26, FR27
 
-### Epic 7: Staff Profiles & Directory — *Week 3*
+### Epic 7: Design System Alignment — *Sprint 1 Addition*
+Adapt our shadcn/ui theme to match the existing BrainAnalytics visual identity (OKLCH palette, Avenir Next, spacing). Port pitch SVG components, Recharts chart components, and dashboard card system.
+**Gap covered:** Design system alignment with existing platform DA.
+
+### Epic 8: External Data Integrations — *Sprint 1 Addition*
+Connect StatsBomb (PostgreSQL, 37 SQL queries), SportMonks (fixtures/scores), and Hudl/Wyscout (video clips) as read-only external data sources via Next.js API routes.
+**Gap covered:** Analytics data pipeline missing from original scope.
+
+### Epic 9: Analytics Dashboards -- Core — *Sprint 1 Addition*
+Dashboard gallery with role-based access control, plus the five most-used dashboards: Season Overview, Post-Match Analysis, Shot Map, Heat Maps.
+**Gap covered:** 11 analytics dashboards present in existing platform, absent from rebuild.
+
+### Epic 10: Analytics Dashboards -- Advanced — *Sprint 1 Addition*
+Six specialized dashboards: Event Map, Player Analysis, Set Pieces, Opposition Analysis, Team Trends, Referee Analysis + View Possessions + Post-Match Set Pieces.
+**Gap covered:** Remaining analytics dashboards from existing platform.
+
+### Epic 11: Cross-Cutting Features — *Sprint 1 Addition*
+Global search, Google OAuth, enriched homepage with SportMonks data, and consolidated RBAC hooks system.
+**Gap covered:** Global search, Google OAuth, homepage data, RBAC consolidation.
+
+### Epic 12: Staff Profiles & Directory — *Sprint 2*
 Staff members get structured profiles with bios, job titles, and certification tracking with expiry alerts. A club directory gives everyone a single place to find contact information.
 **Proposal ref:** Originally Sprint 1 "Staff Profiles & Directory", moved to Sprint 2 (swapped with Document Hub).
 
-### Epic 8: Injury Reporting — *Week 4*
+### Epic 13: Injury Reporting — *Sprint 2*
 Comprehensive injury management with clinical classification, timeline tracking, rehab notes, color-coded return-to-play statuses, and a medical dashboard. Extends Story 5.5.
 **Proposal ref:** Sprint 2 "Injury Reporting".
 
-### Epic 9: Scouting Reports — *Week 5*
+### Epic 14: Scouting Reports — *Sprint 3*
 Scouts create structured reports on transfer targets with grading, recommendations (Sign/Watch/Pass), media attachments, and follow-up notes. Restricted to scouts and admins.
 **Proposal ref:** Sprint 3 "Scouting Reports".
 
-### Epic 10: Shadow Teams — *Week 5*
+### Epic 15: Shadow Teams — *Sprint 3*
 Visual pitch-based squad planning tool for ranking scouting targets by position and priority category (Immediate/Development/Emergency).
 **Proposal ref:** Sprint 3 "Scouting Shadow Teams".
 
-### Epic 11: Notifications & WhatsApp Integration — *Week 6*
+### Epic 16: Notifications & WhatsApp Integration — *Sprint 3*
 WhatsApp Business API integration for automated and manual notifications. Extends the in-app notification center (Story 3.7) with external push, admin broadcasts, templates, and user privacy controls.
 **Proposal ref:** Sprint 3 "WhatsApp Notifications".
 
@@ -680,19 +700,197 @@ So that sensitive financial information is protected.
 
 ---
 
+# Sprint 1 — Additions (Analytics, Integrations & Cross-Cutting)
+
+Sprint 1 additions close the gaps identified by comparing the existing BrainAnalytics platform (football-dashboard-2, Next.js + Supabase) with our rebuild. The existing platform has 11 analytics dashboards powered by StatsBomb/SportMonks/Wyscout integrations, a global search, and Google OAuth -- none of which were in the original Sprint 1 scope. These epics port the existing UI components and integrations into our Convex architecture, keeping our monorepo structure, sidebar navigation, and backend patterns.
+
+**Source reference:** The existing platform repo is at `brainAnalytics/football-dashboard-2`. Components, SQL queries, and API routes are ported and adapted -- not copied verbatim.
+
+## Epic 7: Design System Alignment
+
+Adapt our existing shadcn/ui theme to match the visual identity of the existing BrainAnalytics platform (OKLCH blue palette, Avenir Next typography, spacing, chart styling). We keep our sidebar navigation layout but align colors, typography, and component styling. Port the custom pitch visualization components and chart library setup needed by the analytics dashboards.
+
+**Builds on:** Story 1.2 (shadcn/ui theme configuration).
+**Source files:** `football-dashboard-2/src/app/globals.css` (theme), `football-dashboard-2/src/components/dashboard/` (pitch components), `football-dashboard-2/src/components/charts/` (chart components).
+
+### Story 7.1: Align Color Palette, Typography & Spacing
+
+_To be detailed by SM agent._
+
+**Scope:** Adapt our CSS variables to match their OKLCH palette (primary blue oklch(0.44 0.115 244.61), 5-color chart palette, dark mode), switch font stack to Avenir Next/Inter, align border-radius (base 0.625rem) and spacing tokens. Keep our sidebar layout unchanged.
+
+### Story 7.2: Port Pitch Visualization Components (SVG + Canvas Heatmap)
+
+_To be detailed by SM agent._
+
+**Scope:** Port PitchBase (half-pitch, 80x60 viewBox), FullPitchBase (full-pitch, 80x120 viewBox), GoalBase (goal mouth) SVG components. Port the simpleheat canvas-based heatmap overlay with Sampdoria-branded gradient. Adapt to our component structure and design tokens.
+
+### Story 7.3: Integrate Recharts & Port Reusable Chart Components
+
+_To be detailed by SM agent._
+
+**Scope:** Add Recharts dependency. Port XYScatterChart (dual-axis metric selection, reference lines, player image badges), filter-bar/filter-select/filter-checkbox components, stats-item display component. Adapt styling to our design tokens.
+
+### Story 7.4: Port Dashboard Cards, Gallery Grid & Pin/Recent Tracking
+
+_To be detailed by SM agent._
+
+**Scope:** Port dashboard-card-item with hover transitions, pin toggle, and icon system. Create Convex tables for userPinnedDashboards and userRecentDashboards. Build gallery grid layout (1/2/3 columns responsive). Port the 40+ Lucide icon mapping from dashboard-icons.ts.
+
+---
+
+## Epic 8: External Data Integrations
+
+Connect the three external data sources that power the analytics dashboards: StatsBomb (match/player/team analytics), SportMonks (fixtures, scores, standings), and Hudl/Wyscout (video clips). These are PostgreSQL direct connections and REST APIs -- they live alongside our Convex backend as read-only data sources accessed via Next.js API routes.
+
+**Architecture:** Next.js API routes in `apps/admin/app/api/` query external PostgreSQL databases directly (node-postgres). Convex is NOT involved -- these are read-only external data sources. Video URLs are cached in Convex storage.
+
+### Story 8.1: StatsBomb PostgreSQL Connection & API Routes
+
+_To be detailed by SM agent._
+
+**Scope:** Set up node-postgres connection to StatsBomb database (silver/gold schemas). Port 37 SQL query files. Create ~25 Next.js API routes under `/api/statsbomb/` (teams, competitions, seasons, matches, match-stats, lineups, events, shots, set-pieces, possessions, player-season-stats, league-averages, team-trends, referee-analysis, win-probabilities, etc.). Include connection pooling and error handling.
+
+### Story 8.2: SportMonks PostgreSQL Connection & API Routes
+
+_To be detailed by SM agent._
+
+**Scope:** Set up node-postgres connection to SportMonks database. Port SQL queries for fixtures, scores, team info, standings. Create API routes under `/api/sportmonks/`. Used by homepage (upcoming matches, recent results) and calendar (match fixtures).
+
+### Story 8.3: Hudl Mapping & Wyscout Video Clip Integration
+
+_To be detailed by SM agent._
+
+**Scope:** Integrate Hudl GraphQL mapping API (StatsBomb match ID -> Wyscout match ID). Integrate Wyscout REST API for video clip URLs (with period offsets, timestamp mapping, quality selection). Implement video URL caching in Convex storage with signed URLs. Create API routes under `/api/wyscout/`.
+
+---
+
+## Epic 9: Analytics Dashboards -- Core
+
+The five most-used analytics dashboards that the club staff relies on daily. These are client-side interactive pages with data fetched from StatsBomb/SportMonks API routes (Epic 8). Each dashboard is a dedicated page under `/dashboards/[slug]`.
+
+**Depends on:** Epic 7 (design components), Epic 8 (data integrations).
+**Source:** Each dashboard's components are in `football-dashboard-2/src/app/(dashboard)/dashboards/[slug]/`.
+
+### Story 9.1: Dashboard Gallery Page & Role-Based Access Control
+
+_To be detailed by SM agent._
+
+**Scope:** Build `/dashboards` gallery page with filterable grid of dashboard cards (from Story 7.4). Create Convex tables: dashboards (id, title, description, category, icon, slug), roleDashboards (roleId, dashboardId). Admin can configure which roles see which dashboards (admin settings tab). Dynamic routing to `/dashboards/[slug]` renders the appropriate dashboard component.
+
+### Story 9.2: Season Overview Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 11 components: SeasonFiltersBar, PointsChart (dual-axis line: actual points vs xPoints), SummaryCards, SeasonInsightsPanels, PhaseStrengthsCard (radar), PossessionRadars, CurrentFormCard, HomeVsAwayCard, ProjectedFinishCard, XPointsOverUnderCard. Data from: season-points, season-possession-details, league-team-season-averages API routes. Interactions: team/season dropdowns, season comparison toggle.
+
+### Story 9.3: Post-Match Analysis Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 11 components: MatchFilterBar (fuzzy search), MatchStats (comparative), MomentumGraph (possession % timeline), XgRaceChart (cumulative xG), WinProbabilityBar, LineupTable, SubstitutesTable, PossessionMetricCard, PostMatchPossessionDetails, EventIcons, GraphInfoBadge. Data from: matches, match-stats, lineups-processed, possessions API routes. Interactions: match search/selection, team/season filters.
+
+### Story 9.4: Shot Map Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 15 components: MatchFiltersBar, ShotFiltersBar (multi-select), ShotPitchMap (half-pitch with xG-sized circles), GoalMap (zoomed goal view), DetailsPane (with Wyscout video), ShotsTable (sortable), StatsBar, legends. Data from: shots, match-periods API routes + Wyscout video integration. Interactions: match/team/season filters, outcome filters, player filter, exclude penalties toggle, video clip playback.
+
+### Story 9.5: Heat Maps Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port HeatMapClient and HeatPitchMap components. Canvas-based heatmap rendering using simpleheat library on FullPitchBase overlay. Gradient: Sampdoria blue -> cyan -> yellow -> red. Event density scaling by type (pressures, buildup, under-pressure, interceptions). Data from: events API route with type filtering. Interactions: tab selection (event type), player filter, match/venue filters. ResizeObserver for responsive canvas.
+
+---
+
+## Epic 10: Analytics Dashboards -- Advanced
+
+Six specialized dashboards for deeper tactical analysis. These are more complex (Set Pieces has 18 components) and used less frequently but are essential for match preparation and post-match review.
+
+**Depends on:** Epic 7 (design components), Epic 8 (data integrations).
+
+### Story 10.1: Event Map Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 5 components: EventMapFilterBar, EventMapClient (tab selection: Interceptions/Fouls/Regains), EventPitchMap (SVG with dot events + zone stats panel), EventDetailsPane (with Wyscout video), PlayerStatsChart (zone distribution). Server-rendered filters with client hydration. Video integration via Wyscout. Interactions: tab selection, event click for details, video clip loading.
+
+### Story 10.2: Player Analysis Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 7 components: PlayerFilters (cascading: competition -> team -> season -> player search), PlayerInfoCard, PlayerOverview (position-based templates), SeasonStatistics (per-90 table), PlayerRadarChart (vs league percentiles), PlayerScatterPlot (XY scatter), PlayerComparison. Data from: player-season-stats, league-player-season-stats, players-search API routes. Interactions: cascade filters, position template selector, axis selection.
+
+### Story 10.3: Set Pieces Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 18 components including: SetPieceFiltersBar (multi-select: type, side, technique, zone, player, target, outcome), SetPieceMatchFiltersBar (fuzzy search), SetPiecesPitchMap (half-pitch with zone polygons), SetPiecesGoalMap, SetPieceDetailsPane (with video), SetPieceLegend, CornerTechniqueBar, FirstContactsBarChart, OutcomeBarChart, TakersBarChart, zone polygon definitions. Data from: set-pieces API routes (by-match and by-season). Interactions: match selection, multi-select filters, individual vs zone view toggle, all-season vs single-match toggle, video clips.
+
+### Story 10.4: Opposition Analysis Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 8 components: OppositionFilterBar, OppositionStatsBar, OppositionSummaryCard, StrengthsWeaknesses, StyleOfPlayRadar, PhaseOfPlayRatings, UnavailablePlayers, FormationUsageCard (heatmap). Server-rendered with client hydration. Data from: custom opposition SQL queries. Interactions: opponent team selector, manager filter.
+
+### Story 10.5: Team Trends Dashboard
+
+_To be detailed by SM agent._
+
+**Scope:** Port 4 components: TeamTrendsFiltersBar, TeamMetricProgressChart (multi-metric line chart with metric selector), LeagueRankingChart (position over matchweek), TeamXYScatterChart (team vs league). Data from: team-trends, league-ranking-averages, league-team-season-averages API routes. Interactions: team/season selection, metric picker.
+
+### Story 10.6: Referee Analysis, View Possessions & Post-Match Set Pieces
+
+_To be detailed by SM agent._
+
+**Scope:** Three lighter-weight dashboards grouped in one story. (1) Referee Analysis: RefereeFiltersBar, RefereeSummaryCard, RefereeStatsBar, FoulsTable. (2) View Possessions: possession table with phase/outcome filtering + Wyscout video playback, period offset mapping. (3) Post-Match Set Pieces: variant of Set Pieces filtered to single match with attack/defence toggle. Data from: referee-analysis, referee-summary, possessions, match-periods API routes.
+
+---
+
+## Epic 11: Cross-Cutting Features
+
+Transversal features that improve the overall platform experience: global search, Google OAuth, enriched homepage with live match data, and a consolidated RBAC hooks system.
+
+### Story 11.1: Global Search Across All Entities
+
+_To be detailed by SM agent._
+
+**Scope:** Build a global search (topbar or command palette) that searches across dashboards, documents, contracts, players, and calendar events. Fuzzy matching with result grouping by entity type. Search results show icon, title, and navigation link. Convex-powered for real-time results. Accessible via keyboard shortcut (Cmd+K / Ctrl+K).
+
+### Story 11.2: Google OAuth Authentication
+
+_To be detailed by SM agent._
+
+**Scope:** Add Google OAuth as an alternative sign-in method alongside email/password. Leverage the NativeSquare template's auth infrastructure. Link Google accounts to existing user profiles. Handle edge cases: existing email conflict, team assignment for new Google sign-ins.
+
+### Story 11.3: Enriched Homepage with SportMonks Data
+
+_To be detailed by SM agent._
+
+**Scope:** Enhance the homepage (Story 2.3) with live data from SportMonks: match countdown timer to next fixture, recent match results with scores, league standings snippet. Replace static "Next Match" widget with real fixture data. Recent dashboards and documents sections (from pin/recent tracking in Story 7.4).
+
+### Story 11.4: RBAC Hooks -- Reusable Access Control Utilities
+
+_To be detailed by SM agent._
+
+**Scope:** Consolidate and extend the existing RBAC system. Create reusable hooks: (1) `getTeamResource(ctx, table, id)` -- fetch + team validation in one op (replaces 84+ inline checks), (2) `requireAdminOrSelf(ctx, targetUserId)` -- admin bypass + user-ownership check (replaces 3x duplicated contract pattern), (3) `requireAdminOrRole(ctx, roles[])` -- admin bypass + role check, (4) `requireResourceAccess(ctx, resource, options)` -- composable check combining role + userId + individual permissions, (5) `withAccessControl(handler, rules)` -- mutation/query wrapper for auto-enforcement. Refactor existing mutations/queries across all modules to use the new hooks (no functional changes, pure refactor).
+
+---
+
 # Sprint 2 — Staff & Medical
 
 Sprint 2 delivers the Staff Profiles & Directory module (originally planned for Sprint 1, swapped with Document Hub) and the Injury Reporting module. Together they complete the club's people management capabilities.
 
 > **Open questions for this sprint:** See [sprint2-3-open-questions.md](sprint2-3-open-questions.md) — questions Q-S2-01 through Q-S2-05.
 
-## Epic 7: Staff Profiles & Directory
+## Epic 12: Staff Profiles & Directory
 
 Staff members get structured profiles with bios, job titles, and certification tracking. The club directory gives everyone a single place to find contact information. Admins manage onboarding and permission levels.
 
 **Proposal reference:** Sprint 1 "Staff Profiles & Directory" (moved to Sprint 2 to prioritize Document Hub in Sprint 1).
 
-### Story 7.1: Staff Data Model & Directory View
+### Story 12.1: Staff Data Model & Directory View
 
 As a user,
 I want to browse a staff directory showing all club staff with their name, role, job title, and photo,
@@ -710,7 +908,7 @@ So that I can quickly find and contact anyone at the club.
 
 > **Depends on:** [Q-S2-02](sprint2-3-open-questions.md#q-s2-02-staff-profile-fields) — Final field list may expand based on client input. Default assumption: core bio + contact fields.
 
-### Story 7.2: Staff Profile Creation & Onboarding
+### Story 12.2: Staff Profile Creation & Onboarding
 
 As an admin,
 I want to create staff profiles and invite staff members to the platform,
@@ -729,7 +927,7 @@ So that new hires are onboarded with their information centralized.
 
 > **Depends on:** [Q-S2-02](sprint2-3-open-questions.md#q-s2-02-staff-profile-fields) — Additional fields may be added based on client answer.
 
-### Story 7.3: Certification Tracking & Expiry Alerts
+### Story 12.3: Certification Tracking & Expiry Alerts
 
 As an admin,
 I want to track staff certifications with expiry dates and receive alerts before they expire,
@@ -748,7 +946,7 @@ So that the club stays compliant and no certification lapses go unnoticed.
 
 > **Depends on:** [Q-S2-01](sprint2-3-open-questions.md#q-s2-01-staff-certification-types) — If the client wants predefined certification categories (e.g., UEFA coaching badges, medical licenses) instead of free-text, the form will include a category dropdown. Default assumption: flexible name field.
 
-### Story 7.4: Staff Permission Levels
+### Story 12.4: Staff Permission Levels
 
 As an admin,
 I want to assign granular permission levels to staff members,
@@ -768,14 +966,14 @@ So that each staff member sees only what is relevant to their function.
 
 ---
 
-## Epic 8: Injury Reporting
+## Epic 13: Injury Reporting
 
 A comprehensive injury management system for the medical team, extending the foundation from Story 5.5 (basic injury logging) with clinical classification, status tracking, rehab workflows, and archiving.
 
 **Proposal reference:** Sprint 2 "Injury Reporting".
 **Builds on:** Story 5.5 (sprint2-5-5-injury-history-medical-staff-only.md) — basic injury logging already implemented.
 
-### Story 8.1: Injury Data Model & Classification
+### Story 13.1: Injury Data Model & Classification
 
 As a medical staff member,
 I want to log injuries with structured clinical classification (body region, injury type, mechanism),
@@ -792,7 +990,7 @@ So that the medical team has precise, searchable injury records.
 
 > **Depends on:** [Q-S2-04](sprint2-3-open-questions.md#q-s2-04-injury-classification-system) — If the client uses Orchard Codes, we'll add an optional Orchard Code field alongside the dropdown classification. Default assumption: dropdown-based classification without Orchard Codes.
 
-### Story 8.2: Injury Timeline & Rehab Notes
+### Story 13.2: Injury Timeline & Rehab Notes
 
 As a medical staff member,
 I want to track the progression of an injury with timeline entries and rehab notes,
@@ -808,7 +1006,7 @@ So that the full treatment history is documented from injury to clearance.
 **And** the estimated recovery date can be updated from any timeline entry
 **And** the timeline is read-only for non-medical roles (they cannot see it per existing access control)
 
-### Story 8.3: Injury Status & Return-to-Play Tracking
+### Story 13.3: Injury Status & Return-to-Play Tracking
 
 As a medical staff member,
 I want to set a color-coded status on each injury so coaches and staff can see player availability at a glance,
@@ -827,7 +1025,7 @@ So that squad selection and training planning account for player fitness.
 
 > **Depends on:** [Q-S2-05](sprint2-3-open-questions.md#q-s2-05-injury-status-workflow) — Status transitions and who can change them may be adjusted based on client workflow. Default assumption: only medical staff can change injury status.
 
-### Story 8.4: Injury Dashboard & Archiving
+### Story 13.4: Injury Dashboard & Archiving
 
 As a medical staff member,
 I want a dashboard showing all current injuries across the squad and the ability to archive resolved injuries,
@@ -853,13 +1051,13 @@ Sprint 3 delivers the scouting suite (reports + shadow teams) and the WhatsApp n
 > **Open questions for this sprint:** See [sprint2-3-open-questions.md](sprint2-3-open-questions.md) — questions Q-S3-01 through Q-S3-06.
 > **Critical prerequisite:** Q-S3-01 (Jesper's scouting format) and Q-S3-03 (WhatsApp Business API setup) must be resolved before Sprint 3 starts.
 
-## Epic 9: Scouting Reports
+## Epic 14: Scouting Reports
 
 Scouts and admins can create, grade, and manage scouting reports on transfer targets. Reports include structured data, media attachments, and final recommendations. Access is restricted to scouts and admins.
 
 **Proposal reference:** Sprint 3 "Scouting Reports".
 
-### Story 9.1: Scouting Data Model & Report List
+### Story 14.1: Scouting Data Model & Report List
 
 As a scout or admin,
 I want to see a list of all scouting reports with target name, position, recommendation, and date,
@@ -878,7 +1076,7 @@ So that I can quickly review and manage the club's scouting pipeline.
 
 > **Depends on:** [Q-S3-01](sprint2-3-open-questions.md#q-s3-01-scouting-report-format-jesper-input-needed) — The data model fields listed here are provisional. Jesper's input will finalize the exact fields and may add custom attributes. **This is a blocking dependency.**
 
-### Story 9.2: Scouting Report Creation & Media Attachments
+### Story 14.2: Scouting Report Creation & Media Attachments
 
 As a scout,
 I want to create a detailed scouting report with text analysis, media, and video links,
@@ -897,7 +1095,7 @@ So that decision-makers have all the information they need to evaluate a target.
 
 > **Depends on:** [Q-S3-01](sprint2-3-open-questions.md#q-s3-01-scouting-report-format-jesper-input-needed) — Form fields will be adjusted based on Jesper's report format. **This is a blocking dependency.**
 
-### Story 9.3: Grading System & Recommendations
+### Story 14.3: Grading System & Recommendations
 
 As a scout,
 I want to grade a target player across multiple criteria and assign a final recommendation,
@@ -915,7 +1113,7 @@ So that reports follow a consistent evaluation framework.
 
 > **Depends on:** [Q-S3-01](sprint2-3-open-questions.md#q-s3-01-scouting-report-format-jesper-input-needed) — Grading criteria and scale are provisional. Jesper may want different criteria, a different scale (e.g., letter grades, stars), or additional evaluation categories. **This is a blocking dependency.**
 
-### Story 9.4: Follow-up Notes & Target Archiving
+### Story 14.4: Follow-up Notes & Target Archiving
 
 As a scout or admin,
 I want to add follow-up notes to existing reports and archive targets that are no longer relevant,
@@ -933,13 +1131,13 @@ So that the scouting pipeline stays current and historical data is preserved.
 
 ---
 
-## Epic 10: Shadow Teams
+## Epic 15: Shadow Teams
 
 A visual squad-planning tool where scouts and admins build shadow teams by position, categorize targets by priority, and rank them using drag-and-drop.
 
 **Proposal reference:** Sprint 3 "Scouting Shadow Teams".
 
-### Story 10.1: Shadow Team Data Model & Pitch View
+### Story 15.1: Shadow Team Data Model & Pitch View
 
 As a scout or admin,
 I want to see a visual pitch view displaying scouting targets organized by position,
@@ -957,7 +1155,7 @@ So that I can evaluate squad coverage and identify gaps at a glance.
 
 > **Depends on:** [Q-S3-02](sprint2-3-open-questions.md#q-s3-02-shadow-team-positions-and-categories) — Number of concurrent shadow teams and whether categories are fixed or custom. Default assumption: one active shadow team, 3 fixed categories.
 
-### Story 10.2: Category Management & Player Assignment
+### Story 15.2: Category Management & Player Assignment
 
 As a scout or admin,
 I want to categorize shadow team targets by priority (Immediate, Development, Emergency/Loan),
@@ -973,7 +1171,7 @@ So that transfer planning reflects different urgency levels.
 **And** removing a target from the shadow team does not delete the scouting report
 **And** a sidebar or panel lists all targets grouped by category with quick-add/remove actions
 
-### Story 10.3: Drag-and-Drop Ranking
+### Story 15.3: Drag-and-Drop Ranking
 
 As a scout or admin,
 I want to rank targets within each position using drag-and-drop,
@@ -990,14 +1188,14 @@ So that the preferred order of targets is clear for transfer discussions.
 
 ---
 
-## Epic 11: Notifications & WhatsApp Integration
+## Epic 16: Notifications & WhatsApp Integration
 
 A unified notification system that extends the existing in-app notification center (Story 3.7) with WhatsApp Business API integration for external push notifications. Admins can manage templates, broadcast messages, and users can control their notification preferences.
 
 **Proposal reference:** Sprint 3 "WhatsApp Notifications".
 **Builds on:** Story 3.7 (sprint3-3-7-in-app-notification-center.md) — in-app notification center already implemented.
 
-### Story 11.1: WhatsApp Business API Integration
+### Story 16.1: WhatsApp Business API Integration
 
 As a developer,
 I want to integrate the WhatsApp Business API with the platform backend,
@@ -1015,7 +1213,7 @@ So that the system can send automated and manual WhatsApp messages to users.
 
 > **Depends on:** [Q-S3-03](sprint2-3-open-questions.md#q-s3-03-whatsapp-business-api-setup) — **Hard blocker.** WhatsApp Business account must be set up and verified before this story can start. Prerequisites checklist in the question document.
 
-### Story 11.2: Automated Notification Triggers
+### Story 16.2: Automated Notification Triggers
 
 As a user,
 I want to receive WhatsApp notifications for important events (new calendar events, schedule changes, reminders),
@@ -1024,7 +1222,7 @@ So that I stay informed even when I'm not logged into the platform.
 **Acceptance Criteria:**
 
 **Given** the WhatsApp API integration is operational (Story 11.1)
-**And** the user has opted in to WhatsApp notifications (Story 11.4)
+**And** the user has opted in to WhatsApp notifications (Story 16.4)
 **When** an admin creates a new calendar event that includes the user
 **Then** the user receives a WhatsApp message with the event name, date/time, and location
 **When** an event the user is invited to is updated or cancelled
@@ -1035,7 +1233,7 @@ So that I stay informed even when I'm not logged into the platform.
 
 > **Depends on:** [Q-S3-04](sprint2-3-open-questions.md#q-s3-04-whatsapp-notification-triggers) — Additional trigger types may be added based on client input. Default: calendar events only.
 
-### Story 11.3: Admin Broadcast & Message Templates
+### Story 16.3: Admin Broadcast & Message Templates
 
 As an admin,
 I want to send manual WhatsApp broadcasts to groups of users and manage message templates,
@@ -1054,7 +1252,7 @@ So that I can communicate important club information outside of scheduled events
 
 > **Depends on:** [Q-S3-05](sprint2-3-open-questions.md#q-s3-05-whatsapp-message-templates--language) — Template language (English/Italian/both) and customization needs affect template design.
 
-### Story 11.4: User Notification Preferences & Privacy
+### Story 16.4: User Notification Preferences & Privacy
 
 As a user,
 I want to control which notifications I receive and through which channels (in-app, WhatsApp),

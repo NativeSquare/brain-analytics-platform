@@ -19,6 +19,8 @@ import { playerInjuries } from "./table/playerInjuries";
 import { playerStats } from "./table/playerStats";
 import { players } from "./table/players";
 import { teams } from "./table/teams";
+import { userPinnedDashboards } from "./table/userPinnedDashboards";
+import { userRecentDashboards } from "./table/userRecentDashboards";
 import { users } from "./table/users";
 
 export default defineSchema({
@@ -42,5 +44,7 @@ export default defineSchema({
   playerStats,
   players,
   teams,
+  userPinnedDashboards,
+  userRecentDashboards,
   users,
 });

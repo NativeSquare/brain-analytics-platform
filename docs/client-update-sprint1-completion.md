@@ -60,8 +60,12 @@ As discussed during planning, we swapped Document Hub and Staff Profiles between
 
 ### 6. Infrastructure & Quality
 
-- **526 automated tests** covering authentication, RBAC, contract security, document permissions, calendar mutations, and more
-- **25 manual QA test cases** executed and passing
+- **526 automated backend tests** covering authentication, RBAC, contract security, document permissions, calendar mutations, player management, and more
+- **Comprehensive QA testing** across all 11 epics:
+  - Epics 1–6 (Foundation, Auth, Calendar, Document Hub, Players, Contracts): automated QA validation at 3 levels (unit, integration, manual review) — all documented
+  - Epics 7–8 (Design System, Data Integrations): automated end-to-end validation of all API routes and component rendering
+  - Epics 9–11 (Analytics Dashboards, Cross-Cutting Features): 25 dedicated manual QA test cases covering every dashboard, search, homepage, RBAC, i18n, and calendar regression — all passing
+- **All test plans and results are documented** in the project repository for full traceability
 - **Real-time architecture**: all screens update instantly when data changes (Convex subscriptions)
 - **Multi-tenant isolation**: all data is team-scoped with enforcement at the database layer
 - **Secure file storage**: signed URLs for all uploaded documents and contracts

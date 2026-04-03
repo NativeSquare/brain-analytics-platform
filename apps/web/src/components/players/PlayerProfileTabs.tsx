@@ -223,7 +223,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
       {/* Story 6.2 AC1,3,7: Contract tab completely omitted from DOM for unauthorized users */}
       {canViewContract === true && (
         <TabsContent value="contract">
-          <ContractCard playerId={playerId} />
+          <ContractCard playerId={playerId} isAdmin={isAdmin} />
         </TabsContent>
       )}
 

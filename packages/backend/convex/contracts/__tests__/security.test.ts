@@ -3,6 +3,30 @@ import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "../../_generated/dataModel";
 
+// Suppress convex-test false-positive warning for ctx.scheduler.runAfter
+// (uploadContract now schedules extractContractData action which is a "use node"
+// action that cannot run in the convex-test environment)
+const _w = console.warn;
+console.warn = (...a: any[]) => {
+  if (typeof a[0] === "string" && a[0].includes("should not directly call")) return;
+  _w.apply(console, a);
+};
+
+// Suppress unhandled rejections from convex-test trying to run scheduled
+// "use node" actions (extractContractData) after the mutation completes.
+const _origListeners = process.rawListeners("unhandledRejection");
+process.removeAllListeners("unhandledRejection");
+process.on("unhandledRejection", (reason: unknown) => {
+  if (
+    reason instanceof Error &&
+    reason.message.includes("Write outside of transaction")
+  ) {
+    return; // Suppress — expected in tests when scheduler fires after tx
+  }
+  // Re-throw other unhandled rejections
+  throw reason;
+});
+
 // ---------------------------------------------------------------------------
 // Mock getAuthUserId
 // ---------------------------------------------------------------------------

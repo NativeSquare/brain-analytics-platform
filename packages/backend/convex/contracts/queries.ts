@@ -130,6 +130,7 @@ export const getContract = query({
       fileId: contract.fileId,
       extractionStatus: contract.extractionStatus,
       extractedData: contract.extractedData ?? null,
+      extractionError: contract.extractionError ?? null,
       createdAt: contract.createdAt,
       updatedAt: contract.updatedAt,
       readOnly,

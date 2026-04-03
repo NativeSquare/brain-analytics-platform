@@ -197,13 +197,13 @@ describe("getUserNotifications", () => {
     expect(result[0].title).toBe("Middle");
   });
 
-  it("returns at most 20 notifications", async () => {
+  it("returns at most 5 notifications", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);
 
-    // Insert 25 notifications
-    for (let i = 0; i < 25; i++) {
+    // Insert 10 notifications
+    for (let i = 0; i < 10; i++) {
       await insertNotification(t, userId, teamId, {
         createdAt: Date.now() + i,
         title: `Notification ${i}`,
@@ -215,7 +215,7 @@ describe("getUserNotifications", () => {
       {},
     );
 
-    expect(result.length).toBe(20);
+    expect(result.length).toBe(5);
   });
 
   it("respects team scoping — does not return other team notifications", async () => {

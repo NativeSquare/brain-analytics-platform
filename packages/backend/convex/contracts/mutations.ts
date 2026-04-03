@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { requireRole } from "../lib/auth";
 
 // ---------------------------------------------------------------------------
@@ -42,6 +43,9 @@ export const uploadContract = mutation({
     const now = Date.now();
 
     if (existing) {
+      // Delete old PDF from storage to prevent orphaned files
+      await ctx.storage.delete(existing.fileId);
+
       // Replace existing contract
       await ctx.db.patch(existing._id, {
         fileId,
@@ -50,6 +54,14 @@ export const uploadContract = mutation({
         extractionError: undefined,
         updatedAt: now,
       });
+
+      // Schedule AI extraction
+      await ctx.scheduler.runAfter(
+        0,
+        internal.contracts.actions.extractContractData,
+        { contractId: existing._id },
+      );
+
       return existing._id;
     }
 
@@ -62,6 +74,13 @@ export const uploadContract = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    // Schedule AI extraction
+    await ctx.scheduler.runAfter(
+      0,
+      internal.contracts.actions.extractContractData,
+      { contractId },
+    );
 
     return contractId;
   },

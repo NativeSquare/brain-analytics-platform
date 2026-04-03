@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/statsbomb-db";
 import { loadQuery } from "@/lib/load-query";
+import { getMockResponse } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,9 @@ const toIntOrNull = (value: unknown): number | null => {
 };
 
 export async function GET(request: NextRequest) {
+  const mock = getMockResponse("statsbomb", "referee-analysis");
+  if (mock) return mock;
+
   const searchParams = request.nextUrl.searchParams;
   const competitionIdParam = searchParams.get("competitionId");
   const refereeIdParam = searchParams.get("refereeId");

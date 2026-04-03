@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
-import { requireAuth, requireRole } from "../lib/auth";
+import { requireAuth, requireRole, requireResourceAccess, getTeamResource } from "../lib/auth";
 import {
   filterByAccess,
   filterDocumentsByAccess,
@@ -217,13 +217,7 @@ export const getDocumentUrl = query({
   handler: async (ctx, { documentId }) => {
     const { user, teamId } = await requireAuth(ctx);
 
-    const document = await ctx.db.get(documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", documentId);
 
     // Access check — deny if user lacks permission
     const hasAccess = await checkDocumentAccess(ctx, user, document);
@@ -251,13 +245,7 @@ export const getDocument = query({
   handler: async (ctx, { documentId }) => {
     const { user, teamId } = await requireAuth(ctx);
 
-    const document = await ctx.db.get(documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", documentId);
 
     // Access check — deny if user lacks permission
     const hasAccess = await checkDocumentAccess(ctx, user, document);
@@ -305,12 +293,14 @@ export const getPermissions = query({
     targetId: v.string(),
   },
   handler: async (ctx, { targetType, targetId }) => {
-    const { teamId } = await requireRole(ctx, ["admin"]);
-
-    // Fetch the target
+    // Folders: admin-only. Documents: owner or admin.
+    let teamId: Id<"teams">;
     let permittedRoles: string[] | undefined;
 
     if (targetType === "folder") {
+      const result = await requireRole(ctx, ["admin"]);
+      teamId = result.teamId;
+
       const folder = await ctx.db.get(targetId as Id<"folders">);
       if (!folder || folder.teamId !== teamId) {
         throw new ConvexError({
@@ -320,6 +310,9 @@ export const getPermissions = query({
       }
       permittedRoles = folder.permittedRoles;
     } else {
+      const result = await requireAuth(ctx);
+      teamId = result.teamId;
+
       const document = await ctx.db.get(targetId as Id<"documents">);
       if (!document || document.teamId !== teamId) {
         throw new ConvexError({
@@ -327,6 +320,8 @@ export const getPermissions = query({
           message: "Document not found.",
         });
       }
+      // Owner or admin check
+      await requireResourceAccess(ctx, { createdBy: document.ownerId }, { allowOwner: true });
       permittedRoles = document.permittedRoles;
     }
 
@@ -522,13 +517,7 @@ export const getUsersWithAccessCount = query({
   handler: async (ctx, { documentId }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const document = await ctx.db.get(documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", documentId);
 
     const usersWithAccess = await _getUsersWithAccess(ctx, document, teamId);
 
@@ -545,13 +534,7 @@ export const getReadersDetail = query({
   handler: async (ctx, { documentId }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const document = await ctx.db.get(documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", documentId);
 
     // Get all read records for this document
     const allReads = await ctx.db
@@ -655,6 +638,12 @@ export const searchDocuments = query({
 
       const accessible: Doc<"documents">[] = [];
       for (const doc of matched) {
+        // Owner always has access to their own documents
+        if (doc.ownerId === user._id) {
+          accessible.push(doc);
+          continue;
+        }
+
         // Document has its own permissions (override)
         if (doc.permittedRoles !== undefined) {
           if (doc.permittedRoles === null) {

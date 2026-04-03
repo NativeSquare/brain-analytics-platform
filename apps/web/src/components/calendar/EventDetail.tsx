@@ -139,9 +139,14 @@ export function EventDetail({
   return (
     <>
       <Sheet open={open} onOpenChange={(o) => !o && handleClose()}>
-        <SheetContent side="right" className="overflow-y-auto sm:max-w-md">
+        <SheetContent side="right" className="overflow-y-auto sm:max-w-md" aria-describedby={undefined}>
           {event === undefined ? (
-            <EventDetailSkeleton />
+            <>
+              <SheetHeader>
+                <SheetTitle>Loading event...</SheetTitle>
+              </SheetHeader>
+              <EventDetailSkeleton />
+            </>
           ) : event === null ? (
             <SheetHeader>
               <SheetTitle>Event not found</SheetTitle>

@@ -18,10 +18,11 @@ import { Controller, useForm } from "react-hook-form";
 import { useConvex } from "convex/react";
 import * as z from "zod";
 import { api } from "@packages/backend/convex/_generated/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { getConvexErrorMessage } from "@/utils/getConvexErrorMessage";
 import { Spinner } from "@/components/ui/spinner";
+import { GoogleSignInButton } from "./google-sign-in-button";
 
 const formSchema = z.object({
   email: z
@@ -36,10 +37,26 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuthActions();
   const convex = useConvex();
-  const [formError, setFormError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+
+  // OAuth error from redirect query params
+  const oauthError = searchParams.get("error");
+  const oauthErrorMessage = React.useMemo(() => {
+    if (!oauthError) return null;
+    switch (oauthError) {
+      case "not-invited":
+        return "Your Google account is not associated with an invitation. Please ask your team admin to invite you first.";
+      case "OAuthAccountNotLinked":
+        return "This email is already registered with a different sign-in method. Please use your original sign-in method.";
+      default:
+        return "Something went wrong during sign-in. Please try again.";
+    }
+  }, [oauthError]);
+
+  const [formError, setFormError] = React.useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -88,9 +105,17 @@ export function LoginForm({
                   Login to your Brain Analytics account
                 </p>
               </div>
-              {formError && (
-                <div className="text-destructive self-center">{formError}</div>
+              {(formError || oauthErrorMessage) && (
+                <div className="text-destructive self-center">
+                  {formError ?? oauthErrorMessage}
+                </div>
               )}
+              <GoogleSignInButton disabled={isLoading} />
+              <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+                <span className="bg-card text-muted-foreground relative z-10 px-2">
+                  Or continue with email
+                </span>
+              </div>
               <Controller
                 name="email"
                 control={form.control}
@@ -142,7 +167,6 @@ export function LoginForm({
                   {isLoading ? <Spinner /> : "Login"}
                 </Button>
               </Field>
-              {/* TODO: Re-enable social providers (Apple, Google, Meta) */}
               <FieldDescription className="text-center">
                 Don&apos;t have an account? <a href="/signup">Sign up</a>
               </FieldDescription>

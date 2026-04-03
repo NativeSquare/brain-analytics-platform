@@ -9,6 +9,8 @@ export const wyscoutVideoCache = defineTable({
   storageId: v.optional(v.id("_storage")),
   videoUrl: v.string(),
   expiresAt: v.number(),
+  muxAssetId: v.optional(v.string()),
+  muxPlaybackId: v.optional(v.string()),
   teamId: v.id("teams"),
   createdAt: v.number(),
 }).index("by_lookup", [

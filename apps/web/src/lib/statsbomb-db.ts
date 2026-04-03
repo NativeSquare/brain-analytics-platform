@@ -3,30 +3,30 @@ import "server-only";
 import { Pool, type QueryResultRow } from "pg";
 import type { ConnectionOptions } from "tls";
 
-const connectionString = process.env.STATSBOMB_DATABASE_URL;
-if (!connectionString) {
-  throw new Error(
-    "Missing required environment variable: STATSBOMB_DATABASE_URL",
-  );
-}
-
 function getSslConfig(): ConnectionOptions | boolean | undefined {
   const caRaw = process.env.STATSBOMB_DATABASE_SSL_CA;
   const ca = caRaw?.replaceAll("\\n", "\n");
   if (ca) {
     return { rejectUnauthorized: true, ca };
   }
-  // Accept provider cert when custom CA is not provided
   return { rejectUnauthorized: false };
 }
 
 declare global {
+  // eslint-disable-next-line no-var
   var __statsbombPool__: Pool | undefined;
 }
 
 function getPool(): Pool {
   const existing = globalThis.__statsbombPool__;
   if (existing) return existing;
+
+  const connectionString = process.env.STATSBOMB_DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      "Missing required environment variable: STATSBOMB_DATABASE_URL",
+    );
+  }
 
   const pool = new Pool({
     connectionString,
@@ -39,11 +39,8 @@ function getPool(): Pool {
   });
 
   globalThis.__statsbombPool__ = pool;
-
   return pool;
 }
-
-const pool = getPool();
 
 const READ_ONLY_QUERY = /^\s*(select|with)\b/i;
 
@@ -57,6 +54,7 @@ export async function query<T extends QueryResultRow>(
     );
   }
 
+  const pool = getPool();
   const start = Date.now();
   const client = await pool.connect();
 
@@ -77,5 +75,3 @@ export async function query<T extends QueryResultRow>(
     client.release();
   }
 }
-
-export { pool };

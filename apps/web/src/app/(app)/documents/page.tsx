@@ -1,18 +1,3 @@
-export default function DocumentsPage() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center p-6">
-      <h1 className="text-2xl font-semibold">Documents</h1>
-      <p className="mt-2 text-muted-foreground">Document Hub coming soon.</p>
-    </div>
-  )
-}
-
-// -----------------------------------------------------------------------------
-// Sprint 2 — Full Document Hub implementation (preserved for reactivation)
-// To restore: remove the placeholder above and uncomment everything below.
-// -----------------------------------------------------------------------------
-
-/*
 "use client";
 
 import * as React from "react";
@@ -58,6 +43,8 @@ export default function DocumentsPage() {
 
   const currentUser = useQuery(api.table.users.currentUser);
   const isAdmin = currentUser?.role === "admin";
+  const canManageDoc = (ownerId?: Id<"users">) =>
+    isAdmin || (currentUser != null && currentUser._id === ownerId);
 
   const {
     searchTerm,
@@ -293,6 +280,7 @@ export default function DocumentsPage() {
           isDetailOpen={isDetailOpen}
           setIsDetailOpen={setIsDetailOpen}
           isAdmin={isAdmin}
+          currentUserId={currentUser?._id}
           handleReplaceFromDetail={handleReplaceFromDetail}
           handleDeleteFromDetail={handleDeleteFromDetail}
           handlePermissionsFromDetail={handlePermissionsFromDetail}
@@ -403,7 +391,7 @@ export default function DocumentsPage() {
       <div className="flex items-center justify-between">
         <DocumentFolderBreadcrumb folderId={currentFolderId} />
         <div className="flex items-center gap-2">
-          {isAdmin && currentFolderId && (
+          {currentFolderId && (
             <Button
               size="sm"
               onClick={() => setIsUploadDialogOpen(true)}
@@ -473,6 +461,7 @@ export default function DocumentsPage() {
                     key={doc._id}
                     document={doc}
                     isAdmin={isAdmin}
+                    canManage={canManageDoc(doc.ownerId)}
                     onViewDetails={handleViewDetails}
                     onReplace={handleReplaceFromCard}
                     onDelete={handleDeleteFromCard}
@@ -493,7 +482,7 @@ export default function DocumentsPage() {
                     ? `No ${FILE_TYPE_LABELS[fileType]?.toLowerCase() ?? fileType} documents in this folder.`
                     : "This folder is empty."}
                 </p>
-                {isAdmin && !fileType && (
+                {!fileType && (
                   <Button
                     size="sm"
                     className="mt-4"
@@ -546,6 +535,7 @@ export default function DocumentsPage() {
         isDetailOpen={isDetailOpen}
         setIsDetailOpen={setIsDetailOpen}
         isAdmin={isAdmin}
+        currentUserId={currentUser?._id}
         handleReplaceFromDetail={handleReplaceFromDetail}
         handleDeleteFromDetail={handleDeleteFromDetail}
         handlePermissionsFromDetail={handlePermissionsFromDetail}
@@ -566,6 +556,7 @@ function SharedDialogs({
   isDetailOpen,
   setIsDetailOpen,
   isAdmin,
+  currentUserId,
   handleReplaceFromDetail,
   handleDeleteFromDetail,
   handlePermissionsFromDetail,
@@ -581,6 +572,7 @@ function SharedDialogs({
   isDetailOpen: boolean;
   setIsDetailOpen: (open: boolean) => void;
   isAdmin: boolean;
+  currentUserId?: Id<"users">;
   handleReplaceFromDetail: (docId: Id<"documents">, docName: string) => void;
   handleDeleteFromDetail: (docId: Id<"documents">, docName: string) => void;
   handlePermissionsFromDetail: (
@@ -615,6 +607,7 @@ function SharedDialogs({
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
         isAdmin={isAdmin}
+        currentUserId={currentUserId}
         onReplace={handleReplaceFromDetail}
         onDelete={handleDeleteFromDetail}
         onPermissions={handlePermissionsFromDetail}
@@ -694,4 +687,3 @@ function EmptyState({
     </div>
   );
 }
-*/

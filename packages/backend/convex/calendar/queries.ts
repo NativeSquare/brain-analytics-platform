@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, getTeamResource } from "../lib/auth";
 import { canUserAccessEvent, getUserInvitedEventIds } from "./accessControl";
 
 import type { Id } from "../_generated/dataModel";
@@ -204,19 +204,7 @@ export const getEventRsvps = query({
   handler: async (ctx, { eventId }) => {
     const { user, teamId } = await requireAuth(ctx);
 
-    const event = await ctx.db.get(eventId);
-    if (!event) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Event not found",
-      });
-    }
-    if (event.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_AUTHORIZED" as const,
-        message: "Event not found",
-      });
-    }
+    const event = await getTeamResource(ctx, teamId, "calendarEvents", eventId);
 
     // Fetch all RSVP records for this event
     const rsvps = await ctx.db

@@ -2,7 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import { mutation } from "../_generated/server";
-import { requireAuth, requireRole } from "../lib/auth";
+import { requireAuth, requireRole, getTeamResource } from "../lib/auth";
 import { INJURY_SEVERITIES, INJURY_STATUSES, PLAYER_STATUSES } from "@packages/shared/players";
 
 /**
@@ -72,13 +72,7 @@ export const addPlayerFitness = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const player = await ctx.db.get(args.playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Player not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "players", args.playerId);
 
     validateFitnessFields(args);
 
@@ -114,13 +108,7 @@ export const updatePlayerFitness = mutation({
   handler: async (ctx, args) => {
     const { teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const entry = await ctx.db.get(args.fitnessId);
-    if (!entry || entry.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Fitness entry not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "playerFitness", args.fitnessId);
 
     validateFitnessFields(args);
 
@@ -149,13 +137,7 @@ export const deletePlayerFitness = mutation({
   handler: async (ctx, { fitnessId }) => {
     const { teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const entry = await ctx.db.get(fitnessId);
-    if (!entry || entry.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Fitness entry not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "playerFitness", fitnessId);
 
     await ctx.db.delete(fitnessId);
   },
@@ -241,13 +223,7 @@ export const logInjury = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const player = await ctx.db.get(args.playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Player not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "players", args.playerId);
 
     validateInjuryFields(args);
 
@@ -289,13 +265,7 @@ export const updateInjury = mutation({
   handler: async (ctx, args) => {
     const { teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const entry = await ctx.db.get(args.injuryId);
-    if (!entry || entry.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Injury entry not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "playerInjuries", args.injuryId);
 
     validateInjuryFields({
       injuryType: args.injuryType,
@@ -333,13 +303,7 @@ export const deleteInjury = mutation({
   handler: async (ctx, { injuryId }) => {
     const { teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const entry = await ctx.db.get(injuryId);
-    if (!entry || entry.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Injury entry not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "playerInjuries", injuryId);
 
     await ctx.db.delete(injuryId);
   },
@@ -445,13 +409,7 @@ export const addPlayerStats = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireRole(ctx, ["admin"]);
 
-    const player = await ctx.db.get(args.playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Player not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "players", args.playerId);
 
     validateStatsFields(args);
 
@@ -493,13 +451,7 @@ export const updatePlayerStats = mutation({
   handler: async (ctx, args) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const stats = await ctx.db.get(args.statsId);
-    if (!stats || stats.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Stats entry not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "playerStats", args.statsId);
 
     validateStatsFields(args);
 
@@ -531,13 +483,7 @@ export const deletePlayerStats = mutation({
   handler: async (ctx, { statsId }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const stats = await ctx.db.get(statsId);
-    if (!stats || stats.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Stats entry not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "playerStats", statsId);
 
     await ctx.db.delete(statsId);
   },
@@ -563,10 +509,7 @@ export const updatePlayerStatus = mutation({
   handler: async (ctx, { playerId, status }) => {
     const { user, teamId } = await requireRole(ctx, ["admin"]);
 
-    const player = await ctx.db.get(playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
-    }
+    const player = await getTeamResource(ctx, teamId, "players", playerId);
 
     if (!(PLAYER_STATUSES as readonly string[]).includes(status)) {
       throw new ConvexError({
@@ -774,13 +717,7 @@ export const updateExternalProviders = mutation({
   handler: async (ctx, { playerId, externalProviderLinks }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const player = await ctx.db.get(playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Player not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "players", playerId);
 
     // Validate each entry: non-empty after trimming
     for (const link of externalProviderLinks) {
@@ -835,21 +772,7 @@ export const invitePlayer = mutation({
   handler: async (ctx, args) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const player = await ctx.db.get(args.playerId);
-    if (!player) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Player not found.",
-      });
-    }
-
-    // Validate team match
-    if (player.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_AUTHORIZED" as const,
-        message: "Player does not belong to your team.",
-      });
-    }
+    const player = await getTeamResource(ctx, teamId, "players", args.playerId);
 
     // Validate player has personalEmail
     if (!player.personalEmail) {

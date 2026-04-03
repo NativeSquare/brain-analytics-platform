@@ -1,0 +1,102 @@
+{
+  "data": {
+    "buildUp": [
+      {
+        "scope": "match", "side": "team",
+        "bu_minutes": 1680, "bu_goals": 1, "bu_shots": 6, "bu_xg": 0.92, "bu_xt": 1.15,
+        "def_third_possessions": 12, "def_third_into_mid_pct": 75.0, "def_third_into_final_pct": 41.7, "def_third_xt": 0.32, "def_third_lost_pct": 16.7,
+        "mid_third_possessions": 9, "mid_third_into_final_pct": 66.7, "mid_third_xt": 0.48, "mid_third_lost_pct": 22.2,
+        "regained_atk_half_pct": 38.5,
+        "final_third_entries": 7, "final_third_into_box_pct": 71.4, "final_third_shot_pct": 42.9, "xg_per_entry": 0.131
+      },
+      {
+        "scope": "match", "side": "opponent",
+        "bu_minutes": 1320, "bu_goals": 0, "bu_shots": 3, "bu_xg": 0.51, "bu_xt": 0.68,
+        "def_third_possessions": 8, "def_third_into_mid_pct": 62.5, "def_third_into_final_pct": 37.5, "def_third_xt": 0.18, "def_third_lost_pct": 25.0,
+        "mid_third_possessions": 6, "mid_third_into_final_pct": 50.0, "mid_third_xt": 0.25, "mid_third_lost_pct": 33.3,
+        "regained_atk_half_pct": 28.0,
+        "final_third_entries": 4, "final_third_into_box_pct": 50.0, "final_third_shot_pct": 25.0, "xg_per_entry": 0.128
+      },
+      {
+        "scope": "season_avg", "side": "team",
+        "bu_minutes": 1500, "bu_goals": 0.85, "bu_shots": 5.8, "bu_xg": 0.92, "bu_xt": 1.05,
+        "bu_minutes_rank": 4, "bu_goals_rank": 3, "bu_shots_rank": 5, "bu_xg_rank": 3, "bu_xt_rank": 4,
+        "def_third_possessions": 10.2, "def_third_into_mid_pct": 78.3, "def_third_into_final_pct": 45.2, "def_third_xt": 0.28, "def_third_lost_pct": 18.5,
+        "def_third_possessions_rank": 8, "def_third_into_mid_pct_rank": 2, "def_third_into_final_pct_rank": 6, "def_third_xt_rank": 5, "def_third_lost_pct_rank": 11,
+        "mid_third_possessions": 8.5, "mid_third_into_final_pct": 62.1, "mid_third_xt": 0.42, "mid_third_lost_pct": 22.1,
+        "mid_third_possessions_rank": 7, "mid_third_into_final_pct_rank": 3, "mid_third_xt_rank": 4, "mid_third_lost_pct_rank": 9,
+        "regained_atk_half_pct": 35.8, "regained_atk_half_pct_rank": 6,
+        "final_third_entries": 6.2, "final_third_into_box_pct": 71.2, "final_third_shot_pct": 48.3, "xg_per_entry": 0.264,
+        "final_third_entries_rank": 5, "final_third_into_box_pct_rank": 2, "final_third_shot_pct_rank": 4, "xg_per_entry_rank": 5,
+        "total_teams": 20
+      },
+      {
+        "scope": "season_avg", "side": "opponent",
+        "bu_minutes": 1400, "bu_goals": 0.62, "bu_shots": 4.5, "bu_xg": 0.71, "bu_xt": 0.82,
+        "bu_minutes_rank": 12, "bu_goals_rank": 14, "bu_shots_rank": 13, "bu_xg_rank": 11, "bu_xt_rank": 10,
+        "def_third_possessions": 7.8, "def_third_into_mid_pct": 68.5, "def_third_into_final_pct": 38.2, "def_third_xt": 0.20, "def_third_lost_pct": 22.0,
+        "def_third_possessions_rank": 15, "def_third_into_mid_pct_rank": 12, "def_third_into_final_pct_rank": 10, "def_third_xt_rank": 14, "def_third_lost_pct_rank": 5,
+        "mid_third_possessions": 5.8, "mid_third_into_final_pct": 52.0, "mid_third_xt": 0.28, "mid_third_lost_pct": 30.0,
+        "mid_third_possessions_rank": 16, "mid_third_into_final_pct_rank": 14, "mid_third_xt_rank": 15, "mid_third_lost_pct_rank": 3,
+        "regained_atk_half_pct": 30.0, "regained_atk_half_pct_rank": 14,
+        "final_third_entries": 3.8, "final_third_into_box_pct": 55.0, "final_third_shot_pct": 30.0, "xg_per_entry": 0.140,
+        "final_third_entries_rank": 15, "final_third_into_box_pct_rank": 12, "final_third_shot_pct_rank": 14, "xg_per_entry_rank": 8,
+        "total_teams": 20
+      }
+    ],
+    "transitions": [
+      {
+        "scope": "match", "side": "team",
+        "regains_count": 15, "transitions_count": 32, "transition_goals": 1, "transition_shots": 4, "transition_xg": 0.58, "transition_xt": 0.82,
+        "atk_half_regains": 6, "def_half_turnovers": 3,
+        "transition_entries_pct": 56.3, "transition_turnover_pct": 12.5, "transition_regain_pct": 18.8, "transition_xg_per_entry": 0.032,
+        "ppda": 8.4
+      },
+      {
+        "scope": "match", "side": "opponent",
+        "regains_count": 11, "transitions_count": 24, "transition_goals": 1, "transition_shots": 3, "transition_xg": 0.65, "transition_xt": 0.55,
+        "atk_half_regains": 4, "def_half_turnovers": 2,
+        "transition_entries_pct": 50.0, "transition_turnover_pct": 16.7, "transition_regain_pct": 16.7, "transition_xg_per_entry": 0.054,
+        "ppda": 10.2
+      },
+      {
+        "scope": "season_avg", "side": "team",
+        "regains_count": 14.5, "transitions_count": 30.0, "transition_goals": 0.8, "transition_shots": 3.5, "transition_xg": 0.52, "transition_xt": 0.75,
+        "atk_half_regains": 5.2, "def_half_turnovers": 2.8,
+        "transition_entries_pct": 58.4, "transition_turnover_pct": 12.3, "transition_regain_pct": 18.6, "transition_xg_per_entry": 0.029,
+        "ppda": 8.3,
+        "regains_count_rank": 4, "transitions_count_rank": 5, "transition_goals_rank": 4, "transition_shots_rank": 6, "transition_xg_rank": 5, "transition_xt_rank": 4,
+        "atk_half_regains_rank": 3, "def_half_turnovers_rank": 15, "ppda_rank": 3,
+        "transition_entries_pct_rank": 4, "transition_turnover_pct_rank": 12, "transition_regain_pct_rank": 8, "transition_xg_per_entry_rank": 4,
+        "total_teams": 20
+      },
+      {
+        "scope": "season_avg", "side": "opponent",
+        "regains_count": 12.0, "transitions_count": 26.0, "transition_goals": 0.6, "transition_shots": 2.8, "transition_xg": 0.45, "transition_xt": 0.50,
+        "atk_half_regains": 3.5, "def_half_turnovers": 2.2,
+        "transition_entries_pct": 52.0, "transition_turnover_pct": 14.5, "transition_regain_pct": 15.0, "transition_xg_per_entry": 0.038,
+        "ppda": 9.8,
+        "regains_count_rank": 10, "transitions_count_rank": 12, "transition_goals_rank": 8, "transition_shots_rank": 11, "transition_xg_rank": 7, "transition_xt_rank": 12,
+        "atk_half_regains_rank": 11, "def_half_turnovers_rank": 8, "ppda_rank": 12,
+        "transition_entries_pct_rank": 11, "transition_turnover_pct_rank": 6, "transition_regain_pct_rank": 12, "transition_xg_per_entry_rank": 10,
+        "total_teams": 20
+      }
+    ],
+    "goalkeeper": [
+      { "scope": "match", "side": "team", "gk_possessions": 18, "gk_short_passes": 12, "gk_long_passes": 6, "gk_short_pct": 66.7, "gk_long_pct": 33.3, "gk_reset_count": 8, "gk_reset_into_opp_half_pct": 62.5 },
+      { "scope": "match", "side": "opponent", "gk_possessions": 14, "gk_short_passes": 6, "gk_long_passes": 8, "gk_short_pct": 42.9, "gk_long_pct": 57.1, "gk_reset_count": 6, "gk_reset_into_opp_half_pct": 50.0 },
+      { "scope": "season_avg", "side": "team", "gk_possessions": 16.5, "gk_short_passes": 10.2, "gk_long_passes": 6.3, "gk_short_pct": 61.8, "gk_long_pct": 38.2, "gk_reset_count": 7.5, "gk_reset_into_opp_half_pct": 58.0, "gk_possessions_rank": 5, "gk_short_passes_rank": 3, "gk_long_passes_rank": 8, "gk_reset_count_rank": 4, "gk_reset_into_opp_half_pct_rank": 6, "total_teams": 20 },
+      { "scope": "season_avg", "side": "opponent", "gk_possessions": 15.0, "gk_short_passes": 7.0, "gk_long_passes": 8.0, "gk_short_pct": 46.7, "gk_long_pct": 53.3, "gk_reset_count": 6.0, "gk_reset_into_opp_half_pct": 48.0, "gk_possessions_rank": 12, "gk_short_passes_rank": 14, "gk_long_passes_rank": 4, "gk_reset_count_rank": 10, "gk_reset_into_opp_half_pct_rank": 12, "total_teams": 20 }
+    ],
+    "setPieces": [
+      { "scope": "match", "side": "team", "sp_type": null, "sp_count": 8, "goals": 0, "xg": 0.35, "xg_per_sp": 0.044, "shot_pct": 25.0, "first_contact_pct": 37.5 },
+      { "scope": "match", "side": "opponent", "sp_type": null, "sp_count": 6, "goals": 0, "xg": 0.23, "xg_per_sp": 0.038, "shot_pct": 16.7, "first_contact_pct": 33.3 },
+      { "scope": "season_avg", "side": "team", "sp_type": null, "sp_count": 7.5, "goals": 0.28, "xg": 0.32, "xg_per_sp": 0.043, "shot_pct": 28.0, "first_contact_pct": 40.0, "sp_count_rank": 6, "goals_rank": 8, "xg_rank": 7, "xg_per_sp_rank": 9, "shot_pct_rank": 5, "first_contact_pct_rank": 4, "total_teams": 20 },
+      { "scope": "season_avg", "side": "opponent", "sp_type": null, "sp_count": 6.2, "goals": 0.22, "xg": 0.25, "xg_per_sp": 0.040, "shot_pct": 20.0, "first_contact_pct": 35.0, "sp_count_rank": 12, "goals_rank": 14, "xg_rank": 11, "xg_per_sp_rank": 10, "shot_pct_rank": 13, "first_contact_pct_rank": 12, "total_teams": 20 },
+      { "scope": "match", "side": "team", "sp_type": "corner", "sp_count": 5, "goals": 0, "xg": 0.22, "xg_per_sp": 0.044, "shot_pct": 40.0, "first_contact_pct": 60.0 },
+      { "scope": "match", "side": "opponent", "sp_type": "corner", "sp_count": 3, "goals": 0, "xg": 0.12, "xg_per_sp": 0.040, "shot_pct": 33.3, "first_contact_pct": 33.3 },
+      { "scope": "season_avg", "side": "team", "sp_type": "corner", "sp_count": 4.8, "goals": 0.15, "xg": 0.20, "xg_per_sp": 0.042, "shot_pct": 35.0, "first_contact_pct": 55.0, "sp_count_rank": 5, "goals_rank": 7, "xg_rank": 6, "xg_per_sp_rank": 8, "shot_pct_rank": 4, "first_contact_pct_rank": 3, "total_teams": 20 },
+      { "scope": "season_avg", "side": "opponent", "sp_type": "corner", "sp_count": 3.5, "goals": 0.10, "xg": 0.12, "xg_per_sp": 0.034, "shot_pct": 25.0, "first_contact_pct": 30.0, "sp_count_rank": 14, "goals_rank": 16, "xg_rank": 15, "xg_per_sp_rank": 13, "shot_pct_rank": 15, "first_contact_pct_rank": 14, "total_teams": 20 }
+    ]
+  }
+}

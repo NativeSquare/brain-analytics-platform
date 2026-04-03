@@ -13,18 +13,19 @@ const isAuthRoute = createRouteMatcher([
   "/otp",
 ]);
 const isProtectedRoute = createRouteMatcher([
-  "/dashboards",
-  "/players",
-  "/calendar",
-  "/documents",
-  "/team",
-  "/settings",
-  "/users",
+  "/",
+  "/dashboards(.*)",
+  "/players(.*)",
+  "/calendar(.*)",
+  "/documents(.*)",
+  "/team(.*)",
+  "/settings(.*)",
+  "/users(.*)",
 ]);
 
 export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   if (isAuthRoute(request) && (await convexAuth.isAuthenticated())) {
-    return nextjsMiddlewareRedirect(request, "/dashboards");
+    return nextjsMiddlewareRedirect(request, "/");
   }
   if (isProtectedRoute(request) && !(await convexAuth.isAuthenticated())) {
     return nextjsMiddlewareRedirect(request, "/login");

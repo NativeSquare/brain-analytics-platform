@@ -1,6 +1,6 @@
 # Story 8.2: SportMonks PostgreSQL Connection & API Routes
 
-Status: draft
+Status: done
 Story Type: backend
 Points: 3
 

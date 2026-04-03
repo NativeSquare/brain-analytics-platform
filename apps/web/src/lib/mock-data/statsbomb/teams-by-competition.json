@@ -1,0 +1,24 @@
+{
+  "data": [
+    { "team_id": 234, "team_name": "UC Sampdoria" },
+    { "team_id": 283, "team_name": "Parma Calcio" },
+    { "team_id": 501, "team_name": "Cosenza Calcio" },
+    { "team_id": 410, "team_name": "US Cremonese" },
+    { "team_id": 322, "team_name": "Palermo FC" },
+    { "team_id": 198, "team_name": "Brescia Calcio" },
+    { "team_id": 445, "team_name": "Catanzaro" },
+    { "team_id": 367, "team_name": "Modena FC" },
+    { "team_id": 512, "team_name": "Cittadella" },
+    { "team_id": 389, "team_name": "Reggiana" },
+    { "team_id": 456, "team_name": "Südtirol" },
+    { "team_id": 290, "team_name": "Bari" },
+    { "team_id": 534, "team_name": "Spezia" },
+    { "team_id": 301, "team_name": "Pisa SC" },
+    { "team_id": 423, "team_name": "Como 1907" },
+    { "team_id": 378, "team_name": "Feralpisalò" },
+    { "team_id": 345, "team_name": "Venezia FC" },
+    { "team_id": 489, "team_name": "Ascoli" },
+    { "team_id": 556, "team_name": "SudTirol" },
+    { "team_id": 267, "team_name": "Sassuolo" }
+  ]
+}

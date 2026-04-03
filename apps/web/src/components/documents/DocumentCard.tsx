@@ -31,6 +31,7 @@ interface DocumentData {
 interface DocumentCardProps {
   document: DocumentData;
   isAdmin: boolean;
+  canManage?: boolean;
   onViewDetails: (docId: string) => void;
   onReplace: (docId: string, docName: string) => void;
   onDelete: (docId: string, docName: string) => void;
@@ -41,6 +42,7 @@ interface DocumentCardProps {
 export const DocumentCard = React.memo(function DocumentCard({
   document,
   isAdmin,
+  canManage,
   onViewDetails,
   onReplace,
   onDelete,
@@ -117,7 +119,7 @@ export const DocumentCard = React.memo(function DocumentCard({
         {format(new Date(document.createdAt), "MMM d, yyyy")}
       </span>
 
-      {isAdmin && (
+      {(canManage ?? isAdmin) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

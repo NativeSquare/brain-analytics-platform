@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { query } from "../_generated/server";
-import { requireAuth, requireRole } from "../lib/auth";
+import { requireAuth, requireRole, getTeamResource } from "../lib/auth";
 
 /**
  * Get fitness entries for a specific player.
@@ -13,10 +13,7 @@ export const getPlayerFitness = query({
   handler: async (ctx, { playerId }) => {
     const { teamId } = await requireAuth(ctx);
 
-    const player = await ctx.db.get(playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
-    }
+    await getTeamResource(ctx, teamId, "players", playerId);
 
     const entries = await ctx.db
       .query("playerFitness")
@@ -39,10 +36,7 @@ export const getPlayerStats = query({
   handler: async (ctx, { playerId }) => {
     const { teamId } = await requireAuth(ctx);
 
-    const player = await ctx.db.get(playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
-    }
+    await getTeamResource(ctx, teamId, "players", playerId);
 
     const stats = await ctx.db
       .query("playerStats")
@@ -194,10 +188,7 @@ export const getPlayerInjuries = query({
   handler: async (ctx, { playerId }) => {
     const { teamId } = await requireRole(ctx, ["admin", "physio"]);
 
-    const player = await ctx.db.get(playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
-    }
+    await getTeamResource(ctx, teamId, "players", playerId);
 
     const entries = await ctx.db
       .query("playerInjuries")
@@ -220,10 +211,7 @@ export const getPlayerInjuryStatus = query({
   handler: async (ctx, { playerId }) => {
     const { teamId } = await requireAuth(ctx);
 
-    const player = await ctx.db.get(playerId);
-    if (!player || player.teamId !== teamId) {
-      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
-    }
+    await getTeamResource(ctx, teamId, "players", playerId);
 
     const currentInjuries = await ctx.db
       .query("playerInjuries")

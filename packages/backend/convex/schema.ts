@@ -2,6 +2,8 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema } from "convex/server";
 import { adminInvites } from "./table/adminInvites";
 import { contracts } from "./table/contracts";
+import { dashboards } from "./table/dashboards";
+import { roleDashboards } from "./table/roleDashboards";
 import { calendarEvents } from "./table/calendarEvents";
 import { calendarEventSeries } from "./table/calendarEventSeries";
 import { calendarEventUsers } from "./table/calendarEventUsers";
@@ -30,6 +32,7 @@ export default defineSchema({
   adminInvites,
   calendarEvents,
   contracts,
+  dashboards,
   calendarEventSeries,
   calendarEventUsers,
   documentReads,
@@ -45,6 +48,7 @@ export default defineSchema({
   playerInvites,
   playerStats,
   players,
+  roleDashboards,
   teams,
   userPinnedDashboards,
   userRecentDashboards,

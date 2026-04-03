@@ -1,0 +1,24 @@
+{
+  "data": [
+    { "player_id": 10001, "player_name": "Andrea Conti", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Right Back", "minutes_played": 2100 },
+    { "player_id": 10002, "player_name": "Fabio Quagliarella", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Forward", "minutes_played": 1800 },
+    { "player_id": 10003, "player_name": "Manolo Gabbiadini", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Forward", "minutes_played": 1650 },
+    { "player_id": 10004, "player_name": "Morten Thorsby", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Midfield", "minutes_played": 2400 },
+    { "player_id": 10005, "player_name": "Bartosz Bereszyński", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Right Back", "minutes_played": 1950 },
+    { "player_id": 10006, "player_name": "Omar Colley", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Back", "minutes_played": 2700 },
+    { "player_id": 10007, "player_name": "Maya Yoshida", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Back", "minutes_played": 2550 },
+    { "player_id": 10008, "player_name": "Tommaso Augello", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Left Back", "minutes_played": 2300 },
+    { "player_id": 10009, "player_name": "Albin Ekdal", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Midfield", "minutes_played": 2100 },
+    { "player_id": 10010, "player_name": "Antonio Candreva", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Right Wing", "minutes_played": 2800 },
+    { "player_id": 10011, "player_name": "Mikkel Damsgaard", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Left Wing", "minutes_played": 1400 },
+    { "player_id": 10012, "player_name": "Emil Audero", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Goalkeeper", "minutes_played": 3060 },
+    { "player_id": 10013, "player_name": "Valerio Verre", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Attacking Midfield", "minutes_played": 900 },
+    { "player_id": 10014, "player_name": "Ronaldo Vieira", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Midfield", "minutes_played": 1200 },
+    { "player_id": 10015, "player_name": "Lorenzo Tonelli", "team_name": "UC Sampdoria", "team_id": 234, "primary_position": "Center Back", "minutes_played": 1500 },
+    { "player_id": 20001, "player_name": "Gianluigi Buffon", "team_name": "Parma Calcio", "team_id": 283, "primary_position": "Goalkeeper", "minutes_played": 2700 },
+    { "player_id": 20002, "player_name": "Dennis Man", "team_name": "Parma Calcio", "team_id": 283, "primary_position": "Right Wing", "minutes_played": 2200 },
+    { "player_id": 20003, "player_name": "Valentin Mihăilă", "team_name": "Parma Calcio", "team_id": 283, "primary_position": "Left Wing", "minutes_played": 1800 },
+    { "player_id": 30001, "player_name": "Luca Ceppitelli", "team_name": "Brescia Calcio", "team_id": 198, "primary_position": "Center Back", "minutes_played": 2000 },
+    { "player_id": 30002, "player_name": "Rodrigo Palacio", "team_name": "Brescia Calcio", "team_id": 198, "primary_position": "Center Forward", "minutes_played": 1600 }
+  ]
+}

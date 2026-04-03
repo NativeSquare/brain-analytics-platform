@@ -63,6 +63,7 @@ export async function checkAccess(
 /**
  * Check access for a document, handling inheritance from its parent folder.
  *
+ * - Owner always has access to their own documents.
  * - If the document has its own `permittedRoles` (override), check document-level.
  * - If `permittedRoles` is `undefined` (inherit), fall back to the parent folder's
  *   `permittedRoles` and the folder-level `documentUserPermissions`.
@@ -74,6 +75,9 @@ export async function checkDocumentAccess(
 ): Promise<boolean> {
   // Admin always has access
   if (user.role === "admin") return true;
+
+  // Owner always has access to their own documents
+  if (document.ownerId === user._id) return true;
 
   // Document has its own permissions (override)
   if (document.permittedRoles !== undefined) {
@@ -194,6 +198,12 @@ export async function filterDocumentsByAccess(
   const result: Doc<"documents">[] = [];
 
   for (const doc of documents) {
+    // Owner always has access to their own documents
+    if (doc.ownerId === user._id) {
+      result.push(doc);
+      continue;
+    }
+
     // Document has its own permissions (override)
     if (doc.permittedRoles !== undefined) {
       if (doc.permittedRoles.length === 0) {

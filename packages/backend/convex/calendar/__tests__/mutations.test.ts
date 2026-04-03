@@ -1197,7 +1197,9 @@ describe("submitRsvp", () => {
     expect(caughtError).toBeInstanceOf(ConvexError);
     const rawData = (caughtError as ConvexError<any>).data;
     const errData = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
-    expect(errData.code).toBe("NOT_AUTHORIZED");
+    // getTeamResource throws NOT_FOUND for both missing and wrong-team
+    // to prevent cross-tenant enumeration (Story 11.4)
+    expect(errData.code).toBe("NOT_FOUND");
   });
 
   it("rejects reason exceeding 500 characters", async () => {

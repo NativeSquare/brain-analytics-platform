@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  IconCreditCard,
   IconDotsVertical,
+  IconHelp,
   IconLogout,
-  IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react"
+import Link from "next/link"
 
 import {
   Avatar,
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { useRouter } from "next/navigation"
+import { useTranslation } from "@/hooks/useTranslation"
 
 function getInitials(name: string): string {
   if (!name) return "U"
@@ -52,6 +53,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { signOut } = useAuthActions()
   const router = useRouter()
+  const { t } = useTranslation()
 
   async function handleLogout() {
     await signOut()
@@ -108,23 +110,23 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
+              <DropdownMenuItem asChild>
+                <Link href="/settings">
+                  <IconUserCircle />
+                  {t.nav.account}
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
+              <DropdownMenuItem asChild>
+                <Link href="#">
+                  <IconHelp />
+                  {t.nav.getHelp}
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={handleLogout}>
               <IconLogout />
-              Log out
+              {t.nav.logOut}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -538,7 +538,7 @@ describe("uploadDocument", () => {
     expect(doc!.updatedAt).toBeDefined();
   });
 
-  it("non-admin receives NOT_AUTHORIZED error", async () => {
+  it("non-admin can upload documents (Story 4.6: any authenticated user)", async () => {
     const t = convexTest(schema, modules);
     const { teamId } = await seedTeamAndUser(t);
 
@@ -562,26 +562,23 @@ describe("uploadDocument", () => {
       }),
     );
 
-    let caughtError: unknown;
-    try {
-      await t.mutation(
-        (await import("../mutations")).uploadDocument,
-        {
-          folderId,
-          name: "Doc",
-          filename: "doc.pdf",
-          extension: "pdf",
-          storageId: "s1",
-          mimeType: "application/pdf",
-          fileSize: 100,
-        },
-      );
-    } catch (e) {
-      caughtError = e;
-    }
+    const docId = await t.mutation(
+      (await import("../mutations")).uploadDocument,
+      {
+        folderId,
+        name: "Doc",
+        filename: "doc.pdf",
+        extension: "pdf",
+        storageId: "s1",
+        mimeType: "application/pdf",
+        fileSize: 100,
+      },
+    );
 
-    expect(caughtError).toBeInstanceOf(ConvexError);
-    expect(extractErrorCode(caughtError)).toBe("NOT_AUTHORIZED");
+    expect(docId).toBeDefined();
+    const doc = await t.run(async (ctx) => ctx.db.get(docId));
+    expect(doc).not.toBeNull();
+    expect(doc!.ownerId).toBe(playerId);
   });
 
   it("uploading to a different team's folder throws NOT_FOUND", async () => {
@@ -731,7 +728,7 @@ describe("addVideoLink", () => {
     expect(extractErrorCode(caughtError)).toBe("VALIDATION_ERROR");
   });
 
-  it("non-admin receives NOT_AUTHORIZED", async () => {
+  it("non-admin can add video links (Story 4.6: any authenticated user)", async () => {
     const t = convexTest(schema, modules);
     const { teamId } = await seedTeamAndUser(t);
 
@@ -755,22 +752,19 @@ describe("addVideoLink", () => {
       }),
     );
 
-    let caughtError: unknown;
-    try {
-      await t.mutation(
-        (await import("../mutations")).addVideoLink,
-        {
-          folderId,
-          name: "Video",
-          videoUrl: "https://youtube.com/watch?v=abc",
-        },
-      );
-    } catch (e) {
-      caughtError = e;
-    }
+    const docId = await t.mutation(
+      (await import("../mutations")).addVideoLink,
+      {
+        folderId,
+        name: "Video",
+        videoUrl: "https://youtube.com/watch?v=abc",
+      },
+    );
 
-    expect(caughtError).toBeInstanceOf(ConvexError);
-    expect(extractErrorCode(caughtError)).toBe("NOT_AUTHORIZED");
+    expect(docId).toBeDefined();
+    const doc = await t.run(async (ctx) => ctx.db.get(docId));
+    expect(doc).not.toBeNull();
+    expect(doc!.ownerId).toBe(playerId);
   });
 });
 

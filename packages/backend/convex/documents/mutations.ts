@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
-import { requireAuth, requireRole } from "../lib/auth";
+import { requireAuth, requireRole, requireResourceAccess, getTeamResource } from "../lib/auth";
 import { checkDocumentAccess, VALID_PERMISSION_ROLES } from "../lib/permissions";
 
 /**
@@ -25,13 +25,7 @@ export const createFolder = mutation({
     }
 
     if (parentId) {
-      const parent = await ctx.db.get(parentId);
-      if (!parent || parent.teamId !== teamId) {
-        throw new ConvexError({
-          code: "NOT_FOUND" as const,
-          message: "Parent folder not found.",
-        });
-      }
+      const parent = await getTeamResource(ctx, teamId, "folders", parentId);
       // Check depth: if parent has a parentId, it's already level 2 -> reject level 3
       if (parent.parentId !== undefined) {
         throw new ConvexError({
@@ -64,13 +58,7 @@ export const renameFolder = mutation({
   handler: async (ctx, { folderId, name }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const folder = await ctx.db.get(folderId);
-    if (!folder || folder.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Folder not found.",
-      });
-    }
+    await getTeamResource(ctx, teamId, "folders", folderId);
 
     const trimmedName = name.trim();
     if (trimmedName.length === 0) {
@@ -97,13 +85,7 @@ export const deleteFolder = mutation({
   handler: async (ctx, { folderId }) => {
     const { teamId } = await requireRole(ctx, ["admin"]);
 
-    const folder = await ctx.db.get(folderId);
-    if (!folder || folder.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Folder not found.",
-      });
-    }
+    await getTeamResource(ctx, teamId, "folders", folderId);
 
     // Check for subfolders
     const subfolders = await ctx.db
@@ -149,7 +131,8 @@ export const deleteFolder = mutation({
 // ---------------------------------------------------------------------------
 
 /**
- * Uploads a document record after file is stored via Convex storage. Admin-only.
+ * Uploads a document record after file is stored via Convex storage.
+ * Any authenticated user can upload. Sharing mode controls visibility.
  */
 export const uploadDocument = mutation({
   args: {
@@ -160,17 +143,35 @@ export const uploadDocument = mutation({
     storageId: v.string(),
     mimeType: v.string(),
     fileSize: v.number(),
+    sharing: v.optional(v.object({
+      mode: v.union(v.literal("private"), v.literal("roles"), v.literal("users")),
+      roles: v.optional(v.array(v.string())),
+      userIds: v.optional(v.array(v.id("users"))),
+    })),
   },
   handler: async (ctx, args) => {
-    const { user, teamId } = await requireRole(ctx, ["admin"]);
+    const { user, teamId } = await requireAuth(ctx);
 
     // Validate folder exists and belongs to team
-    const folder = await ctx.db.get(args.folderId);
-    if (!folder || folder.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Folder not found.",
-      });
+    await getTeamResource(ctx, teamId, "folders", args.folderId);
+
+    // Determine permittedRoles based on sharing mode
+    const sharingMode = args.sharing?.mode ?? "private";
+    let permittedRoles: string[] | undefined;
+
+    if (sharingMode === "roles" && args.sharing?.roles) {
+      // Validate role values
+      for (const role of args.sharing.roles) {
+        if (!(VALID_PERMISSION_ROLES as readonly string[]).includes(role)) {
+          throw new ConvexError({
+            code: "VALIDATION_ERROR" as const,
+            message: `Invalid role: "${role}". Must be one of: ${VALID_PERMISSION_ROLES.join(", ")}.`,
+          });
+        }
+      }
+      permittedRoles = args.sharing.roles;
+    } else if (sharingMode === "private" || sharingMode === "users") {
+      permittedRoles = []; // empty = private (owner + admin only)
     }
 
     const documentId = await ctx.db.insert("documents", {
@@ -184,35 +185,56 @@ export const uploadDocument = mutation({
       fileSize: args.fileSize,
       videoUrl: undefined,
       ownerId: user._id,
-      permittedRoles: undefined,
+      permittedRoles,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    // For "users" mode, insert documentUserPermissions for each userId
+    if (sharingMode === "users" && args.sharing?.userIds) {
+      for (const uid of args.sharing.userIds) {
+        const targetUser = await ctx.db.get(uid);
+        if (!targetUser || targetUser.teamId !== teamId) {
+          throw new ConvexError({
+            code: "VALIDATION_ERROR" as const,
+            message: `User ${uid} not found or belongs to a different team.`,
+          });
+        }
+        await ctx.db.insert("documentUserPermissions", {
+          teamId,
+          targetType: "document",
+          targetId: documentId as string,
+          userId: uid,
+          grantedBy: user._id,
+          createdAt: Date.now(),
+        });
+      }
+    }
 
     return documentId;
   },
 });
 
 /**
- * Adds a video link document. Admin-only.
+ * Adds a video link document.
+ * Any authenticated user can add. Sharing mode controls visibility.
  */
 export const addVideoLink = mutation({
   args: {
     folderId: v.id("folders"),
     name: v.string(),
     videoUrl: v.string(),
+    sharing: v.optional(v.object({
+      mode: v.union(v.literal("private"), v.literal("roles"), v.literal("users")),
+      roles: v.optional(v.array(v.string())),
+      userIds: v.optional(v.array(v.id("users"))),
+    })),
   },
   handler: async (ctx, args) => {
-    const { user, teamId } = await requireRole(ctx, ["admin"]);
+    const { user, teamId } = await requireAuth(ctx);
 
     // Validate folder exists and belongs to team
-    const folder = await ctx.db.get(args.folderId);
-    if (!folder || folder.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Folder not found.",
-      });
-    }
+    await getTeamResource(ctx, teamId, "folders", args.folderId);
 
     // Validate URL prefix
     if (
@@ -223,6 +245,24 @@ export const addVideoLink = mutation({
         code: "VALIDATION_ERROR" as const,
         message: "Video URL must start with http:// or https://.",
       });
+    }
+
+    // Determine permittedRoles based on sharing mode
+    const sharingMode = args.sharing?.mode ?? "private";
+    let permittedRoles: string[] | undefined;
+
+    if (sharingMode === "roles" && args.sharing?.roles) {
+      for (const role of args.sharing.roles) {
+        if (!(VALID_PERMISSION_ROLES as readonly string[]).includes(role)) {
+          throw new ConvexError({
+            code: "VALIDATION_ERROR" as const,
+            message: `Invalid role: "${role}". Must be one of: ${VALID_PERMISSION_ROLES.join(", ")}.`,
+          });
+        }
+      }
+      permittedRoles = args.sharing.roles;
+    } else if (sharingMode === "private" || sharingMode === "users") {
+      permittedRoles = [];
     }
 
     const documentId = await ctx.db.insert("documents", {
@@ -236,17 +276,38 @@ export const addVideoLink = mutation({
       fileSize: undefined,
       videoUrl: args.videoUrl,
       ownerId: user._id,
-      permittedRoles: undefined,
+      permittedRoles,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    // For "users" mode, insert documentUserPermissions for each userId
+    if (sharingMode === "users" && args.sharing?.userIds) {
+      for (const uid of args.sharing.userIds) {
+        const targetUser = await ctx.db.get(uid);
+        if (!targetUser || targetUser.teamId !== teamId) {
+          throw new ConvexError({
+            code: "VALIDATION_ERROR" as const,
+            message: `User ${uid} not found or belongs to a different team.`,
+          });
+        }
+        await ctx.db.insert("documentUserPermissions", {
+          teamId,
+          targetType: "document",
+          targetId: documentId as string,
+          userId: uid,
+          grantedBy: user._id,
+          createdAt: Date.now(),
+        });
+      }
+    }
 
     return documentId;
   },
 });
 
 /**
- * Replaces the file on an existing file-type document. Admin-only.
+ * Replaces the file on an existing file-type document. Owner or admin.
  * Deletes the old file from Convex storage.
  */
 export const replaceFile = mutation({
@@ -259,15 +320,12 @@ export const replaceFile = mutation({
     fileSize: v.number(),
   },
   handler: async (ctx, args) => {
-    const { teamId } = await requireRole(ctx, ["admin"]);
+    const { teamId } = await requireAuth(ctx);
 
-    const document = await ctx.db.get(args.documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", args.documentId);
+
+    // Owner or admin check
+    await requireResourceAccess(ctx, { createdBy: document.ownerId }, { allowOwner: true });
 
     // Must be a file document, not a video link
     if (!document.storageId && document.videoUrl) {
@@ -296,7 +354,7 @@ export const replaceFile = mutation({
 });
 
 /**
- * Deletes a document and its file from storage. Admin-only.
+ * Deletes a document and its file from storage. Owner or admin.
  * Also cascades to delete related documentReads records.
  */
 export const deleteDocument = mutation({
@@ -304,15 +362,12 @@ export const deleteDocument = mutation({
     documentId: v.id("documents"),
   },
   handler: async (ctx, args) => {
-    const { teamId } = await requireRole(ctx, ["admin"]);
+    const { teamId } = await requireAuth(ctx);
 
-    const document = await ctx.db.get(args.documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", args.documentId);
+
+    // Owner or admin check
+    await requireResourceAccess(ctx, { createdBy: document.ownerId }, { allowOwner: true });
 
     // Delete file from storage if it exists
     if (document.storageId) {
@@ -327,6 +382,18 @@ export const deleteDocument = mutation({
 
     for (const read of reads) {
       await ctx.db.delete(read._id);
+    }
+
+    // Cascade delete related documentUserPermissions
+    const perms = await ctx.db
+      .query("documentUserPermissions")
+      .withIndex("by_targetId", (q) => q.eq("targetId", args.documentId as string))
+      .collect();
+
+    for (const perm of perms) {
+      if (perm.targetType === "document") {
+        await ctx.db.delete(perm._id);
+      }
     }
 
     // Delete the document record
@@ -354,13 +421,7 @@ export const setFolderPermissions = mutation({
     const { user, teamId } = await requireRole(ctx, ["admin"]);
 
     // Validate folder exists & belongs to team
-    const folder = await ctx.db.get(folderId);
-    if (!folder || folder.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Folder not found.",
-      });
-    }
+    await getTeamResource(ctx, teamId, "folders", folderId);
 
     // Validate role values (skip when undefined = unrestricted)
     if (permittedRoles !== undefined) {
@@ -416,7 +477,7 @@ export const setFolderPermissions = mutation({
 });
 
 /**
- * Set role and individual-user permissions on a document. Admin-only.
+ * Set role and individual-user permissions on a document. Owner or admin.
  * When `permittedRoles` is `undefined`, the document inherits from its folder.
  */
 export const setDocumentPermissions = mutation({
@@ -426,16 +487,13 @@ export const setDocumentPermissions = mutation({
     userIds: v.array(v.id("users")),
   },
   handler: async (ctx, { documentId, permittedRoles, userIds }) => {
-    const { user, teamId } = await requireRole(ctx, ["admin"]);
+    const { user, teamId } = await requireAuth(ctx);
 
     // Validate document exists & belongs to team
-    const document = await ctx.db.get(documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found.",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", documentId);
+
+    // Owner or admin check
+    await requireResourceAccess(ctx, { createdBy: document.ownerId }, { allowOwner: true });
 
     // Validate role values if provided
     if (permittedRoles !== undefined) {
@@ -513,13 +571,7 @@ export const trackRead = mutation({
     const { user, teamId } = await requireAuth(ctx);
 
     // Validate document exists and belongs to user's team
-    const document = await ctx.db.get(args.documentId);
-    if (!document || document.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Document not found",
-      });
-    }
+    const document = await getTeamResource(ctx, teamId, "documents", args.documentId);
 
     // Verify user has access to this document
     const hasAccess = await checkDocumentAccess(ctx, user, document);

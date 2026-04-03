@@ -60,7 +60,10 @@ export default function CalendarPage() {
   }, []);
 
   const handleMonthChange = useCallback((year: number, month: number) => {
-    setSelectedMonth({ year, month });
+    setSelectedMonth((prev) => {
+      if (prev.year === year && prev.month === month) return prev;
+      return { year, month };
+    });
   }, []);
 
   const handleCloseEvent = useCallback(() => {

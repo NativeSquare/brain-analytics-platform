@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
-import { requireAuth, requireRole } from "../lib/auth";
+import { requireAuth, requireRole, getTeamResource } from "../lib/auth";
 import { createNotification } from "../lib/notifications";
 import { EVENT_TYPE_LABELS, RECURRENCE_FREQUENCY_LABELS } from "@packages/shared/calendar";
 import { computeOccurrenceDates } from "./utils";
@@ -363,13 +363,7 @@ export const updateEvent = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireRole(ctx, ["admin"]);
 
-    const event = await ctx.db.get(args.eventId);
-    if (!event || event.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Event not found",
-      });
-    }
+    const event = await getTeamResource(ctx, teamId, "calendarEvents", args.eventId);
 
     // Time validation
     const newStartsAt = args.startsAt ?? event.startsAt;
@@ -466,13 +460,7 @@ export const cancelEvent = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireRole(ctx, ["admin"]);
 
-    const event = await ctx.db.get(args.eventId);
-    if (!event || event.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Event not found",
-      });
-    }
+    const event = await getTeamResource(ctx, teamId, "calendarEvents", args.eventId);
 
     if (event.isCancelled) {
       throw new ConvexError({
@@ -535,13 +523,7 @@ export const deleteEventSeries = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireRole(ctx, ["admin"]);
 
-    const series = await ctx.db.get(args.seriesId);
-    if (!series || series.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Series not found",
-      });
-    }
+    await getTeamResource(ctx, teamId, "calendarEventSeries", args.seriesId);
 
     // Find all events in series
     const events = await ctx.db
@@ -634,22 +616,8 @@ export const submitRsvp = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireAuth(ctx);
 
-    // Fetch event
-    const event = await ctx.db.get(args.eventId);
-    if (!event) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Event not found",
-      });
-    }
-
-    // Team isolation
-    if (event.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_AUTHORIZED" as const,
-        message: "Event not found",
-      });
-    }
+    // Fetch event with team isolation
+    const event = await getTeamResource(ctx, teamId, "calendarEvents", args.eventId);
 
     // RSVP must be enabled
     if (!event.rsvpEnabled) {

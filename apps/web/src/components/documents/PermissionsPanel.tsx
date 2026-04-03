@@ -78,9 +78,9 @@ export function PermissionsPanel({
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Search team members
+  // Search team members (uses searchTeamUsers which is accessible to all authenticated users)
   const searchResults = useQuery(
-    api.users.queries.searchTeamMembersForPermissions,
+    api.users.queries.searchTeamUsers,
     debouncedSearch.length >= 2 ? { search: debouncedSearch } : "skip",
   );
 
@@ -131,13 +131,13 @@ export function PermissionsPanel({
   const handleAddUser = (user: {
     _id: Id<"users">;
     fullName: string;
-    email: string;
-    role: string;
+    email?: string;
+    role?: string;
   }) => {
     if (selectedUsers.some((u) => u.userId === user._id)) return;
     setSelectedUsers((prev) => [
       ...prev,
-      { userId: user._id, fullName: user.fullName, email: user.email, role: user.role },
+      { userId: user._id, fullName: user.fullName, email: user.email ?? "", role: user.role ?? "" },
     ]);
     setSearchInput("");
   };

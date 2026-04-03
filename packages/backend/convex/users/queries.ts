@@ -1,7 +1,39 @@
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { query } from "../_generated/server";
 import { requireAuth, requireRole } from "../lib/auth";
 import { USER_ROLES } from "@packages/shared/roles";
+
+/**
+ * Return the current user's profile including team name.
+ * Used on the Account / Settings page.
+ */
+export const currentUserProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return null;
+
+    const user = await ctx.db.get(userId);
+    if (!user) return null;
+
+    let teamName: string | null = null;
+    if (user.teamId) {
+      const team = await ctx.db.get(user.teamId);
+      teamName = team?.name ?? null;
+    }
+
+    return {
+      _id: user._id,
+      fullName: user.fullName ?? user.name ?? null,
+      email: user.email ?? null,
+      avatarUrl: user.avatarUrl ?? user.image ?? null,
+      role: user.role ?? null,
+      teamName,
+      preferredLanguage: user.preferredLanguage ?? null,
+    };
+  },
+});
 
 /**
  * Return all users belonging to the authenticated user's team.

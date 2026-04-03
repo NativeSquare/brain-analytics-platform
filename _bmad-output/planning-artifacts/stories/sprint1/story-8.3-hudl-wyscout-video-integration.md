@@ -1,6 +1,6 @@
 # Story 8.3: Hudl Mapping & Wyscout Video Clip Integration
 
-Status: draft
+Status: done
 Story Type: backend + API
 Points: 8
 

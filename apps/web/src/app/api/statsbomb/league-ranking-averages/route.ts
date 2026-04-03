@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/statsbomb-db";
 import { loadQuery } from "@/lib/load-query";
+import { getMockResponse } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,9 @@ const AGAINST_METRICS = new Set([
 ]);
 
 export async function GET(request: NextRequest) {
+  const mock = getMockResponse("statsbomb", "league-ranking-averages");
+  if (mock) return mock;
+
   const searchParams = request.nextUrl.searchParams;
   const teamId = searchParams.get("teamId");
   const seasonId = searchParams.get("seasonId");

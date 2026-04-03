@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/statsbomb-db";
 import { loadQuery } from "@/lib/load-query";
+import { getMockResponse } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  // Return mock data when enabled
+  const mock = getMockResponse("statsbomb", "season-possession-details");
+  if (mock) return mock;
+
   const searchParams = request.nextUrl.searchParams;
   const seasonId = searchParams.get("seasonId");
   const teamId = searchParams.get("teamId");

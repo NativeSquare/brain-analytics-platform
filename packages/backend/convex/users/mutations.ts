@@ -1,8 +1,72 @@
 import { ConvexError, v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { internalMutation, mutation } from "../_generated/server";
-import { requireRole } from "../lib/auth";
+import { requireAuth, requireRole } from "../lib/auth";
 import { USER_ROLES } from "@packages/shared/roles";
 import type { UserRole } from "@packages/shared/roles";
+
+/**
+ * Update the current user's profile (fullName and optionally avatar).
+ * Any authenticated user can update their own profile.
+ * If avatarStorageId is provided, the storageId is resolved to a URL and saved.
+ */
+export const updateProfile = mutation({
+  args: {
+    fullName: v.string(),
+    avatarStorageId: v.optional(v.id("_storage")),
+    preferredLanguage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new ConvexError({
+        code: "NOT_AUTHENTICATED" as const,
+        message: "Authentication required.",
+      });
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "User not found.",
+      });
+    }
+
+    const fullName = args.fullName.trim();
+    if (fullName.length === 0) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Full name is required.",
+      });
+    }
+
+    const patch: {
+      fullName: string;
+      avatarUrl?: string;
+      preferredLanguage?: string;
+    } = { fullName };
+
+    if (args.avatarStorageId !== undefined) {
+      const url = await ctx.storage.getUrl(args.avatarStorageId);
+      if (url) {
+        patch.avatarUrl = url;
+      }
+    }
+
+    if (args.preferredLanguage !== undefined) {
+      if (args.preferredLanguage !== "en" && args.preferredLanguage !== "it") {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `Invalid language: ${args.preferredLanguage}. Allowed values: "en", "it".`,
+        });
+      }
+      patch.preferredLanguage = args.preferredLanguage;
+    }
+
+    await ctx.db.patch(userId, patch);
+  },
+});
 
 /**
  * Update a user's role. Admin-only.

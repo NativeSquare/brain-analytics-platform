@@ -1,0 +1,54 @@
+{
+  "data": {
+    "competitions": [
+      { "competition_id": 84, "competition_name": "Serie B" },
+      { "competition_id": 12, "competition_name": "Serie A" }
+    ],
+    "referees": [
+      { "referee_id": 501, "referee_name": "Marco Di Bello" },
+      { "referee_id": 502, "referee_name": "Daniele Orsato" },
+      { "referee_id": 503, "referee_name": "Gianluca Manganiello" }
+    ],
+    "active_referee_id": 501,
+    "leagueTotals": {
+      "fouls_per_match": 24.5,
+      "advantages_per_match": 3.2,
+      "yellow_cards_per_match": 4.1,
+      "second_yellow_cards_per_match": 0.08,
+      "straight_red_cards_per_match": 0.05,
+      "red_cards_per_match": 0.13,
+      "penalties_per_match": 0.28
+    },
+    "totals": {
+      "referee_id": 501,
+      "referee_name": "Marco Di Bello",
+      "matches": 18,
+      "fouls": 468,
+      "fouls_per_match": 26.0,
+      "advantages": 62,
+      "advantages_per_match": 3.4,
+      "yellow_cards": 82,
+      "yellow_cards_per_match": 4.6,
+      "second_yellow_cards": 2,
+      "second_yellow_cards_per_match": 0.11,
+      "straight_red_cards": 1,
+      "straight_red_cards_per_match": 0.06,
+      "red_cards": 3,
+      "red_cards_per_match": 0.17,
+      "penalties": 5,
+      "penalties_per_match": 0.28
+    },
+    "fouls": [
+      { "match_id": 3869151, "match_date": "2024-08-17", "home_team_name": "UC Sampdoria", "away_team_name": "Parma Calcio", "fouls_home": 14, "fouls_away": 12, "yellow_cards": 5, "red_cards": 0, "penalties": 1 },
+      { "match_id": 3869200, "match_date": "2024-08-24", "home_team_name": "Brescia Calcio", "away_team_name": "Cosenza Calcio", "fouls_home": 16, "fouls_away": 10, "yellow_cards": 4, "red_cards": 0, "penalties": 0 },
+      { "match_id": 3869250, "match_date": "2024-09-01", "home_team_name": "Palermo FC", "away_team_name": "UC Sampdoria", "fouls_home": 11, "fouls_away": 15, "yellow_cards": 6, "red_cards": 1, "penalties": 0 },
+      { "match_id": 3869300, "match_date": "2024-09-15", "home_team_name": "UC Sampdoria", "away_team_name": "Catanzaro", "fouls_home": 13, "fouls_away": 13, "yellow_cards": 3, "red_cards": 0, "penalties": 1 },
+      { "match_id": 3869350, "match_date": "2024-09-22", "home_team_name": "Modena FC", "away_team_name": "Cittadella", "fouls_home": 18, "fouls_away": 8, "yellow_cards": 5, "red_cards": 0, "penalties": 0 }
+    ],
+    "refereeAverages": [
+      { "referee_id": 501, "referee_name": "Marco Di Bello", "matches": 18, "fouls": 468, "fouls_per_match": 26.0, "advantages": 62, "advantages_per_match": 3.4, "yellow_cards": 82, "yellow_cards_per_match": 4.6, "second_yellow_cards": 2, "second_yellow_cards_per_match": 0.11, "straight_red_cards": 1, "straight_red_cards_per_match": 0.06, "red_cards": 3, "red_cards_per_match": 0.17, "penalties": 5, "penalties_per_match": 0.28 },
+      { "referee_id": 502, "referee_name": "Daniele Orsato", "matches": 15, "fouls": 352, "fouls_per_match": 23.5, "advantages": 48, "advantages_per_match": 3.2, "yellow_cards": 58, "yellow_cards_per_match": 3.9, "second_yellow_cards": 1, "second_yellow_cards_per_match": 0.07, "straight_red_cards": 0, "straight_red_cards_per_match": 0.0, "red_cards": 1, "red_cards_per_match": 0.07, "penalties": 4, "penalties_per_match": 0.27 },
+      { "referee_id": 503, "referee_name": "Gianluca Manganiello", "matches": 12, "fouls": 312, "fouls_per_match": 26.0, "advantages": 35, "advantages_per_match": 2.9, "yellow_cards": 52, "yellow_cards_per_match": 4.3, "second_yellow_cards": 0, "second_yellow_cards_per_match": 0.0, "straight_red_cards": 1, "straight_red_cards_per_match": 0.08, "red_cards": 1, "red_cards_per_match": 0.08, "penalties": 3, "penalties_per_match": 0.25 }
+    ]
+  }
+}

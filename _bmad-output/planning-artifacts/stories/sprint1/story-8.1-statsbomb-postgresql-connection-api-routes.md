@@ -1,6 +1,6 @@
 # Story 8.1: StatsBomb PostgreSQL Connection & API Routes
 
-Status: draft
+Status: done
 Story Type: backend / integration
 Points: 8
 

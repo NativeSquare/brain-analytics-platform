@@ -5,17 +5,16 @@ import {
   IconCalendar,
   IconChartBar,
   IconFileDescription,
-  IconHelp,
+  IconHome,
   IconInnerShadowTop,
-  IconSettings,
   IconUsers,
   IconUsersGroup,
 } from "@tabler/icons-react"
 import { useQuery } from "convex/react"
 import { api } from "@packages/backend/convex/_generated/api"
 
+import { useTranslation } from "@/hooks/useTranslation"
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -28,56 +27,48 @@ import {
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const data = {
-  navMain: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation()
+  const currentUser = useQuery(api.table.users.currentUser)
+
+  const navMain = [
     {
-      title: "Dashboards",
+      title: t.nav.home,
+      url: "/",
+      icon: IconHome,
+    },
+    {
+      title: t.nav.dashboards,
       url: "/dashboards",
       icon: IconChartBar,
     },
     {
-      title: "Players",
+      title: t.nav.players,
       url: "/players",
       icon: IconUsersGroup,
     },
     {
-      title: "Calendar",
+      title: t.nav.calendar,
       url: "/calendar",
       icon: IconCalendar,
     },
     {
-      title: "Documents",
+      title: t.nav.documents,
       url: "/documents",
       icon: IconFileDescription,
     },
     {
-      title: "Team",
+      title: t.nav.team,
       url: "/team",
       icon: IconUsers,
     },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-  ],
-}
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const currentUser = useQuery(api.table.users.currentUser)
+  ]
 
   const user = currentUser
     ? {
-        name: currentUser.name || "User",
+        name: currentUser.fullName || currentUser.name || "Your Profile",
         email: currentUser.email || "",
-        avatar: currentUser.image || "",
+        avatar: currentUser.avatarUrl || currentUser.image || "",
       }
     : null
 
@@ -99,8 +90,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
         {user ? (

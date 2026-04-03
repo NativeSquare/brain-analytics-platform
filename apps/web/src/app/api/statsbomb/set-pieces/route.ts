@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/statsbomb-db";
 import { loadQuery } from "@/lib/load-query";
+import { getMockResponse } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const mock = getMockResponse("statsbomb", "set-pieces");
+  if (mock) return mock;
+
   const searchParams = request.nextUrl.searchParams;
   const matchId = searchParams.get("matchId");
   const teamId = searchParams.get("teamId");

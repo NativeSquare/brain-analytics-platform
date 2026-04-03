@@ -25,6 +25,7 @@ interface DocumentDetailProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isAdmin: boolean;
+  currentUserId?: Id<"users">;
   onReplace?: (docId: Id<"documents">, docName: string) => void;
   onDelete?: (docId: Id<"documents">, docName: string) => void;
   onPermissions?: (docId: Id<"documents">, docName: string, folderId: string) => void;
@@ -35,6 +36,7 @@ export function DocumentDetail({
   open,
   onOpenChange,
   isAdmin,
+  currentUserId,
   onReplace,
   onDelete,
   onPermissions,
@@ -53,6 +55,7 @@ export function DocumentDetail({
 
   const isFile = document?.storageId != null;
   const isVideo = document?.videoUrl != null;
+  const canManage = isAdmin || (currentUserId != null && document?.ownerId === currentUserId);
 
   function handleOpenDownload() {
     if (documentUrl && documentId) {
@@ -173,7 +176,7 @@ export function DocumentDetail({
                 </Button>
               )}
 
-              {isAdmin && onPermissions && (
+              {canManage && onPermissions && (
                 <Button
                   variant="outline"
                   onClick={() =>
@@ -186,7 +189,7 @@ export function DocumentDetail({
                 </Button>
               )}
 
-              {isAdmin && isFile && onReplace && (
+              {canManage && isFile && onReplace && (
                 <Button
                   variant="outline"
                   onClick={() => onReplace(document._id, document.name)}
@@ -197,7 +200,7 @@ export function DocumentDetail({
                 </Button>
               )}
 
-              {isAdmin && onDelete && (
+              {canManage && onDelete && (
                 <Button
                   variant="destructive"
                   onClick={() => onDelete(document._id, document.name)}

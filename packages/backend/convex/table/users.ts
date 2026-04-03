@@ -48,6 +48,9 @@ const documentSchema = {
 
   // Calendar feed token for .ics sync (Story 3.5)
   calendarFeedToken: v.optional(v.string()),
+
+  // Preferred language for i18n (Story 11.5)
+  preferredLanguage: v.optional(v.string()),
 };
 
 const partialSchema = {
@@ -94,6 +97,9 @@ const partialSchema = {
 
   // Calendar feed token for .ics sync (Story 3.5)
   calendarFeedToken: v.optional(v.string()),
+
+  // Preferred language for i18n (Story 11.5)
+  preferredLanguage: v.optional(v.string()),
 };
 
 export const users = defineTable(documentSchema)

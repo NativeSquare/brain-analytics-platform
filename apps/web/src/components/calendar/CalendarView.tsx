@@ -2,7 +2,7 @@
 
 import "temporal-polyfill/global";
 import "@schedule-x/theme-shadcn/dist/index.css";
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { ScheduleXCalendar, useNextCalendarApp } from "@schedule-x/react";
 import { createViewMonthGrid } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
@@ -82,12 +82,19 @@ function mapEvents(events: CalendarEvent[]) {
     start: toScheduleXDateTime(e.startsAt),
     end: toScheduleXDateTime(e.endsAt),
     calendarId: e.eventType,
-    _customContent: {
-      monthGrid: `<span class="sx-event-name">${e.name}</span>`,
-    },
-    eventType: e.eventType,
-    isRecurring: e.isRecurring ?? false,
-    originalId: e._id,
+    // Do NOT set `_customContent.monthGrid` here — when a React custom
+    // component (`monthGridEvent`) is provided via `customComponents`, the
+    // Preact MonthGridEvent still renders the `_customContent` innerHTML in
+    // addition to the React portal, causing every event to show duplicate
+    // content.
+    //
+    // Custom props for our MonthGridEvent renderer (prefixed with _ to avoid
+    // Schedule-X interpreting them). Do NOT pass `isRecurring` or `rrule` as
+    // top-level props — Schedule-X would generate duplicate visual occurrences
+    // for events that are already individual occurrences in our DB.
+    _eventType: e.eventType,
+    _isRecurring: e.isRecurring ?? false,
+    _originalId: e._id,
   }));
 }
 
@@ -102,12 +109,12 @@ const MonthGridEvent = memo(function MonthGridEvent({
     id: string | number;
     title?: string;
     start: unknown;
-    eventType?: EventType;
-    isRecurring?: boolean;
-    originalId?: string;
+    _eventType?: EventType;
+    _isRecurring?: boolean;
+    _originalId?: string;
   };
 }) {
-  const eventType = (calendarEvent.eventType ?? "meeting") as EventType;
+  const eventType = (calendarEvent._eventType ?? "meeting") as EventType;
   const startTime = (() => {
     const s = calendarEvent.start;
     if (!s) return "";
@@ -135,7 +142,7 @@ const MonthGridEvent = memo(function MonthGridEvent({
       <EventTypeBadge type={eventType} size="sm" className="shrink-0" />
       <span className="text-muted-foreground shrink-0">{startTime}</span>
       <span className="truncate font-medium">{calendarEvent.title}</span>
-      {calendarEvent.isRecurring && (
+      {calendarEvent._isRecurring && (
         <Repeat className="text-muted-foreground ml-auto size-3 shrink-0" />
       )}
     </div>
@@ -154,6 +161,17 @@ export function CalendarView({
 }: CalendarViewProps) {
   const calendarControls = useMemo(() => createCalendarControlsPlugin(), []);
   const currentTimePlugin = useMemo(() => createCurrentTimePlugin(), []);
+
+  // IMPORTANT: All hooks must be called unconditionally (before any early
+  // return) to satisfy the Rules of Hooks.  Moving this `useMemo` above the
+  // loading guard ensures the reference is stable across renders and prevents
+  // ScheduleXCalendar's internal useEffect (which depends on
+  // `customComponents`) from re-running destroy/render cycles that accumulate
+  // stale React portal entries.
+  const customComponents = useMemo(
+    () => ({ monthGridEvent: MonthGridEvent }),
+    [],
+  );
 
   const calendarApp = useNextCalendarApp({
     views: [createViewMonthGrid()],
@@ -182,11 +200,24 @@ export function CalendarView({
     },
   }, [calendarControls, currentTimePlugin]);
 
-  // Sync Convex events into Schedule-X whenever events change
+  // Stable snapshot to avoid redundant syncs when Convex returns a new
+  // array reference with identical data.
+  const prevSnapshotRef = useRef<string>("");
+
+  // Sync Convex events into Schedule-X whenever events change.
+  // Use .set() which is the official "replace all events" API.
   useEffect(() => {
     if (!calendarApp || !events) return;
-    const mapped = mapEvents(events);
-    calendarApp.events.set(mapped);
+
+    const snapshot = events
+      .map((e) => `${e._id}|${e.startsAt}|${e.endsAt}|${e.name}`)
+      .sort()
+      .join(";");
+
+    if (snapshot === prevSnapshotRef.current) return;
+    prevSnapshotRef.current = snapshot;
+
+    calendarApp.events.set(mapEvents(events));
   }, [calendarApp, events]);
 
   if (events === undefined) {
@@ -202,7 +233,7 @@ export function CalendarView({
     <div style={{ height: "calc(100vh - 250px)" }}>
       <ScheduleXCalendar
         calendarApp={calendarApp}
-        customComponents={{ monthGridEvent: MonthGridEvent }}
+        customComponents={customComponents}
       />
     </div>
   );

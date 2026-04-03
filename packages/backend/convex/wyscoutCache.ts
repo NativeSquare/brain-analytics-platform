@@ -104,10 +104,12 @@ export const saveVideoCache = mutation({
     videoUrl: v.string(),
     expiresAt: v.number(),
     storageId: v.optional(v.id("_storage")),
+    muxAssetId: v.optional(v.string()),
+    muxPlaybackId: v.optional(v.string()),
   },
   handler: async (
     ctx,
-    { wyscoutMatchId, startTimestamp, endTimestamp, quality, videoUrl, expiresAt, storageId }
+    { wyscoutMatchId, startTimestamp, endTimestamp, quality, videoUrl, expiresAt, storageId, muxAssetId, muxPlaybackId }
   ) => {
     const { teamId } = await requireAuth(ctx);
 
@@ -128,6 +130,8 @@ export const saveVideoCache = mutation({
         videoUrl,
         expiresAt,
         storageId,
+        muxAssetId,
+        muxPlaybackId,
       });
       return existing._id;
     }
@@ -142,6 +146,8 @@ export const saveVideoCache = mutation({
       teamId,
       createdAt: Date.now(),
       storageId,
+      muxAssetId,
+      muxPlaybackId,
     });
   },
 });

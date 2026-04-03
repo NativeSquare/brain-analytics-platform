@@ -72,35 +72,19 @@ so that I can quickly view structured contract data without reading the full doc
 
 ### Backend Tasks
 
-- [ ] **Task 1: Define Contract Schema** (AC: 1, 2, 3, 5)
-  - [ ] 1.1: Add `contracts` table to `packages/backend/convex/schema.ts` with fields:
-    - `teamId` (Id<"teams">)
-    - `playerId` (Id<"players">)
-    - `storageId` (Id<"_storage">) — reference to uploaded PDF
-    - `fileName` (string) — original filename
-    - `extractionStatus` ("pending" | "processing" | "completed" | "failed")
-    - `extractionError` (optional string) — error message if failed
-    - `contractStartDate` (optional number) — Unix timestamp ms
-    - `contractEndDate` (optional number) — Unix timestamp ms
-    - `salary` (optional string) — free text, supports varied formats
-    - `bonuses` (optional string) — free text
-    - `clauses` (optional string) — free text
-    - `terminationTerms` (optional string) — free text
-    - `governingLaw` (optional string) — free text
-    - `rawExtraction` (optional string) — full AI response for debugging
-    - `uploadedBy` (Id<"users">)
-    - `createdAt` (number)
-    - `updatedAt` (number)
-  - [ ] 1.2: Add indexes: `by_playerId` (playerId), `by_teamId` (teamId), `by_playerId_teamId` (playerId, teamId)
+- [x] **Task 1: Define Contract Schema** (AC: 1, 2, 3, 5) — ALREADY DONE
+  - [x] Schema exists in `packages/backend/convex/table/contracts.ts` with fields: teamId, playerId, fileId, extractionStatus, extractedData (object with 6 optional string fields), extractionError, createdAt, updatedAt
+  - [x] Indexes: by_playerId, by_teamId, by_teamId_playerId
 
-- [ ] **Task 2: Implement Contract Queries** (AC: 1, 5)
-  - [ ] 2.1: Create `packages/backend/convex/contracts/queries.ts`
-  - [ ] 2.2: Implement `getContract` query — takes `playerId`, enforces `requireRole(ctx, ["admin"])` + teamId scoping, returns contract record or null
-  - [ ] 2.3: Implement `getContractDownloadUrl` query — takes `contractId`, enforces admin role, returns signed URL from Convex storage for PDF download
+- [x] **Task 2: Implement Contract Queries** (AC: 1, 5) — ALREADY DONE
+  - [x] `canViewContract(playerId)` — admin or player-self
+  - [x] `getContract(playerId)` — returns contract + readOnly flag, null for non-admin
+  - [x] `getContractDownloadUrl(playerId)` — signed URL
 
-- [ ] **Task 3: Implement Contract Upload Mutation** (AC: 2, 7)
-  - [ ] 3.1: Create `packages/backend/convex/contracts/mutations.ts`
-  - [ ] 3.2: Implement `uploadContract` mutation:
+- [x] **Task 3 (partial): Contract Upload Mutation** (AC: 2, 7) — PARTIALLY DONE
+  - [x] `uploadContract(playerId, fileId)` — inserts/patches record, sets status "pending"
+  - [x] `updateContractFields(playerId, extractedData)` — admin can edit fields
+  - [ ] 3.2: Extend `uploadContract` mutation to:
     - Validate: `requireRole(ctx, ["admin"])`, teamId scoping
     - Accept: `playerId`, `storageId` (from client-side `uploadFile`), `fileName`
     - If existing contract for player: delete old storage file, delete old record
@@ -130,15 +114,12 @@ so that I can quickly view structured contract data without reading the full doc
     - On failure: call internal mutation to set status `"failed"` with error message
     - Implement 30-second timeout guard
   - [ ] 4.3: Create the LLM prompt template as a constant — structured extraction prompt requesting JSON output with the target fields
-  - [ ] 4.4: Add environment variable support: `LLM_PROVIDER` ("claude" | "gemini"), `LLM_API_KEY`
+  - [ ] 4.4: Add environment variable support: `OPENAI_API_KEY` (set via Convex env)
 
-- [ ] **Task 5: Write Backend Tests** (AC: 1, 2, 3, 6)
-  - [ ] 5.1: Create `packages/backend/convex/contracts/__tests__/mutations.test.ts`
-  - [ ] 5.2: Test `uploadContract` — creates record with pending status, rejects non-admin
-  - [ ] 5.3: Test `updateContractFields` — admin can update fields, non-admin rejected
-  - [ ] 5.4: Test `updateExtractedData` — internal mutation correctly patches record
-  - [ ] 5.5: Test `getContract` — returns contract for admin, returns null/throws for non-admin
-  - [ ] 5.6: Test team scoping — admin from team A cannot access team B contracts
+- [x] **Task 5 (partial): Backend Tests** (AC: 1, 2, 3, 6) — PARTIALLY DONE
+  - [x] Security tests in `packages/backend/convex/contracts/__tests__/security.test.ts` — covers all roles, cross-tenant, upload/edit guards
+  - [ ] 5.4: Test `updateExtractedData` internal mutation — patches record with extracted data
+  - [ ] 5.5: Test extraction status transitions (pending → processing → completed/failed)
 
 ### Frontend Tasks
 
@@ -208,11 +189,12 @@ so that I can quickly view structured contract data without reading the full doc
 
 ### LLM Integration Notes
 
-- The LLM provider (Claude vs Gemini) is intentionally deferred — implement with an environment variable toggle (`LLM_PROVIDER`).
-- For Claude: use the Anthropic SDK (`@anthropic-ai/sdk`) with PDF support via base64 content.
-- For Gemini: use the Google Generative AI SDK with PDF via inline data.
+- Use **OpenAI** (`openai` npm package) with **structured JSON output** (response_format: { type: "json_schema", json_schema: ... }).
+- Environment variable: `OPENAI_API_KEY` (set via `npx convex env set OPENAI_API_KEY <key>`).
+- Model: `gpt-4o` (good balance of speed, cost, and PDF text comprehension).
 - The extraction prompt should request strict JSON output matching a defined Zod schema for reliable parsing.
-- Include fallback: if LLM response doesn't parse, set `extractionStatus: "failed"` with the raw response saved in `rawExtraction` for debugging.
+- Include fallback: if OpenAI response doesn't parse, set `extractionStatus: "failed"` with the raw response saved in `rawExtraction` for debugging.
+- Note: OpenAI does not accept raw PDF binary. Extract text from PDF first using a lightweight library (e.g. `pdf-parse`), then send the text to OpenAI.
 
 ### NFR Compliance
 

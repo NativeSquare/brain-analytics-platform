@@ -56,7 +56,7 @@ export const sendAdminInviteEmail = internalAction({
   },
   returns: v.string(),
   handler: async (ctx, args) => {
-    const inviteUrl = `${process.env.ADMIN_URL || "http://localhost:3001"}/accept-invite?token=${args.token}`;
+    const inviteUrl = `${process.env.WEB_APP_URL || process.env.ADMIN_URL || "http://localhost:3000"}/accept-invite?token=${args.token}`;
 
     const isDev = process.env.IS_DEV === "true";
     if (isDev) {
@@ -93,7 +93,7 @@ export const sendPlayerInviteEmail = internalAction({
   },
   returns: v.string(),
   handler: async (ctx, args) => {
-    const inviteUrl = `${process.env.ADMIN_URL || "http://localhost:3001"}/accept-invite?token=${args.token}&type=player`;
+    const inviteUrl = `${process.env.WEB_APP_URL || process.env.ADMIN_URL || "http://localhost:3000"}/accept-invite?token=${args.token}&type=player`;
 
     const isDev = process.env.IS_DEV === "true";
     if (isDev) {

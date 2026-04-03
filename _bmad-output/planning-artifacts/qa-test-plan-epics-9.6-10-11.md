@@ -255,7 +255,7 @@
 | **Prerequisites** | Two teams in Convex DB. Requires manual seeding (see steps). |
 | **Steps** | 1. **Seed a second team manually**: Open Convex dashboard (https://dashboard.convex.dev), go to Data → `teams` table, click "Add document", create `{ name: "Test Club B", slug: "test-club-b" }`. Note the new team's `_id`. 2. **Create a player on Team B**: Go to `players` table, click "Add document", create `{ firstName: "Test", lastName: "Player", teamId: <Team B _id>, status: "active" }`. Note this player's `_id`. 3. **Log in as your admin user** (who is on Team A / Default Club). 4. **Navigate to** `/players/<Team B player _id>` directly in the browser URL bar. 5. **Verify** the page shows "Resource not found" or "Player not found" — NOT "Access denied" or "Not authorized". 6. **Cleanup** (optional): Delete the test player and test team from Convex dashboard. |
 | **Expected** | Same NOT_FOUND error for both non-existent and wrong-team resources. The user cannot tell whether the player exists on another team or doesn't exist at all. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | [x] PASS |
 
 ---
 
@@ -268,7 +268,7 @@
 | **ACs Covered** | AC2, AC3, AC5 |
 | **Steps** | 1. Go to `/settings`. 2. Change language to "Italian", save. 3. Verify sidebar: "Giocatori", "Calendario", "Documenti". 4. Verify account page labels in Italian. 5. Log out, log back in — verify still Italian. 6. Switch back to English — verify all labels revert. |
 | **Expected** | Language switches instantly. Persists across sessions. All nav/account labels translated. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | [x] PASS — quelques traductions IT manquantes mais fonctionnalité globale OK |
 
 ---
 
@@ -324,7 +324,7 @@
 | **Prerequisites** | Logged in as admin |
 | **Steps** | 1. Create a recurring event (e.g., weekly Training, 4 occurrences). 2. Verify all occurrences appear on the calendar. 3. Click on one occurrence → cancel it. 4. Verify that specific occurrence shows as cancelled. 5. Verify other occurrences are unchanged. |
 | **Expected** | Recurring events generate multiple occurrences. Cancelling one doesn't affect others. |
-| **Pass/Fail** | [ ] FAIL — BUG: recurring events are duplicated (2-4x per occurrence). Pre-existing bug, not related to current sprint stories. |
+| **Pass/Fail** | [x] PASS — Fixed: Rules of Hooks violation + double content rendering in CalendarView.tsx |
 
 ### TC-3-03: Event RSVP + Role Invitations
 
@@ -334,7 +334,7 @@
 | **Prerequisites** | Admin + at least one other user in the team |
 | **Steps** | 1. As admin: create an event with RSVP enabled, invite "All Players" (role-based). 2. Log in as a player-role user. 3. Navigate to `/calendar`, find the event. 4. Submit RSVP: "Attending". 5. Verify RSVP status saved. 6. Change to "Not Attending" with reason. 7. Verify updated. |
 | **Expected** | Event visible to invited roles. RSVP submission works. Reason for absence captured. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | [x] PASS |
 
 ### TC-3-04: ICS Feed Sync
 
@@ -344,7 +344,7 @@
 | **Prerequisites** | Logged in |
 | **Steps** | 1. Navigate to `/calendar`. 2. Find the "Sync" or "Subscribe" option. 3. Copy the .ics feed URL. 4. Open the URL in a browser — verify it returns valid ICS content (starts with `BEGIN:VCALENDAR`). |
 | **Expected** | ICS URL is generated. Content is valid iCalendar format with events. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | [x] PASS |
 
 ---
 

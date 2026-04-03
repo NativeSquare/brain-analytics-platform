@@ -37,7 +37,28 @@ export const getUserNotifications = query({
         q.eq("userId", user._id).eq("teamId", teamId),
       )
       .order("desc")
-      .take(20);
+      .take(5);
+
+    return notifications;
+  },
+});
+
+/**
+ * Returns all notifications for the authenticated user (up to 100),
+ * ordered newest-first. Used by the full notifications page.
+ */
+export const getAllNotifications = query({
+  args: {},
+  handler: async (ctx) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    const notifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_userId_teamId", (q) =>
+        q.eq("userId", user._id).eq("teamId", teamId),
+      )
+      .order("desc")
+      .take(100);
 
     return notifications;
   },

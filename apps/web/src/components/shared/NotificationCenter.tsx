@@ -1,23 +1,9 @@
 "use client";
 
-/* [Sprint 3 — Story 3.7] Full notification center commented out until Sprint 3 delivery.
- * Bell icon + placeholder dropdown kept visible (client already informed notifications are in progress).
- * To restore: uncomment the original imports/logic below and remove the placeholder.
- */
-
-import { IconBell } from "@tabler/icons-react";
-import { Inbox } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-
-/* [Sprint 3 — Story 3.7] Original imports — uncomment when restoring
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Inbox, Loader2 } from "lucide-react";
+import { IconBell } from "@tabler/icons-react";
 import { formatDistanceToNow } from "date-fns";
 import { useQuery, useMutation } from "convex/react";
 import { toast } from "sonner";
@@ -27,11 +13,15 @@ import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { api } from "@packages/backend/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-*/
 
 function NotificationCenter() {
-  /* [Sprint 3 — Story 3.7] Original logic — uncomment when restoring
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -82,10 +72,9 @@ function NotificationCenter() {
       : unreadCount > 9
         ? "9+"
         : unreadCount;
-  */
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -94,22 +83,19 @@ function NotificationCenter() {
           aria-label="Notifications"
         >
           <IconBell className="h-4 w-4" />
+          {!!displayCount && (
+            <Badge
+              variant="destructive"
+              className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px]"
+            >
+              {displayCount}
+            </Badge>
+          )}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="text-sm font-semibold">Notifications</h3>
-        </div>
-        <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
-          <Inbox className="size-8" />
-          <p className="text-sm">Notifications will be available soon</p>
-        </div>
-      </PopoverContent>
-
-      {/* [Sprint 3 — Story 3.7] Original popover content — uncomment when restoring
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between border-b px-4 py-3">
+      <PopoverContent align="end" className="flex w-80 flex-col overflow-hidden p-0" style={{ maxHeight: "400px" }}>
+        <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
           <h3 className="text-sm font-semibold">Notifications</h3>
           {unreadCount !== undefined && unreadCount > 0 && (
             <button
@@ -123,7 +109,7 @@ function NotificationCenter() {
           )}
         </div>
 
-        <ScrollArea className="max-h-80">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {notifications === undefined ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <Loader2 className="size-5 animate-spin" />
@@ -150,16 +136,16 @@ function NotificationCenter() {
                       !notification.read && "bg-muted",
                     )}
                   >
-                    <div className="mt-1.5 shrink-0">
+                    <div className="mt-1.5 w-2 shrink-0">
                       {!notification.read && (
                         <span className="block size-2 rounded-full bg-primary" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
+                      <p className="text-sm font-medium leading-snug break-words">
                         {notification.title}
                       </p>
-                      <p className="truncate text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground break-words">
                         {notification.message}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -173,9 +159,21 @@ function NotificationCenter() {
               ))}
             </ul>
           )}
-        </ScrollArea>
+        </div>
+
+        <div className="shrink-0 border-t px-4 py-2">
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              router.push("/notifications");
+            }}
+            className="w-full text-center text-xs font-medium text-primary hover:underline"
+          >
+            View all notifications
+          </button>
+        </div>
       </PopoverContent>
-      */}
     </Popover>
   );
 }

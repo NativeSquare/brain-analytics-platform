@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import * as z from "zod";
 import { api } from "@packages/backend/convex/_generated/api";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -96,6 +96,29 @@ function AcceptPlayerInviteForm({
 
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  // Track pending invite acceptance — wait for auth to propagate before calling mutation
+  const [pendingToken, setPendingToken] = React.useState<string | null>(null);
+  const { isAuthenticated } = useConvexAuth();
+
+  // Once auth is established after sign-up, accept the invite
+  React.useEffect(() => {
+    if (!pendingToken || !isAuthenticated) return;
+
+    let cancelled = false;
+    async function accept() {
+      try {
+        await acceptPlayerInvite({ token: pendingToken! });
+        if (!cancelled) router.replace("/");
+      } catch (error) {
+        if (!cancelled) {
+          setFormError(getConvexErrorMessage(error));
+          setIsLoading(false);
+        }
+      }
+    }
+    accept();
+    return () => { cancelled = true; };
+  }, [pendingToken, isAuthenticated, acceptPlayerInvite, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -161,13 +184,10 @@ function AcceptPlayerInviteForm({
         flow: "signUp",
       });
 
-      // Accept the invite — links user to player profile
-      await acceptPlayerInvite({ token });
-
-      router.replace("/");
+      // Signal that we need to accept the invite once auth propagates
+      setPendingToken(token);
     } catch (error) {
       setFormError(getConvexErrorMessage(error));
-    } finally {
       setIsLoading(false);
     }
   }

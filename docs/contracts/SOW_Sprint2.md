@@ -35,7 +35,14 @@ Additionally, any corrections or adjustments identified during the Sprint 1 Demo
 
 | Functional Requirement         | Description                                                                                                                                                 |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sprint 1 Fixes                 | Address any bugs or UX adjustments identified during the Sprint 1 Demo or client feedback                                                                   |
+| Dashboard Styling Alignment    | Match remaining design tokens from the existing platform, specifically on the dashboard pages                                                                |
+| Calendar Navigation Bug        | Fix visual glitch when navigating between months (e.g. May → back)                                                                                          |
+| Players Page Layout            | Redesign the players list to display cards grouped by position (GK, Defenders, Midfielders, Forwards) based on the existing mockup                          |
+| Player Invite URL Fix          | Ensure invitation email links point to the staging/production URL, not localhost                                                                             |
+| Admin Edit Player Contact Info | Allow admins to edit player contact details (phone, email, address, emergency contacts), not just the player themselves                                      |
+| Nationality Dropdown           | Replace the free-text nationality field with a searchable country dropdown                                                                                   |
+| GDPR Player Deletion           | Add the ability for admins to permanently delete a player and all associated data (profile, stats, fitness, contracts, documents)                            |
+| Date Format (DD/MM/YYYY)       | Switch all dates across the platform to European format (day/month/year)                                                                                     |
 | StatsBomb Live Connection      | Connect to the real StatsBomb PostgreSQL database, verify all 37 SQL queries return correct data, validate all dashboards render correctly                  |
 | SportMonks Live Connection     | Connect to the real SportMonks PostgreSQL database, verify fixtures, scores, and standings display correctly on the homepage and dashboards                 |
 | Wyscout/Hudl Video Integration | Verify video clip playback works end-to-end: Wyscout API → video URL → player. Test across Shot Map, Event Map, Set Pieces, and View Possessions dashboards |

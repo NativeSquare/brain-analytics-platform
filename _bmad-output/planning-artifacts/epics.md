@@ -180,23 +180,60 @@ Six specialized dashboards: Event Map, Player Analysis, Set Pieces, Opposition A
 Global search, Google OAuth, enriched homepage with SportMonks data, and consolidated RBAC hooks system.
 **Gap covered:** Global search, Google OAuth, homepage data, RBAC consolidation.
 
-### Epic 12: Staff Profiles & Directory — *Sprint 2*
+### Epic 12: Sprint 1 Polish — *Sprint 2*
+Address client feedback from the Sprint 1 Demo: UX fixes, GDPR compliance, date formatting, players page redesign, and data model improvements.
+**SOW ref:** Sprint 2 Phase 1 (feedback items).
+
+#### Stories
+
+- **Story 12.1: Dashboard Styling Alignment** — Match remaining design tokens from the existing platform on the dashboard pages, align chart styling, colors, and layout to match the existing BrainAnalytics visual identity
+- **Story 12.2: UX Feedback Fixes** — Calendar navigation bug fix, players page layout redesign (cards grouped by position), nationality dropdown, date format DD/MM/YYYY
+- **Story 12.3: Data Fixes & GDPR** — Player invite URL fix (staging/production), admin edit player contact info, GDPR player deletion (cascade delete all associated data)
+
+### Epic 13: Staff Profiles & Directory — *Sprint 2*
 Staff members get structured profiles with bios, job titles, and certification tracking with expiry alerts. A club directory gives everyone a single place to find contact information.
 **Proposal ref:** Originally Sprint 1 "Staff Profiles & Directory", moved to Sprint 2 (swapped with Document Hub).
+**Data approach:** Developed and tested with mock data (`USE_MOCK_DATA=true`), following the same pattern as Sprint 1. Live data verification deferred to Epic 15.
 
-### Epic 13: Injury Reporting — *Sprint 2*
+#### Stories
+
+- **Story 13.1: Staff Schema, CRUD & Profile Page** — Convex schema for staff profiles (name, photo, job title, department, phone, email, bio, date joined). Admin CRUD mutations. Profile page with tabs for bio, certifications, and role info
+- **Story 13.2: Staff Directory** — Searchable, filterable directory page listing all staff with photo, name, title, department. Accessible to all authenticated users. Add "Staff" to sidebar navigation
+- **Story 13.3: Certification Tracking & Expiry Alerts** — Log certifications with issue date and expiry date. Visual indicators for expiring (< 30 days) and expired certifications. Admin summary view of all expiring certs across the team
+- **Story 13.4: Staff Self-Service & Deactivation** — Staff can view/edit own profile (contact info, bio, certifications) but not role or department. Admin can deactivate staff (revokes access, profile remains visible to admins)
+
+### Epic 14: Injury Reporting — *Sprint 2*
 Comprehensive injury management with clinical classification, timeline tracking, rehab notes, color-coded return-to-play statuses, and a medical dashboard. Extends Story 5.5.
 **Proposal ref:** Sprint 2 "Injury Reporting".
+**Data approach:** Developed and tested with mock data (`USE_MOCK_DATA=true`), following the same pattern as Sprint 1. Live data verification deferred to Epic 15.
 
-### Epic 14: Scouting Reports — *Sprint 3*
+#### Stories
+
+- **Story 14.1: Injury Schema & Clinical Classification** — Convex schema for injuries with body region, injury type, severity (Minor/Moderate/Severe), mechanism (contact/non-contact/overuse), side (left/right/bilateral). CRUD mutations with medical role guard. Injury log UI on player profile
+- **Story 14.2: Injury Timeline & Rehab Notes** — Visual timeline per player showing injury history (injury date, expected return, actual return, days out), color-coded by severity. Timestamped rehab notes per injury record
+- **Story 14.3: Return-to-Play Workflow & Medical Dashboard** — Status workflow: Active → Rehab → Return-to-Play Assessment → Cleared. Color-coded badges on player cards. Medical dashboard showing currently injured players, upcoming return dates, injury frequency by type/region, squad availability %
+- **Story 14.4: Injury Access Control & Reports** — Injury details visible only to medical staff and admins. Non-medical users see only a status indicator (injured/available) on player cards. Admin summary reports: injuries per player, per season, time lost per injury type
+
+### Epic 15: Live Data Integration — *Sprint 2*
+Replace mock data with real API connections. Activate third-party integrations. Full end-to-end verification with production data.
+**SOW ref:** Sprint 2 Phase 1 (live data items). Executed last to validate on a stable system.
+
+#### Stories
+
+- **Story 15.1: StatsBomb & SportMonks Live Connection** — Connect to the real StatsBomb PostgreSQL database (37 queries), SportMonks database (fixtures, scores, standings). Verify all dashboards and homepage render correctly with real data
+- **Story 15.2: Video & Third-Party Activation** — Wyscout/Hudl video E2E verification, MUX video cache activation, Google OAuth activation, OpenAI contract extraction activation
+- **Story 15.3: Staff & Injury Live Data Verification** — Verify Staff Profiles (Epic 13) and Injury Reporting (Epic 14) work correctly with real data, seed production-representative data, validate all CRUD flows and access control with live Convex
+- **Story 15.4: End-to-End Smoke Test** — Complete walkthrough of every feature with real data: all 13 dashboards, video playback, homepage widgets, staff directory, injury dashboard, contract extraction
+
+### Epic 16: Scouting Reports — *Sprint 3*
 Scouts create structured reports on transfer targets with grading, recommendations (Sign/Watch/Pass), media attachments, and follow-up notes. Restricted to scouts and admins.
 **Proposal ref:** Sprint 3 "Scouting Reports".
 
-### Epic 15: Shadow Teams — *Sprint 3*
+### Epic 17: Shadow Teams — *Sprint 3*
 Visual pitch-based squad planning tool for ranking scouting targets by position and priority category (Immediate/Development/Emergency).
 **Proposal ref:** Sprint 3 "Scouting Shadow Teams".
 
-### Epic 16: Notifications & WhatsApp Integration — *Sprint 3*
+### Epic 18: Notifications & WhatsApp Integration — *Sprint 3*
 WhatsApp Business API integration for automated and manual notifications. Extends the in-app notification center (Story 3.7) with external push, admin broadcasts, templates, and user privacy controls.
 **Proposal ref:** Sprint 3 "WhatsApp Notifications".
 

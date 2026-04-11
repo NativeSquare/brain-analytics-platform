@@ -85,7 +85,7 @@ export function TodayDisplay({ events, onMidnightRollover }: TodayDisplayProps) 
     return () => clearTimeout(timeout);
   }, [now, onMidnightRollover]);
 
-  const dateString = format(now, "EEEE, d MMMM yyyy");
+  const dateString = format(now, "EEEE dd/MM/yyyy");
   const timeString = format(now, "HH:mm");
 
   return (

@@ -4,8 +4,9 @@ import { createElement, useMemo } from "react";
 import Link from "next/link";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
-import { IconPin } from "@tabler/icons-react";
+import { IconArrowRight, IconPin } from "@tabler/icons-react";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -78,21 +79,25 @@ export function PinnedDashboards() {
             No pinned dashboards yet
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {items.map((item) => {
               const iconElement = createElement(getDashboardIcon(item.icon), {
-                className: "size-4 text-primary",
+                className: "size-4",
               });
               return (
                 <li key={item.slug}>
                   <Link
                     href={`/dashboards/${item.slug}`}
-                    className="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
+                    className="group flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/30 hover:bg-muted/30"
                   >
-                    <div className="rounded-md bg-primary/15 p-1.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
                       {iconElement}
                     </div>
-                    <span className="text-sm font-medium">{item.title}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.title}</span>
+                    <IconArrowRight
+                      className="size-4 text-primary opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100"
+                      aria-hidden="true"
+                    />
                   </Link>
                 </li>
               );
@@ -101,12 +106,9 @@ export function PinnedDashboards() {
         )}
       </CardContent>
       <CardFooter>
-        <Link
-          href="/dashboards"
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          Browse dashboards &rarr;
-        </Link>
+        <Button variant="outline" className="w-full" asChild>
+          <Link href="/dashboards">Browse dashboards</Link>
+        </Button>
       </CardFooter>
     </Card>
   );

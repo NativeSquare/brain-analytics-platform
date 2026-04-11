@@ -110,10 +110,10 @@ function getAvatarColor(name: string | undefined): string {
 }
 
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString("en-US", {
+  return new Date(timestamp).toLocaleDateString("en-GB", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
 }
 

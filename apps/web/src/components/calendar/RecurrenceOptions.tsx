@@ -137,7 +137,7 @@ export function RecurrenceOptions({
                 >
                   <CalendarIcon className="mr-2 size-4" />
                   {endDateAsDate
-                    ? format(endDateAsDate, "PPP")
+                    ? format(endDateAsDate, "dd/MM/yyyy")
                     : "Pick an end date"}
                 </Button>
               </PopoverTrigger>

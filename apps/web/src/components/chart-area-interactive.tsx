@@ -249,9 +249,9 @@ export function ChartAreaInteractive() {
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value)
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
+                return date.toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
                 })
               }}
             />
@@ -260,9 +260,9 @@ export function ChartAreaInteractive() {
               content={
                 <ChartTooltipContent
                   labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
+                    return new Date(value).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
                     })
                   }}
                   indicator="dot"

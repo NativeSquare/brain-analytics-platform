@@ -42,7 +42,7 @@ const ReaderRow = React.memo(function ReaderRow({
         </Badge>
       </div>
       <span className="text-xs text-muted-foreground shrink-0">
-        {format(new Date(readAt), "MMM d, yyyy 'at' HH:mm")}
+        {format(new Date(readAt), "dd/MM/yyyy 'at' HH:mm")}
       </span>
     </div>
   );

@@ -36,7 +36,7 @@ export function DeleteInjuryDialog({
   const deleteInjury = useMutation(api.players.mutations.deleteInjury);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const formattedDate = format(new Date(date), "dd MMM yyyy");
+  const formattedDate = format(new Date(date), "dd/MM/yyyy");
 
   const handleDelete = async () => {
     setIsDeleting(true);

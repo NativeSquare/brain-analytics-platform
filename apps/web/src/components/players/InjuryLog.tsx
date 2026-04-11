@@ -88,7 +88,7 @@ const InjuryRow = React.memo(function InjuryRow({
   return (
     <TableRow>
       <TableCell>
-        {format(new Date(entry.date), "dd MMM yyyy")}
+        {format(new Date(entry.date), "dd/MM/yyyy")}
       </TableCell>
       <TableCell>
         <NotesCell text={entry.injuryType} maxLen={40} />
@@ -114,7 +114,7 @@ const InjuryRow = React.memo(function InjuryRow({
       </TableCell>
       <TableCell>
         {entry.clearanceDate
-          ? format(new Date(entry.clearanceDate), "dd MMM yyyy")
+          ? format(new Date(entry.clearanceDate), "dd/MM/yyyy")
           : "\u2014"}
       </TableCell>
       <TableCell>
@@ -257,7 +257,7 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
               <div className="flex flex-wrap gap-2">
                 {summary.currentInjuries.map((inj) => (
                   <Badge key={inj._id} variant="destructive" className="text-xs">
-                    {inj.injuryType} — {format(new Date(inj.date), "dd MMM yyyy")}
+                    {inj.injuryType} — {format(new Date(inj.date), "dd/MM/yyyy")}
                   </Badge>
                 ))}
               </div>

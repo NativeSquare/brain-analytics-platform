@@ -116,7 +116,7 @@ export const DocumentCard = React.memo(function DocumentCard({
       )}
 
       <span className="shrink-0 text-xs text-muted-foreground">
-        {format(new Date(document.createdAt), "MMM d, yyyy")}
+        {format(new Date(document.createdAt), "dd/MM/yyyy")}
       </span>
 
       {(canManage ?? isAdmin) && (

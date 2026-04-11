@@ -190,6 +190,12 @@ export function CalendarView({
         onDateClick(d.getTime());
       },
       onRangeUpdate(range) {
+        // Clear the snapshot so the next events sync always pushes fresh data.
+        // Without this, navigating to a month and back can skip the
+        // `calendarApp.events.set()` call because the snapshot string still
+        // matches, even though Schedule-X's visible range has changed.
+        prevSnapshotRef.current = "";
+
         // When the view range changes, figure out which month is displayed
         const start = new Date(range.start.toString());
         const end = new Date(range.end.toString());

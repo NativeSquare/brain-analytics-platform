@@ -144,14 +144,14 @@ export function DocumentDetail({
               <div>
                 <dt className="text-muted-foreground">Upload Date</dt>
                 <dd className="font-medium">
-                  {format(new Date(document.createdAt), "MMM d, yyyy")}
+                  {format(new Date(document.createdAt), "dd/MM/yyyy")}
                 </dd>
               </div>
 
               <div>
                 <dt className="text-muted-foreground">Last Updated</dt>
                 <dd className="font-medium">
-                  {format(new Date(document.updatedAt), "MMM d, yyyy")}
+                  {format(new Date(document.updatedAt), "dd/MM/yyyy")}
                 </dd>
               </div>
             </dl>

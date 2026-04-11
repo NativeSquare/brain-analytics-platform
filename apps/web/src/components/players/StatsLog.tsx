@@ -171,7 +171,7 @@ export function StatsLog({ playerId, isAdmin }: StatsLogProps) {
               {stats.map((entry) => (
                 <TableRow key={entry._id}>
                   <TableCell>
-                    {format(new Date(entry.matchDate), "dd MMM yyyy")}
+                    {format(new Date(entry.matchDate), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>{entry.opponent}</TableCell>
                   <TableCell className="text-right">

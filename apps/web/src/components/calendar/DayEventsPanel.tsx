@@ -59,7 +59,7 @@ export function DayEventsPanel({
       : "skip",
   );
 
-  const dayLabel = date !== null ? format(new Date(date), "EEEE, d MMMM yyyy") : "";
+  const dayLabel = date !== null ? format(new Date(date), "EEEE dd/MM/yyyy") : "";
 
   // Stable click handler factory to avoid inline arrow functions per item
   const handleEventClick = useCallback(

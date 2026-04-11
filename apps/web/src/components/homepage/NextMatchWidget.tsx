@@ -44,7 +44,7 @@ export function NextMatchWidget({ match }: NextMatchWidgetProps) {
             <p className="text-base font-semibold">{match.name}</p>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <IconCalendarEvent className="size-4" aria-hidden="true" />
-              <span>{format(new Date(match.startsAt), "EEEE, d MMMM yyyy 'at' HH:mm")}</span>
+              <span>{format(new Date(match.startsAt), "EEEE dd/MM/yyyy 'at' HH:mm")}</span>
             </div>
             {match.location && (
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">

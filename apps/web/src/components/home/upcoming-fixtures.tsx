@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { IconCalendarEvent } from "@tabler/icons-react";
+import {
+  IconCalendarEvent,
+  IconClock,
+  IconTrophy,
+} from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -87,34 +91,47 @@ export function UpcomingFixtures() {
             No upcoming fixtures
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {fixtures.map((f) => {
               const isSampdoriaHome =
                 f.homeTeamId === SAMPDORIA_SPORTMONKS_TEAM_ID;
               const opponent = isSampdoriaHome
                 ? f.awayTeamName
                 : f.homeTeamName;
+              const fixtureDate = new Date(getFixtureDate(f));
 
               return (
                 <li
                   key={f.id ?? f.fixtureId}
-                  className="flex items-center justify-between gap-2"
+                  className="group relative flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium">
+                  {/* Opponent logo placeholder */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted p-1.5 ring-1 ring-border">
+                    <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
+                  </div>
+
+                  {/* Match info */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-sm font-medium">
                       vs {opponent}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(
-                        new Date(getFixtureDate(f)),
-                        "EEE, d MMM yyyy 'at' HH:mm"
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-0.5">
+                        <IconCalendarEvent className="size-2.5" aria-hidden="true" />
+                        {format(fixtureDate, "dd/MM/yyyy")}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <IconClock className="size-2.5" aria-hidden="true" />
+                        {format(fixtureDate, "HH:mm")}
+                      </span>
+                      {f.competitionName && (
+                        <span>{f.competitionName}</span>
                       )}
-                      {f.competitionName
-                        ? ` \u00b7 ${f.competitionName}`
-                        : ""}
-                    </span>
+                    </div>
                   </div>
-                  <Badge variant={isSampdoriaHome ? "default" : "secondary"}>
+
+                  {/* Home/Away badge */}
+                  <Badge variant="outline" className="text-[10px] font-medium uppercase tracking-tighter">
                     {isSampdoriaHome ? "Home" : "Away"}
                   </Badge>
                 </li>

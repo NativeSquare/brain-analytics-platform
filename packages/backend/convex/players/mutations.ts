@@ -618,6 +618,272 @@ export const updateOwnContactInfo = mutation({
 });
 
 /**
+ * Update any player's contact information. Admin only.
+ *
+ * Story 12.3 AC #4: Mirrors updateOwnContactInfo validation but uses
+ * requireRole(["admin"]) and accepts a playerId argument.
+ * Story 12.3 AC #7: Same validation rules as self-service.
+ * Story 12.3 AC #14: Team-scoped via getTeamResource.
+ */
+export const updatePlayerContactInfo = mutation({
+  args: {
+    playerId: v.id("players"),
+    phone: v.optional(v.string()),
+    personalEmail: v.optional(v.string()),
+    address: v.optional(v.string()),
+    emergencyContactName: v.optional(v.string()),
+    emergencyContactRelationship: v.optional(v.string()),
+    emergencyContactPhone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin"]);
+
+    await getTeamResource(ctx, teamId, "players", args.playerId);
+
+    // Validate email format if provided and non-empty
+    if (args.personalEmail && args.personalEmail.trim() !== "") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(args.personalEmail)) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: "Invalid email format",
+        });
+      }
+    }
+
+    // Validate field lengths (max 500 characters)
+    const { playerId: _pid, ...fields } = args;
+    for (const [key, value] of Object.entries(fields)) {
+      if (typeof value === "string" && value.length > 500) {
+        throw new ConvexError({
+          code: "VALIDATION_ERROR" as const,
+          message: `${key} cannot exceed 500 characters`,
+        });
+      }
+    }
+
+    // Build patch with only provided fields
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    if (args.phone !== undefined) patch.phone = args.phone || undefined;
+    if (args.personalEmail !== undefined) patch.personalEmail = args.personalEmail || undefined;
+    if (args.address !== undefined) patch.address = args.address || undefined;
+    if (args.emergencyContactName !== undefined) patch.emergencyContactName = args.emergencyContactName || undefined;
+    if (args.emergencyContactRelationship !== undefined) patch.emergencyContactRelationship = args.emergencyContactRelationship || undefined;
+    if (args.emergencyContactPhone !== undefined) patch.emergencyContactPhone = args.emergencyContactPhone || undefined;
+
+    await ctx.db.patch(args.playerId, patch);
+    return args.playerId;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// GDPR Player Deletion (Story 12.3 AC #8, #9, #14, #15)
+// ---------------------------------------------------------------------------
+
+/**
+ * Permanently delete a player and ALL associated data (GDPR right to erasure).
+ * Admin only. Cascade-deletes across 13+ tables plus auth records.
+ *
+ * Story 12.3 AC #8: Hard cascade deletion — irreversible.
+ * Story 12.3 AC #9: Handles missing data gracefully (no records = no error).
+ * Story 12.3 AC #14: Team-scoped via getTeamResource.
+ * Story 12.3 AC #15: Cleans up authSessions and authAccounts.
+ */
+export const deletePlayer = mutation({
+  args: {
+    playerId: v.id("players"),
+  },
+  handler: async (ctx, { playerId }) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    const player = await getTeamResource(ctx, teamId, "players", playerId);
+
+    // Prevent admin from deleting themselves
+    if (player.userId && player.userId === user._id) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "You cannot delete your own player profile.",
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // 1. Delete player-linked records (by playerId index)
+    // -----------------------------------------------------------------------
+
+    // playerStats
+    const stats = await ctx.db
+      .query("playerStats")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+    for (const doc of stats) {
+      await ctx.db.delete(doc._id);
+    }
+
+    // playerFitness
+    const fitness = await ctx.db
+      .query("playerFitness")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+    for (const doc of fitness) {
+      await ctx.db.delete(doc._id);
+    }
+
+    // playerInjuries
+    const injuries = await ctx.db
+      .query("playerInjuries")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+    for (const doc of injuries) {
+      await ctx.db.delete(doc._id);
+    }
+
+    // contracts (+ storage files)
+    const contracts = await ctx.db
+      .query("contracts")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+    for (const contract of contracts) {
+      // Storage file may have been deleted already — ignore errors
+      try {
+        await ctx.storage.delete(contract.fileId);
+      } catch {
+        // File already deleted or missing — safe to ignore
+      }
+      await ctx.db.delete(contract._id);
+    }
+
+    // playerInvites
+    const invites = await ctx.db
+      .query("playerInvites")
+      .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+      .collect();
+    for (const doc of invites) {
+      await ctx.db.delete(doc._id);
+    }
+
+    // -----------------------------------------------------------------------
+    // 2. Delete user-linked records (only if player has a linked userId)
+    // -----------------------------------------------------------------------
+
+    if (player.userId) {
+      const userId = player.userId;
+
+      // calendarEventUsers
+      const eventUsers = await ctx.db
+        .query("calendarEventUsers")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .collect();
+      for (const doc of eventUsers) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // eventRsvps (no direct userId-only index — use filter)
+      const rsvps = await ctx.db
+        .query("eventRsvps")
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .collect();
+      for (const doc of rsvps) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // documentReads (no direct userId-only index — use filter)
+      const docReads = await ctx.db
+        .query("documentReads")
+        .filter((q) => q.eq(q.field("userId"), userId))
+        .collect();
+      for (const doc of docReads) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // documentUserPermissions
+      const docPerms = await ctx.db
+        .query("documentUserPermissions")
+        .withIndex("by_userId_teamId", (q) =>
+          q.eq("userId", userId).eq("teamId", teamId)
+        )
+        .collect();
+      for (const doc of docPerms) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // notifications
+      const notifs = await ctx.db
+        .query("notifications")
+        .withIndex("by_userId_teamId", (q) =>
+          q.eq("userId", userId).eq("teamId", teamId)
+        )
+        .collect();
+      for (const doc of notifs) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // userPinnedDashboards
+      const pinned = await ctx.db
+        .query("userPinnedDashboards")
+        .withIndex("by_userId_teamId", (q) =>
+          q.eq("userId", userId).eq("teamId", teamId)
+        )
+        .collect();
+      for (const doc of pinned) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // userRecentDashboards
+      const recent = await ctx.db
+        .query("userRecentDashboards")
+        .withIndex("by_userId_teamId", (q) =>
+          q.eq("userId", userId).eq("teamId", teamId)
+        )
+        .collect();
+      for (const doc of recent) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // feedback
+      const feedbackDocs = await ctx.db
+        .query("feedback")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .collect();
+      for (const doc of feedbackDocs) {
+        await ctx.db.delete(doc._id);
+      }
+
+      // -------------------------------------------------------------------
+      // 3. Delete auth records (authSessions, authAccounts)
+      // -------------------------------------------------------------------
+
+      const sessions = await ctx.db
+        .query("authSessions")
+        .withIndex("userId", (q) => q.eq("userId", userId))
+        .collect();
+      for (const session of sessions) {
+        await ctx.db.delete(session._id);
+      }
+
+      const accounts = await ctx.db
+        .query("authAccounts")
+        .withIndex("userIdAndProvider", (q) => q.eq("userId", userId))
+        .collect();
+      for (const account of accounts) {
+        await ctx.db.delete(account._id);
+      }
+
+      // -------------------------------------------------------------------
+      // 4. Delete the user document
+      // -------------------------------------------------------------------
+      await ctx.db.delete(userId);
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. Delete the player document itself
+    // -----------------------------------------------------------------------
+    await ctx.db.delete(playerId);
+
+    return { success: true, deletedPlayerId: playerId };
+  },
+});
+
+/**
  * Create a new player profile. Admin only.
  *
  * AC #4: Accepts all bio fields, validates squad number uniqueness,

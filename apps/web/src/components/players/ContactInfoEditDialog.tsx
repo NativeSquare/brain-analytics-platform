@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 
+import type { Id } from "@packages/backend/convex/_generated/dataModel";
+
 import {
   contactInfoSchema,
   type ContactInfoFormData,
@@ -42,6 +44,10 @@ interface ContactInfoEditDialogProps {
   };
   open: boolean;
   onClose: () => void;
+  /** When true, calls admin mutation instead of self-service. Story 12.3 AC #6. */
+  isAdmin?: boolean;
+  /** Required when isAdmin is true — the player to update. */
+  playerId?: Id<"players">;
 }
 
 /**
@@ -54,9 +60,14 @@ export function ContactInfoEditDialog({
   player,
   open,
   onClose,
+  isAdmin,
+  playerId,
 }: ContactInfoEditDialogProps) {
-  const updateContact = useMutation(
+  const updateOwnContact = useMutation(
     api.players.mutations.updateOwnContactInfo
+  );
+  const updatePlayerContact = useMutation(
+    api.players.mutations.updatePlayerContactInfo
   );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -97,7 +108,7 @@ export function ContactInfoEditDialog({
     setIsSubmitting(true);
     try {
       // Clean empty strings to undefined for the mutation
-      await updateContact({
+      const contactFields = {
         phone: data.phone || undefined,
         personalEmail: data.personalEmail || undefined,
         address: data.address || undefined,
@@ -105,7 +116,13 @@ export function ContactInfoEditDialog({
         emergencyContactRelationship:
           data.emergencyContactRelationship || undefined,
         emergencyContactPhone: data.emergencyContactPhone || undefined,
-      });
+      };
+
+      if (isAdmin && playerId) {
+        await updatePlayerContact({ playerId, ...contactFields });
+      } else {
+        await updateOwnContact(contactFields);
+      }
       toast.success("Contact information updated");
       onClose();
     } catch (error) {

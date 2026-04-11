@@ -12,7 +12,7 @@ export default function AppHomePage() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-6 py-4 md:gap-8 md:py-6">
+    <div className="flex flex-col space-y-6 py-4 md:py-6">
       {/* Hero: Next match countdown */}
       <section className="px-4 lg:px-6">
         <MatchCountdown />

@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { IconListDetails } from "@tabler/icons-react";
+import { IconListDetails, IconTrophy } from "@tabler/icons-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -59,13 +58,10 @@ function getOutcome(fixture: Fixture): Outcome {
   return "D";
 }
 
-const outcomeBadgeVariant: Record<
-  Outcome,
-  "default" | "secondary" | "destructive"
-> = {
-  W: "default",
-  D: "secondary",
-  L: "destructive",
+const outcomeColors: Record<Outcome, string> = {
+  W: "bg-green-500 text-white",
+  D: "bg-gray-400 text-white",
+  L: "bg-red-500 text-white",
 };
 
 // ---------------------------------------------------------------------------
@@ -120,7 +116,7 @@ export function RecentResults() {
             No recent results available
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {fixtures.map((f) => {
               const isSampdoriaHome =
                 f.homeTeamId === SAMPDORIA_SPORTMONKS_TEAM_ID;
@@ -138,24 +134,35 @@ export function RecentResults() {
               return (
                 <li
                   key={f.id ?? f.fixtureId}
-                  className="flex items-center justify-between gap-2"
+                  className="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium">
-                      Sampdoria{" "}
-                      <span className="font-bold">
-                        {sampdoriaScore ?? "-"} - {opponentScore ?? "-"}
-                      </span>{" "}
-                      {opponent}
+                  {/* Opponent logo placeholder */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted p-1.5 ring-1 ring-border">
+                    <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
+                  </div>
+
+                  {/* Match info */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-sm font-medium">
+                      vs {opponent}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(getFixtureDate(f)), "d MMM yyyy")}
+                    <span className="text-[10px] text-muted-foreground">
+                      {format(new Date(getFixtureDate(f)), "dd/MM/yyyy")}
                       {f.competitionName ? ` \u00b7 ${f.competitionName}` : ""}
                     </span>
                   </div>
-                  <Badge variant={outcomeBadgeVariant[outcome]}>
+
+                  {/* Score */}
+                  <span className="text-sm font-black tracking-tighter">
+                    {sampdoriaScore ?? "-"} - {opponentScore ?? "-"}
+                  </span>
+
+                  {/* W/D/L badge */}
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-black ring-4 ring-background ${outcomeColors[outcome]}`}
+                  >
                     {outcome}
-                  </Badge>
+                  </div>
                 </li>
               );
             })}

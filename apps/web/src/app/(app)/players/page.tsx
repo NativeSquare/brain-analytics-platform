@@ -10,7 +10,7 @@ import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlayerTable } from "@/components/players/PlayerTable";
+import { PlayerCardGrid } from "@/components/players/PlayerCardGrid";
 import { PlayerListFilters } from "@/components/players/PlayerListFilters";
 
 function PlayersPageContent() {
@@ -96,7 +96,7 @@ function PlayersPageContent() {
       ) : players.length === 0 ? (
         <EmptyState isAdmin={isAdmin} />
       ) : (
-        <PlayerTable players={players} onPlayerClick={handlePlayerClick} />
+        <PlayerCardGrid players={players} onPlayerClick={handlePlayerClick} />
       )}
     </div>
   );
@@ -104,15 +104,26 @@ function PlayersPageContent() {
 
 function PlayerListSkeleton() {
   return (
-    <div className="space-y-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4">
-          <Skeleton className="size-8 rounded-full" />
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-8" />
-          <Skeleton className="h-5 w-16 rounded-full" />
-          <Skeleton className="h-4 w-20" />
+    <div className="space-y-8">
+      {Array.from({ length: 2 }).map((_, g) => (
+        <div key={g} className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-6 w-1 rounded-full" />
+            <Skeleton className="h-6 w-24 rounded-md" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex flex-col items-center gap-2 rounded-lg border p-4"
+              >
+                <Skeleton className="size-16 rounded-full" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-8" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>

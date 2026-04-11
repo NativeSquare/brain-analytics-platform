@@ -38,7 +38,7 @@ export function DeleteFitnessDialog({
   );
   const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const formattedDate = format(new Date(date), "dd MMM yyyy");
+  const formattedDate = format(new Date(date), "dd/MM/yyyy");
 
   const handleDelete = async () => {
     setIsDeleting(true);

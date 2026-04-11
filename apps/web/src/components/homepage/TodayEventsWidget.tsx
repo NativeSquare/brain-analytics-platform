@@ -39,7 +39,7 @@ interface TodayEventsWidgetProps {
 }
 
 export function TodayEventsWidget({ events }: TodayEventsWidgetProps) {
-  const today = format(new Date(), "EEEE, d MMMM yyyy");
+  const today = format(new Date(), "EEEE dd/MM/yyyy");
   const hasEvents = events && events.length > 0;
 
   return (

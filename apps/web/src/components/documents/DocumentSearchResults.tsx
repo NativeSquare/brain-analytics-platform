@@ -162,7 +162,7 @@ const ResultCard = React.memo(function ResultCard({
       )}
 
       <span className="shrink-0 text-xs text-muted-foreground">
-        {format(new Date(result.createdAt), "MMM d, yyyy")}
+        {format(new Date(result.createdAt), "dd/MM/yyyy")}
       </span>
     </div>
   );

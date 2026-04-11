@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
-import { IconArrowLeft, IconMail, IconActivityHeartbeat, IconSwitchHorizontal } from "@tabler/icons-react";
+import { IconArrowLeft, IconMail, IconActivityHeartbeat, IconSwitchHorizontal, IconTrash } from "@tabler/icons-react";
 import type { PlayerStatus } from "@packages/shared/players";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { PlayerStatusBadge } from "@/components/shared/PlayerStatusBadge";
 import { StatusChangeDialog } from "./StatusChangeDialog";
+import { DeletePlayerDialog } from "./DeletePlayerDialog";
 
 export interface PlayerProfileData {
   _id: string;
@@ -64,6 +65,11 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
   const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);
   const handleOpenStatusDialog = React.useCallback(() => setStatusDialogOpen(true), []);
   const handleCloseStatusDialog = React.useCallback(() => setStatusDialogOpen(false), []);
+
+  // Story 12.3 AC #10: Delete player dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const handleOpenDeleteDialog = React.useCallback(() => setDeleteDialogOpen(true), []);
+  const handleCloseDeleteDialog = React.useCallback(() => setDeleteDialogOpen(false), []);
 
   return (
     <div className="space-y-4">
@@ -145,6 +151,18 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
               {inviteStatus === "pending" ? "Resend Invite" : "Invite to Platform"}
             </Button>
           )}
+
+          {/* Story 12.3 AC #10: Admin-only delete player button */}
+          {isAdmin && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleOpenDeleteDialog}
+            >
+              <IconTrash className="mr-1 size-4" />
+              Delete Player
+            </Button>
+          )}
         </div>
       </div>
 
@@ -156,6 +174,16 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
           playerName={`${player.firstName} ${player.lastName}`}
           open={statusDialogOpen}
           onClose={handleCloseStatusDialog}
+        />
+      )}
+
+      {/* Story 12.3 AC #10, #11: Delete player confirmation dialog */}
+      {isAdmin && (
+        <DeletePlayerDialog
+          playerId={player._id as Id<"players">}
+          playerName={`${player.firstName} ${player.lastName}`}
+          open={deleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
         />
       )}
     </div>

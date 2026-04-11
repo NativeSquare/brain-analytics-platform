@@ -94,8 +94,9 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
   const handleCloseContactEdit = React.useCallback(() => setContactEditOpen(false), []);
 
   // Story 5.6 AC #9: Player self-service shows "Edit Contact Info"
-  // Story 5.6 AC #12: Admin sees full "Edit Profile" (not implemented here — deferred to Story 5.2 ProfileForm)
+  // Story 12.3 AC #5: Admin can edit any player's contact info
   const showSelfServiceEdit = tabAccess.isSelf && !isAdmin;
+  const showAdminContactEdit = isAdmin;
 
   return (
     <Tabs defaultValue="bio">
@@ -137,7 +138,8 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
         <Card>
           <CardContent className="pt-6">
             {/* Story 5.6 AC #9: Self-service edit button for players */}
-            {showSelfServiceEdit && (
+            {/* Story 12.3 AC #5: Admin edit button for any player */}
+            {(showSelfServiceEdit || showAdminContactEdit) && (
               <div className="mb-4 flex justify-end">
                 <Button
                   variant="outline"
@@ -155,7 +157,7 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
                 label="Date of Birth"
                 value={
                   player.dateOfBirth
-                    ? format(new Date(player.dateOfBirth), "dd MMM yyyy")
+                    ? format(new Date(player.dateOfBirth), "dd/MM/yyyy")
                     : undefined
                 }
               />
@@ -195,11 +197,14 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
         </Card>
 
         {/* Story 5.6 AC #9, #11: Self-service contact info edit dialog */}
-        {showSelfServiceEdit && (
+        {/* Story 12.3 AC #6: Admin mode with playerId prop */}
+        {(showSelfServiceEdit || showAdminContactEdit) && (
           <ContactInfoEditDialog
             player={player}
             open={contactEditOpen}
             onClose={handleCloseContactEdit}
+            isAdmin={showAdminContactEdit}
+            playerId={showAdminContactEdit ? playerId : undefined}
           />
         )}
       </TabsContent>

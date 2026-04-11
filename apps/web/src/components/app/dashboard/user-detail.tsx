@@ -173,10 +173,10 @@ export function UserDetail({ userId, backPath = "/team" }: UserDetailProps) {
     user?.banned && (!user.banExpires || user.banExpires > Date.now());
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
+    return new Date(timestamp).toLocaleDateString("en-GB", {
       year: "numeric",
-      month: "long",
-      day: "numeric",
+      month: "2-digit",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
     });

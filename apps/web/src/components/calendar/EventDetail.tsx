@@ -197,7 +197,7 @@ export function EventDetail({
                 {/* Date / Time */}
                 <div className="text-sm">
                   <p className="font-medium">
-                    {format(new Date(event.startsAt), "EEEE, d MMMM yyyy")}
+                    {format(new Date(event.startsAt), "EEEE dd/MM/yyyy")}
                   </p>
                   <p className="text-muted-foreground">
                     {format(new Date(event.startsAt), "HH:mm")} &ndash;{" "}
@@ -245,7 +245,7 @@ export function EventDetail({
                       Series ends{" "}
                       {format(
                         new Date(seriesInfo.series.endDate),
-                        "d MMMM yyyy",
+                        "dd/MM/yyyy",
                       )}
                     </p>
                   </div>
@@ -334,7 +334,7 @@ export function EventDetail({
             <AlertDialogTitle>Cancel this occurrence?</AlertDialogTitle>
             <AlertDialogDescription>
               {event
-                ? `Cancel this occurrence of ${event.name} on ${format(new Date(event.startsAt), "EEEE, d MMMM yyyy")}?${event.isRecurring ? " Other occurrences will not be affected." : ""}`
+                ? `Cancel this occurrence of ${event.name} on ${format(new Date(event.startsAt), "EEEE dd/MM/yyyy")}?${event.isRecurring ? " Other occurrences will not be affected." : ""}`
                 : "Cancel this event?"}
             </AlertDialogDescription>
           </AlertDialogHeader>

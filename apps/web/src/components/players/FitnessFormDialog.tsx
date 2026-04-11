@@ -155,7 +155,7 @@ export function FitnessFormDialog({
                       >
                         <IconCalendar className="mr-2 size-4" />
                         {field.value
-                          ? format(new Date(field.value), "dd MMM yyyy")
+                          ? format(new Date(field.value), "dd/MM/yyyy")
                           : "Pick a date"}
                       </Button>
                     </PopoverTrigger>

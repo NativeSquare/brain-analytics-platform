@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  IconArrowRight,
   IconCalendar,
   IconChartBar,
   IconFolderOpen,
@@ -10,9 +11,7 @@ import {
 
 import {
   Card,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
@@ -67,15 +66,24 @@ export function QuickAccessCards() {
       {modules.map((mod) => {
         const Icon = mod.icon;
         return (
-          <Link key={mod.title} href={mod.href}>
-            <Card className="h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg focus-within:border-primary/50">
+          <Link key={mod.title} href={mod.href} className="group">
+            <Card className="h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md">
               <CardHeader>
-                <Icon
-                  className="size-8 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <CardTitle className="text-base">{mod.title}</CardTitle>
-                <CardDescription>{mod.description}</CardDescription>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </div>
+                  <div className="flex flex-1 flex-col gap-0.5">
+                    <span className="text-sm font-bold">{mod.title}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {mod.description}
+                    </span>
+                  </div>
+                  <IconArrowRight
+                    className="ml-auto size-4 text-primary opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-hidden="true"
+                  />
+                </div>
               </CardHeader>
             </Card>
           </Link>

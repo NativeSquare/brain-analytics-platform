@@ -38,7 +38,7 @@ export function DeleteStatsDialog({
   const deleteStats = useMutation(api.players.mutations.deletePlayerStats);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const formattedDate = format(new Date(matchDate), "dd MMM yyyy");
+  const formattedDate = format(new Date(matchDate), "dd/MM/yyyy");
 
   const handleDelete = async () => {
     setIsDeleting(true);

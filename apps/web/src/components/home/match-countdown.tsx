@@ -116,14 +116,16 @@ export function MatchCountdown() {
 
   if (error || !fixture) {
     return (
-      <Card className="border-l-4 border-l-primary">
-        <CardContent className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-          <IconCalendarEvent
-            className="size-10 text-muted-foreground/40"
-            aria-hidden="true"
-          />
-          <p className="text-sm text-muted-foreground">No upcoming match</p>
-        </CardContent>
+      <Card className="overflow-hidden rounded-xl">
+        <div className="bg-gradient-to-b from-primary/5 to-transparent px-6 py-8">
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
+            <IconCalendarEvent
+              className="size-10 text-muted-foreground/40"
+              aria-hidden="true"
+            />
+            <p className="text-sm text-muted-foreground">No upcoming match</p>
+          </div>
+        </div>
       </Card>
     );
   }
@@ -135,22 +137,52 @@ export function MatchCountdown() {
     : fixture.homeTeamName;
 
   return (
-    <Card className="border-l-4 border-l-primary">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconTrophy
-            className="size-5 text-muted-foreground"
-            aria-hidden="true"
-          />
-          Next Match
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Match info */}
-          <div className="flex flex-col gap-2">
-            <p className="text-lg font-semibold">vs {opponent}</p>
-            <div className="flex flex-wrap items-center gap-2">
+    <Card className="overflow-hidden rounded-xl">
+      {/* Gradient header */}
+      <div className="bg-gradient-to-b from-primary/5 to-transparent">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <IconCalendarEvent
+              className="size-3.5 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Next Match
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-6 py-2">
+            {/* Teams row with logos and VS divider */}
+            <div className="flex w-full items-center justify-center gap-6">
+              {/* Home team */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-background p-3 shadow-xs ring-1 ring-border sm:h-20 sm:w-20">
+                  <IconTrophy className="size-8 text-primary sm:size-10" aria-hidden="true" />
+                </div>
+                <span className="max-w-[100px] truncate text-xs font-bold sm:max-w-[120px] sm:text-sm">
+                  {isSampdoriaHome ? "Sampdoria" : opponent}
+                </span>
+              </div>
+
+              {/* VS divider */}
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[10px] font-black ring-4 ring-background">
+                VS
+              </div>
+
+              {/* Away team */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-background p-3 shadow-xs ring-1 ring-border sm:h-20 sm:w-20">
+                  <IconTrophy className="size-8 text-muted-foreground sm:size-10" aria-hidden="true" />
+                </div>
+                <span className="max-w-[100px] truncate text-xs font-bold sm:max-w-[120px] sm:text-sm">
+                  {isSampdoriaHome ? opponent : "Sampdoria"}
+                </span>
+              </div>
+            </div>
+
+            {/* Competition and venue badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <Badge variant={isSampdoriaHome ? "default" : "secondary"}>
                 {isSampdoriaHome ? "Home" : "Away"}
               </Badge>
@@ -158,33 +190,35 @@ export function MatchCountdown() {
                 <Badge variant="outline">{fixture.competitionName}</Badge>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <IconCalendarEvent className="size-4" aria-hidden="true" />
+
+            {/* Date row */}
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <IconCalendarEvent className="size-2.5" aria-hidden="true" />
               <span>
                 {format(
                   new Date(getFixtureDate(fixture)),
-                  "EEEE, d MMMM yyyy 'at' HH:mm"
+                  "EEEE dd/MM/yyyy 'at' HH:mm"
                 )}
               </span>
             </div>
-          </div>
 
-          {/* Countdown */}
-          {countdown.days === 0 &&
-          countdown.hours === 0 &&
-          countdown.minutes === 0 ? (
-            <Badge variant="default" className="text-sm">
-              Match in progress
-            </Badge>
-          ) : (
-            <div className="flex items-center gap-4">
-              <CountdownBlock value={countdown.days} label="Days" />
-              <CountdownBlock value={countdown.hours} label="Hours" />
-              <CountdownBlock value={countdown.minutes} label="Min" />
-            </div>
-          )}
-        </div>
-      </CardContent>
+            {/* Countdown */}
+            {countdown.days === 0 &&
+            countdown.hours === 0 &&
+            countdown.minutes === 0 ? (
+              <Badge className="animate-pulse bg-primary px-3 py-1 text-xs font-bold">
+                Match in progress
+              </Badge>
+            ) : (
+              <div className="flex items-center gap-4">
+                <CountdownBlock value={countdown.days} label="Days" />
+                <CountdownBlock value={countdown.hours} label="Hours" />
+                <CountdownBlock value={countdown.minutes} label="Min" />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </div>
     </Card>
   );
 }
@@ -199,7 +233,9 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
       <span className="text-3xl font-bold tabular-nums text-primary">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
     </div>
   );
 }

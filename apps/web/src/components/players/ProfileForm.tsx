@@ -12,6 +12,14 @@ import { IconUpload, IconX } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -28,6 +36,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { COUNTRIES } from "@/lib/countries";
 
 import {
   playerFormSchema,
@@ -295,11 +304,25 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid || undefined}>
                     <FieldLabel htmlFor="nationality">Nationality</FieldLabel>
-                    <Input
-                      {...field}
-                      id="nationality"
-                      placeholder="e.g. England"
-                    />
+                    <Combobox
+                      value={field.value || null}
+                      onValueChange={(val) => field.onChange(val ?? "")}
+                    >
+                      <ComboboxInput
+                        placeholder="Select nationality..."
+                        showClear={!!field.value}
+                      />
+                      <ComboboxContent>
+                        <ComboboxList>
+                          <ComboboxEmpty>No country found.</ComboboxEmpty>
+                          {COUNTRIES.map((country) => (
+                            <ComboboxItem key={country} value={country}>
+                              {country}
+                            </ComboboxItem>
+                          ))}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    </Combobox>
                     {fieldState.error && (
                       <FieldError errors={[fieldState.error]} />
                     )}

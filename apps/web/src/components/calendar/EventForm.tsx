@@ -351,7 +351,7 @@ export function EventForm({
                   )}
                 >
                   <CalendarIcon className="mr-2 size-4" />
-                  {startDate ? format(startDate, "PPP") : "Pick a date"}
+                  {startDate ? format(startDate, "dd/MM/yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -389,7 +389,7 @@ export function EventForm({
                   )}
                 >
                   <CalendarIcon className="mr-2 size-4" />
-                  {endDate ? format(endDate, "PPP") : "Pick a date"}
+                  {endDate ? format(endDate, "dd/MM/yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

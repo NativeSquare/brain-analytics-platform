@@ -168,7 +168,7 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
                 latestMetrics.latestWeight
                   ? format(
                       new Date(latestMetrics.latestWeight.date),
-                      "dd MMM yyyy"
+                      "dd/MM/yyyy"
                     )
                   : undefined
               }
@@ -185,7 +185,7 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
                 latestMetrics.latestBodyFat
                   ? format(
                       new Date(latestMetrics.latestBodyFat.date),
-                      "dd MMM yyyy"
+                      "dd/MM/yyyy"
                     )
                   : undefined
               }
@@ -196,7 +196,7 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
             />
             <SummaryCard
               label="Date Range"
-              value={`${format(new Date(latestMetrics.dateRange.earliest), "dd MMM yyyy")} — ${format(new Date(latestMetrics.dateRange.latest), "dd MMM yyyy")}`}
+              value={`${format(new Date(latestMetrics.dateRange.earliest), "dd/MM/yyyy")} — ${format(new Date(latestMetrics.dateRange.latest), "dd/MM/yyyy")}`}
             />
           </div>
         )}
@@ -232,7 +232,7 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
               {entries.map((entry) => (
                 <TableRow key={entry._id}>
                   <TableCell>
-                    {format(new Date(entry.date), "dd MMM yyyy")}
+                    {format(new Date(entry.date), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell className="text-right">
                     {entry.weightKg !== undefined

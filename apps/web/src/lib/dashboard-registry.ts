@@ -15,6 +15,7 @@ const registry: Record<string, () => Promise<{ default: DashboardComponent }>> =
   "referee-analysis": () => import("@/components/dashboards/referee-analysis"),
   "view-possessions": () => import("@/components/dashboards/view-possessions"),
   "post-match-set-pieces": () => import("@/components/dashboards/post-match-set-pieces"),
+  "medical-overview": () => import("@/components/dashboards/medical-overview"),
 };
 
 /** Cache lazy-wrapped components so React doesn't remount on every render. */

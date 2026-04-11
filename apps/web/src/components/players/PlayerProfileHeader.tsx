@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
-import { IconArrowLeft, IconMail, IconActivityHeartbeat, IconSwitchHorizontal, IconTrash } from "@tabler/icons-react";
+import { IconArrowLeft, IconMail, IconSwitchHorizontal, IconTrash } from "@tabler/icons-react";
 import type { PlayerStatus } from "@packages/shared/players";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -61,6 +61,10 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
     { playerId: player._id as Id<"players"> }
   );
 
+  // Story 14.4 AC #4: Determine if current user is medical (admin/physio) for tooltip
+  const canViewInjury = useQuery(api.injuries.queries.canViewInjuryDetails, {});
+  const isMedical = canViewInjury === true;
+
   // Story 5.6 AC #1: Status change dialog state
   const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);
   const handleOpenStatusDialog = React.useCallback(() => setStatusDialogOpen(true), []);
@@ -99,18 +103,21 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
               <h1 className="text-2xl font-semibold">
                 {player.firstName} {player.lastName}
               </h1>
-              {/* [Sprint 2 — Story 5.5] Injury status icon hidden until Sprint 2 delivery
+              {/* Story 14.4 AC #4: Injury indicator — dot for all, tooltip for medical only */}
               {injuryStatus?.hasCurrentInjury && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <IconActivityHeartbeat className="size-5 text-destructive" />
-                    </TooltipTrigger>
-                    <TooltipContent>Currently injured</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                isMedical ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-block size-2.5 rounded-full bg-destructive" />
+                      </TooltipTrigger>
+                      <TooltipContent>Currently injured</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <span className="inline-block size-2.5 rounded-full bg-destructive" />
+                )
               )}
-              */}
               {inviteStatus === "pending" && (
                 <Badge variant="secondary" className="text-xs">
                   Invited — awaiting response

@@ -5,7 +5,6 @@ import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import type { PlayerStatus } from "@packages/shared/players";
-import { IconActivityHeartbeat } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PlayerStatusBadge } from "@/components/shared/PlayerStatusBadge";
+import { RtpStatusDot } from "./rtp-status";
 
 export interface PlayerSummary {
   _id: Id<"players">;
@@ -51,10 +51,14 @@ const PlayerRow = React.memo(function PlayerRow({
   player,
   onPlayerClick,
   hasCurrentInjury,
+  rtpStatus,
+  isMedicalUser,
 }: {
   player: PlayerSummary;
   onPlayerClick: (playerId: Id<"players">) => void;
   hasCurrentInjury?: boolean;
+  rtpStatus?: string | null;
+  isMedicalUser?: boolean;
 }) {
   const handleClick = useCallback(() => {
     onPlayerClick(player._id);
@@ -77,22 +81,27 @@ const PlayerRow = React.memo(function PlayerRow({
       </TableCell>
       <TableCell className="font-medium">
         <span className="inline-flex items-center gap-1.5">
+          {/* Story 14.3 AC #5: RTP status dot for medical users */}
+          {rtpStatus !== undefined && <RtpStatusDot status={rtpStatus} />}
           {player.firstName} {player.lastName}
           {player.inviteStatus === "pending" && (
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
               Invited
             </Badge>
           )}
-          {/* [Sprint 2 — Story 5.5] Injury icon hidden until Sprint 2 delivery
+          {/* Story 14.4 AC #4: Injury indicator — dot for all, tooltip for medical only */}
           {hasCurrentInjury && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <IconActivityHeartbeat className="size-4 text-destructive" />
-              </TooltipTrigger>
-              <TooltipContent>Currently injured</TooltipContent>
-            </Tooltip>
+            isMedicalUser ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-block size-2 rounded-full bg-destructive" />
+                </TooltipTrigger>
+                <TooltipContent>Currently injured</TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="inline-block size-2 rounded-full bg-destructive" />
+            )
           )}
-          */}
         </span>
       </TableCell>
       <TableCell>{player.position}</TableCell>
@@ -121,6 +130,16 @@ export function PlayerTable({ players, onPlayerClick }: PlayerTableProps) {
     playerIds.length > 0 ? { playerIds } : "skip"
   );
 
+  // Story 14.3 AC #5, #6: Fetch RTP statuses for medical users only.
+  // The query itself enforces admin/physio role; non-medical users get null.
+  const currentUser = useQuery(api.table.users.currentUser);
+  const isMedical = currentUser?.role === "admin" || currentUser?.role === "physio";
+
+  const rtpStatuses = useQuery(
+    api.players.queries.getPlayersRtpStatuses,
+    isMedical && playerIds.length > 0 ? { playerIds } : "skip"
+  );
+
   return (
     <TooltipProvider>
       <Table>
@@ -141,6 +160,8 @@ export function PlayerTable({ players, onPlayerClick }: PlayerTableProps) {
               player={player}
               onPlayerClick={onPlayerClick}
               hasCurrentInjury={injuryStatuses?.[player._id] ?? false}
+              rtpStatus={isMedical ? (rtpStatuses?.[player._id] ?? null) : undefined}
+              isMedicalUser={isMedical}
             />
           ))}
         </TableBody>

@@ -2,6 +2,12 @@ import { convexTest } from "convex-test";
 import { ConvexError } from "convex/values";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "../../_generated/dataModel";
+import {
+  BODY_REGIONS,
+  INJURY_MECHANISMS,
+  INJURY_SIDES,
+  INJURY_STATUSES,
+} from "@packages/shared/injuries";
 
 // ---------------------------------------------------------------------------
 // Mock getAuthUserId
@@ -111,13 +117,17 @@ async function getPlayerInjuryStatusLogic(
     throw new ConvexError({ code: "NOT_FOUND" as const, message: "Player not found" });
   }
 
-  const currentInjuries = await ctx.db
+  // Story 14.1: Check for non-cleared status (backward compat: "recovered" = cleared)
+  const allInjuries = await ctx.db
     .query("playerInjuries")
     .withIndex("by_playerId", (q: any) => q.eq("playerId", args.playerId))
-    .filter((q: any) => q.eq(q.field("status"), "current"))
     .collect();
 
-  return { hasCurrentInjury: currentInjuries.length > 0 };
+  const hasCurrentInjury = allInjuries.some(
+    (i: any) => i.status !== "cleared" && i.status !== "recovered"
+  );
+
+  return { hasCurrentInjury };
 }
 
 async function logInjuryLogic(
@@ -127,6 +137,10 @@ async function logInjuryLogic(
     date: number;
     injuryType: string;
     severity: string;
+    bodyRegion?: string;
+    mechanism?: string;
+    side?: string;
+    expectedReturnDate?: number;
     estimatedRecovery?: string;
     notes?: string;
   }
@@ -157,6 +171,20 @@ async function logInjuryLogic(
     throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Notes cannot exceed 2000 characters" });
   }
 
+  // Story 14.1: Validate clinical classification fields
+  if (args.bodyRegion !== undefined && !(BODY_REGIONS as readonly string[]).includes(args.bodyRegion)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Invalid body region" });
+  }
+  if (args.mechanism !== undefined && !(INJURY_MECHANISMS as readonly string[]).includes(args.mechanism)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Invalid injury mechanism" });
+  }
+  if (args.side !== undefined && !(INJURY_SIDES as readonly string[]).includes(args.side)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Invalid injury side" });
+  }
+  if (args.expectedReturnDate !== undefined && args.expectedReturnDate <= 0) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Expected return date must be a positive number" });
+  }
+
   const now = Date.now();
   return await ctx.db.insert("playerInjuries", {
     teamId,
@@ -164,9 +192,14 @@ async function logInjuryLogic(
     date: args.date,
     injuryType: args.injuryType,
     severity: args.severity,
+    bodyRegion: args.bodyRegion,
+    mechanism: args.mechanism,
+    side: args.side,
+    expectedReturnDate: args.expectedReturnDate,
     estimatedRecovery: args.estimatedRecovery,
     notes: args.notes,
-    status: "current",
+    status: "active",
+    actualReturnDate: undefined,
     clearanceDate: undefined,
     createdBy: user._id,
     createdAt: now,
@@ -181,10 +214,15 @@ async function updateInjuryLogic(
     date: number;
     injuryType: string;
     severity: string;
+    bodyRegion?: string;
+    mechanism?: string;
+    side?: string;
+    expectedReturnDate?: number;
     estimatedRecovery?: string;
     notes?: string;
     status: string;
     clearanceDate?: number;
+    actualReturnDate?: number;
   }
 ) {
   const { teamId } = await requireRole(ctx, ["admin", "physio"]);
@@ -197,8 +235,9 @@ async function updateInjuryLogic(
   if (!["minor", "moderate", "severe"].includes(args.severity)) {
     throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Severity must be minor, moderate, or severe" });
   }
-  if (!["current", "recovered"].includes(args.status)) {
-    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Status must be current or recovered" });
+  // Story 14.1: Validate against new 4-value status enum
+  if (!(INJURY_STATUSES as readonly string[]).includes(args.status)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Status must be active, rehab, assessment, or cleared" });
   }
   if (!args.injuryType || args.injuryType.trim().length === 0) {
     throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Injury type is required" });
@@ -213,14 +252,36 @@ async function updateInjuryLogic(
     throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Notes cannot exceed 2000 characters" });
   }
 
+  // Story 14.1: Validate clinical classification fields
+  if (args.bodyRegion !== undefined && !(BODY_REGIONS as readonly string[]).includes(args.bodyRegion)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Invalid body region" });
+  }
+  if (args.mechanism !== undefined && !(INJURY_MECHANISMS as readonly string[]).includes(args.mechanism)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Invalid injury mechanism" });
+  }
+  if (args.side !== undefined && !(INJURY_SIDES as readonly string[]).includes(args.side)) {
+    throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Invalid injury side" });
+  }
+
+  // Story 14.1 AC #4: Auto-set actualReturnDate when status changes to "cleared"
+  const actualReturnDate =
+    args.status === "cleared" && args.actualReturnDate === undefined
+      ? Date.now()
+      : args.actualReturnDate;
+
   await ctx.db.patch(args.injuryId, {
     date: args.date,
     injuryType: args.injuryType,
     severity: args.severity,
+    bodyRegion: args.bodyRegion,
+    mechanism: args.mechanism,
+    side: args.side,
+    expectedReturnDate: args.expectedReturnDate,
     estimatedRecovery: args.estimatedRecovery,
     notes: args.notes,
     status: args.status,
     clearanceDate: args.clearanceDate,
+    actualReturnDate,
     updatedAt: Date.now(),
   });
 
@@ -251,7 +312,7 @@ const VALID_INJURY = {
 
 const VALID_UPDATE_FIELDS = {
   ...VALID_INJURY,
-  status: "current",
+  status: "active",
 };
 
 // ---------------------------------------------------------------------------
@@ -273,15 +334,15 @@ describe("getPlayerInjuries", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: 1000, injuryType: "ACL tear", severity: "severe",
-        status: "recovered", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+        status: "cleared", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
       });
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: 3000, injuryType: "Hamstring", severity: "moderate",
-        status: "current", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+        status: "active", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
       });
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: 2000, injuryType: "Ankle", severity: "minor",
-        status: "recovered", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+        status: "cleared", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
       });
     });
 
@@ -305,7 +366,7 @@ describe("getPlayerInjuries", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: 1000, injuryType: "Sprain", severity: "minor",
-        status: "current", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+        status: "active", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
       });
     });
 
@@ -459,7 +520,7 @@ describe("getPlayerInjuryStatus", () => {
     expect(typeof result.hasCurrentInjury).toBe("boolean");
   });
 
-  it("returns true when a 'current' injury exists", async () => {
+  it("returns true when an 'active' injury exists", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);
@@ -469,7 +530,7 @@ describe("getPlayerInjuryStatus", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: Date.now(), injuryType: "ACL tear", severity: "severe",
-        status: "current", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+        status: "active", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
       });
     });
 
@@ -480,7 +541,49 @@ describe("getPlayerInjuryStatus", () => {
     expect(result.hasCurrentInjury).toBe(true);
   });
 
-  it("returns false when only 'recovered' injuries exist", async () => {
+  it("returns true when a 'rehab' injury exists", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("playerInjuries", {
+        teamId, playerId, date: Date.now(), injuryType: "Hamstring", severity: "moderate",
+        status: "rehab", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+      });
+    });
+
+    const result = await t.run(async (ctx) => {
+      return await getPlayerInjuryStatusLogic(ctx, { playerId });
+    });
+
+    expect(result.hasCurrentInjury).toBe(true);
+  });
+
+  it("returns true when an 'assessment' injury exists", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("playerInjuries", {
+        teamId, playerId, date: Date.now(), injuryType: "Concussion", severity: "moderate",
+        status: "assessment", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+      });
+    });
+
+    const result = await t.run(async (ctx) => {
+      return await getPlayerInjuryStatusLogic(ctx, { playerId });
+    });
+
+    expect(result.hasCurrentInjury).toBe(true);
+  });
+
+  it("returns false when only 'cleared' injuries exist", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);
@@ -490,7 +593,7 @@ describe("getPlayerInjuryStatus", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: Date.now(), injuryType: "Sprain", severity: "minor",
-        status: "recovered", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
+        status: "cleared", createdBy: userId, createdAt: Date.now(), updatedAt: Date.now(),
       });
     });
 
@@ -525,7 +628,7 @@ describe("getPlayerInjuryStatus", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("playerInjuries", {
         teamId, playerId, date: Date.now(), injuryType: "Hamstring", severity: "moderate",
-        status: "current", notes: "Secret details", createdBy: userId,
+        status: "active", notes: "Secret details", createdBy: userId,
         createdAt: Date.now(), updatedAt: Date.now(),
       });
     });
@@ -632,6 +735,48 @@ describe("logInjury", () => {
   it("player gets NOT_AUTHORIZED", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t, { role: "player" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_AUTHORIZED");
+  });
+
+  it("analyst gets NOT_AUTHORIZED", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "analyst" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_AUTHORIZED");
+  });
+
+  it("staff gets NOT_AUTHORIZED", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "staff" });
     mockGetAuthUserId.mockResolvedValue(userId);
 
     const playerId = await seedPlayer(t, teamId);
@@ -779,7 +924,7 @@ describe("logInjury", () => {
     expect(errorCode).toBe("VALIDATION_ERROR");
   });
 
-  it("created entry has status 'current', clearanceDate undefined, correct metadata", async () => {
+  it("created entry has status 'active', clearanceDate undefined, correct metadata", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);
@@ -791,12 +936,126 @@ describe("logInjury", () => {
     });
 
     const entry = await t.run(async (ctx) => ctx.db.get(injuryId));
-    expect(entry!.status).toBe("current");
+    expect(entry!.status).toBe("active");
     expect(entry!.clearanceDate).toBeUndefined();
+    expect(entry!.actualReturnDate).toBeUndefined();
     expect(entry!.createdBy).toBe(userId);
     expect(entry!.teamId).toBe(teamId);
     expect(entry!.createdAt).toBeGreaterThan(0);
     expect(entry!.updatedAt).toBeGreaterThan(0);
+  });
+
+  // Story 14.1: New field validation tests
+  it("accepts and stores all new optional fields (bodyRegion, mechanism, side, expectedReturnDate)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, {
+        playerId,
+        ...VALID_INJURY,
+        bodyRegion: "knee",
+        mechanism: "contact",
+        side: "right",
+        expectedReturnDate: Date.now() + 86400000,
+      });
+    });
+
+    const entry = await t.run(async (ctx) => ctx.db.get(injuryId));
+    expect(entry!.bodyRegion).toBe("knee");
+    expect(entry!.mechanism).toBe("contact");
+    expect(entry!.side).toBe("right");
+    expect(entry!.expectedReturnDate).toBeGreaterThan(0);
+  });
+
+  it("rejects invalid bodyRegion with VALIDATION_ERROR", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await logInjuryLogic(ctx, { playerId, ...VALID_INJURY, bodyRegion: "brain" });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects invalid mechanism with VALIDATION_ERROR", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await logInjuryLogic(ctx, { playerId, ...VALID_INJURY, mechanism: "magic" });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects invalid side with VALIDATION_ERROR", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await logInjuryLogic(ctx, { playerId, ...VALID_INJURY, side: "top" });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("RBAC: logInjury with new fields still rejects coach role", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t, { role: "coach" });
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await logInjuryLogic(ctx, {
+            playerId, ...VALID_INJURY,
+            bodyRegion: "knee", mechanism: "contact", side: "right",
+          });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_AUTHORIZED");
   });
 });
 
@@ -918,7 +1177,7 @@ describe("updateInjury", () => {
     expect(errorCode).toBe("NOT_FOUND");
   });
 
-  it("can change status from 'current' to 'recovered' with clearanceDate", async () => {
+  it("can change status from 'active' to 'cleared' with actualReturnDate", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);
@@ -929,21 +1188,23 @@ describe("updateInjury", () => {
       return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
     });
 
-    const clearanceDate = Date.now();
+    const now = Date.now();
     await t.run(async (ctx) => {
       return await updateInjuryLogic(ctx, {
         injuryId, ...VALID_UPDATE_FIELDS,
-        status: "recovered",
-        clearanceDate,
+        status: "cleared",
+        actualReturnDate: now,
+        clearanceDate: now,
       });
     });
 
     const updated = await t.run(async (ctx) => ctx.db.get(injuryId));
-    expect(updated!.status).toBe("recovered");
-    expect(updated!.clearanceDate).toBe(clearanceDate);
+    expect(updated!.status).toBe("cleared");
+    expect(updated!.actualReturnDate).toBe(now);
+    expect(updated!.clearanceDate).toBe(now);
   });
 
-  it("can change status from 'recovered' back to 'current'", async () => {
+  it("can change status from 'cleared' back to 'active' (re-injury)", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);
@@ -954,22 +1215,95 @@ describe("updateInjury", () => {
       return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
     });
 
-    // First recover
+    // First clear
     await t.run(async (ctx) => {
       return await updateInjuryLogic(ctx, {
-        injuryId, ...VALID_UPDATE_FIELDS, status: "recovered", clearanceDate: Date.now(),
+        injuryId, ...VALID_UPDATE_FIELDS, status: "cleared", clearanceDate: Date.now(),
       });
     });
 
     // Then reopen
     await t.run(async (ctx) => {
       return await updateInjuryLogic(ctx, {
-        injuryId, ...VALID_UPDATE_FIELDS, status: "current",
+        injuryId, ...VALID_UPDATE_FIELDS, status: "active",
       });
     });
 
     const updated = await t.run(async (ctx) => ctx.db.get(injuryId));
-    expect(updated!.status).toBe("current");
+    expect(updated!.status).toBe("active");
+  });
+
+  it("can transition through all status values: active -> rehab -> assessment -> cleared", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    for (const status of ["rehab", "assessment", "cleared"] as const) {
+      await t.run(async (ctx) => {
+        return await updateInjuryLogic(ctx, {
+          injuryId, ...VALID_UPDATE_FIELDS, status,
+        });
+      });
+
+      const updated = await t.run(async (ctx) => ctx.db.get(injuryId));
+      expect(updated!.status).toBe(status);
+    }
+  });
+
+  it("rejects old 'current' status as invalid", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateInjuryLogic(ctx, { injuryId, ...VALID_UPDATE_FIELDS, status: "current" });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects old 'recovered' status as invalid", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await updateInjuryLogic(ctx, { injuryId, ...VALID_UPDATE_FIELDS, status: "recovered" });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("VALIDATION_ERROR");
   });
 
   it("invalid status throws VALIDATION_ERROR", async () => {
@@ -995,6 +1329,60 @@ describe("updateInjury", () => {
       })
     ).rejects.toThrow(ConvexError);
     expect(errorCode).toBe("VALIDATION_ERROR");
+  });
+
+  it("auto-sets actualReturnDate when status changes to 'cleared' and no actualReturnDate provided", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    const beforeUpdate = Date.now();
+
+    await t.run(async (ctx) => {
+      return await updateInjuryLogic(ctx, {
+        injuryId, ...VALID_UPDATE_FIELDS, status: "cleared",
+      });
+    });
+
+    const updated = await t.run(async (ctx) => ctx.db.get(injuryId));
+    expect(updated!.status).toBe("cleared");
+    expect(updated!.actualReturnDate).toBeDefined();
+    expect(updated!.actualReturnDate).toBeGreaterThanOrEqual(beforeUpdate);
+  });
+
+  it("accepts and stores new clinical fields on update", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    await t.run(async (ctx) => {
+      return await updateInjuryLogic(ctx, {
+        injuryId,
+        ...VALID_UPDATE_FIELDS,
+        bodyRegion: "ankle",
+        mechanism: "non_contact",
+        side: "left",
+        expectedReturnDate: Date.now() + 86400000,
+      });
+    });
+
+    const updated = await t.run(async (ctx) => ctx.db.get(injuryId));
+    expect(updated!.bodyRegion).toBe("ankle");
+    expect(updated!.mechanism).toBe("non_contact");
+    expect(updated!.side).toBe("left");
+    expect(updated!.expectedReturnDate).toBeGreaterThan(0);
   });
 
   it("updatedAt is refreshed on update", async () => {
@@ -1152,6 +1540,66 @@ describe("deleteInjury", () => {
     expect(errorCode).toBe("NOT_AUTHORIZED");
   });
 
+  it("staff gets NOT_AUTHORIZED (regression)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    const { userId: staffId } = await seedTeamAndUser(t, {
+      role: "staff", email: "staff@example.com", name: "Staff", teamId,
+    });
+    mockGetAuthUserId.mockResolvedValue(staffId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await deleteInjuryLogic(ctx, { injuryId });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_AUTHORIZED");
+  });
+
+  it("player gets NOT_AUTHORIZED (regression)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, teamId } = await seedTeamAndUser(t);
+    mockGetAuthUserId.mockResolvedValue(userId);
+
+    const playerId = await seedPlayer(t, teamId);
+
+    const injuryId = await t.run(async (ctx) => {
+      return await logInjuryLogic(ctx, { playerId, ...VALID_INJURY });
+    });
+
+    const { userId: playerUserId } = await seedTeamAndUser(t, {
+      role: "player", email: "player@example.com", name: "Player", teamId,
+    });
+    mockGetAuthUserId.mockResolvedValue(playerUserId);
+
+    let errorCode: string | undefined;
+    await expect(
+      t.run(async (ctx) => {
+        try {
+          await deleteInjuryLogic(ctx, { injuryId });
+        } catch (e) {
+          errorCode = getErrorCode(e);
+          throw e;
+        }
+      })
+    ).rejects.toThrow(ConvexError);
+    expect(errorCode).toBe("NOT_AUTHORIZED");
+  });
+
   it("deleting entry from different team throws NOT_FOUND", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
@@ -1208,7 +1656,7 @@ describe("deleteInjury", () => {
     expect(after).toHaveLength(0);
   });
 
-  it("deleted entry makes getPlayerInjuryStatus return false if it was the only current injury", async () => {
+  it("deleted entry makes getPlayerInjuryStatus return false if it was the only active injury", async () => {
     const t = convexTest(schema, modules);
     const { userId, teamId } = await seedTeamAndUser(t);
     mockGetAuthUserId.mockResolvedValue(userId);

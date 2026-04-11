@@ -27,10 +27,23 @@ export const PREFERRED_FOOT_OPTIONS = ["Left", "Right", "Both"] as const;
 
 export type PreferredFoot = (typeof PREFERRED_FOOT_OPTIONS)[number];
 
-export const INJURY_SEVERITIES = ["minor", "moderate", "severe"] as const;
-
-export type InjurySeverity = (typeof INJURY_SEVERITIES)[number];
-
-export const INJURY_STATUSES = ["current", "recovered"] as const;
-
-export type InjuryStatus = (typeof INJURY_STATUSES)[number];
+// Re-export all injury classification constants from the dedicated injuries module.
+// This maintains backward compatibility for existing imports from "@packages/shared/players".
+export {
+  INJURY_SEVERITIES,
+  type InjurySeverity,
+  INJURY_SEVERITY_LABELS,
+  INJURY_STATUSES,
+  type InjuryStatus,
+  INJURY_STATUS_LABELS,
+  LEGACY_STATUS_MAP,
+  BODY_REGIONS,
+  type BodyRegion,
+  BODY_REGION_LABELS,
+  INJURY_MECHANISMS,
+  type InjuryMechanism,
+  INJURY_MECHANISM_LABELS,
+  INJURY_SIDES,
+  type InjurySide,
+  INJURY_SIDE_LABELS,
+} from "./injuries";

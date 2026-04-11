@@ -1,0 +1,56 @@
+[
+  {
+    "_id": "cert_001",
+    "staffId": "staff_001",
+    "staffName": "Marco Bianchi",
+    "name": "UEFA Pro Coaching License",
+    "issuingBody": "UEFA",
+    "issueDate": 1609459200000,
+    "expiryDate": 1767225600000,
+    "status": "valid",
+    "notes": "Renewed in January 2021. Valid for 5 years."
+  },
+  {
+    "_id": "cert_002",
+    "staffId": "staff_001",
+    "staffName": "Marco Bianchi",
+    "name": "FA Level 3 First Aid",
+    "issuingBody": "The Football Association",
+    "issueDate": 1672531200000,
+    "expiryDate": 1746057600000,
+    "status": "expiring",
+    "notes": "Renewal course booked for April 2025."
+  },
+  {
+    "_id": "cert_003",
+    "staffId": "staff_002",
+    "staffName": "Laura Conti",
+    "name": "BASES Accreditation",
+    "issuingBody": "British Association of Sport and Exercise Sciences",
+    "issueDate": 1640995200000,
+    "expiryDate": 1735689600000,
+    "status": "expired",
+    "notes": "Expired — awaiting renewal paperwork."
+  },
+  {
+    "_id": "cert_004",
+    "staffId": "staff_002",
+    "staffName": "Laura Conti",
+    "name": "BSc Sports Science",
+    "issuingBody": "Universita degli Studi di Milano",
+    "issueDate": 1277942400000,
+    "status": "valid",
+    "notes": "Undergraduate degree — no expiry."
+  },
+  {
+    "_id": "cert_005",
+    "staffId": "staff_003",
+    "staffName": "Alessandro Ferrari",
+    "name": "DBS Enhanced Check",
+    "issuingBody": "Disclosure and Barring Service",
+    "issueDate": 1680307200000,
+    "expiryDate": 1743465600000,
+    "status": "expiring",
+    "notes": "Renewal in progress."
+  }
+]

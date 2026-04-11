@@ -201,6 +201,43 @@ export const getPlayerInjuries = query({
 });
 
 /**
+ * Get rehab notes for a specific injury. Admin or physio only.
+ *
+ * Story 14.2 AC #6: Returns array of injuryRehabNotes sorted by createdAt ascending.
+ * Story 14.2 AC #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const getRehabNotes = query({
+  args: { injuryId: v.id("playerInjuries") },
+  handler: async (ctx, { injuryId }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const injury = await ctx.db.get(injuryId);
+    if (!injury || injury.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Injury not found" });
+    }
+
+    const notes = await ctx.db
+      .query("injuryRehabNotes")
+      .withIndex("by_injuryId", (q) => q.eq("injuryId", injuryId))
+      .collect();
+
+    // Resolve author names
+    const notesWithAuthors = await Promise.all(
+      notes.map(async (note) => {
+        const author = await ctx.db.get(note.authorId);
+        return {
+          ...note,
+          authorName: author?.name ?? author?.email ?? "Unknown",
+        };
+      })
+    );
+
+    // Sort by createdAt ascending (oldest first)
+    return notesWithAuthors.sort((a, b) => a.createdAt - b.createdAt);
+  },
+});
+
+/**
  * Get injury status for a player. Any authenticated team member.
  *
  * Story 5.5 AC #12: Returns { hasCurrentInjury: boolean } only.
@@ -213,13 +250,19 @@ export const getPlayerInjuryStatus = query({
 
     await getTeamResource(ctx, teamId, "players", playerId);
 
-    const currentInjuries = await ctx.db
+    // Story 14.1 AC #5, #12: Check for non-cleared status.
+    // Backward compat: "current" (legacy) is treated as active (not cleared).
+    // "recovered" (legacy) is treated as cleared, so we exclude it too.
+    const allInjuries = await ctx.db
       .query("playerInjuries")
       .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
-      .filter((q) => q.eq(q.field("status"), "current"))
       .collect();
 
-    return { hasCurrentInjury: currentInjuries.length > 0 };
+    const hasCurrentInjury = allInjuries.some(
+      (i) => i.status !== "cleared" && i.status !== "recovered"
+    );
+
+    return { hasCurrentInjury };
   },
 });
 
@@ -236,18 +279,74 @@ export const getPlayersInjuryStatuses = query({
 
     const result: Record<string, boolean> = {};
 
-    // Fetch all team injuries in one go using teamId index
+    // Story 14.1 AC #5, #12: Fetch all non-cleared injuries.
+    // Backward compat: "recovered" (legacy) is treated as cleared.
     const allInjuries = await ctx.db
       .query("playerInjuries")
       .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
-      .filter((q) => q.eq(q.field("status"), "current"))
       .collect();
 
-    // Build a set of playerIds that have current injuries
-    const injuredPlayerIds = new Set(allInjuries.map((i) => i.playerId));
+    // Build a set of playerIds that have active injuries (not cleared/recovered)
+    const injuredPlayerIds = new Set(
+      allInjuries
+        .filter((i) => i.status !== "cleared" && i.status !== "recovered")
+        .map((i) => i.playerId)
+    );
 
     for (const playerId of playerIds) {
       result[playerId] = injuredPlayerIds.has(playerId);
+    }
+
+    return result;
+  },
+});
+
+/**
+ * Batch query: get RTP status for multiple players. Admin or physio only.
+ *
+ * Story 14.3 AC #6: Returns the most severe RTP status per player.
+ * Priority: active (3) > rehab (2) > assessment (1) > null.
+ */
+export const getPlayersRtpStatuses = query({
+  args: { playerIds: v.array(v.id("players")) },
+  handler: async (ctx, { playerIds }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const RTP_PRIORITY: Record<string, number> = {
+      active: 3,
+      current: 3, // backward compat
+      rehab: 2,
+      assessment: 1,
+    };
+
+    const allInjuries = await ctx.db
+      .query("playerInjuries")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    // Filter to non-cleared injuries only
+    const activeInjuries = allInjuries.filter(
+      (i) => i.status !== "cleared" && i.status !== "recovered"
+    );
+
+    // Build playerId -> most severe status map
+    const playerIdSet = new Set(playerIds.map((id) => id.toString()));
+    const result: Record<string, string | null> = {};
+
+    for (const playerId of playerIds) {
+      result[playerId] = null;
+    }
+
+    for (const injury of activeInjuries) {
+      if (!playerIdSet.has(injury.playerId.toString())) continue;
+
+      const current = result[injury.playerId];
+      const currentPriority = current ? (RTP_PRIORITY[current] ?? 0) : 0;
+      const newPriority = RTP_PRIORITY[injury.status] ?? 0;
+
+      if (newPriority > currentPriority) {
+        result[injury.playerId] = injury.status;
+      }
     }
 
     return result;

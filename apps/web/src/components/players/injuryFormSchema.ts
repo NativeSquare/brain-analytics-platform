@@ -1,5 +1,11 @@
 import * as z from "zod";
-import { INJURY_SEVERITIES, INJURY_STATUSES } from "@packages/shared/players";
+import {
+  INJURY_SEVERITIES,
+  INJURY_STATUSES,
+  BODY_REGIONS,
+  INJURY_MECHANISMS,
+  INJURY_SIDES,
+} from "@packages/shared/players";
 
 /**
  * Zod schema for the "Log Injury" create form.
@@ -7,6 +13,8 @@ import { INJURY_SEVERITIES, INJURY_STATUSES } from "@packages/shared/players";
  * Story 5.5 AC #5: date (required), injuryType (required, max 200),
  * severity (required enum), estimatedRecovery (optional, max 200),
  * notes (optional, max 2000).
+ *
+ * Story 14.1 AC #6: bodyRegion, mechanism, side, expectedReturnDate.
  *
  * Uses shared constants from @packages/shared/players per Dev Notes.
  */
@@ -19,6 +27,10 @@ export const injuryCreateSchema = z.object({
   severity: z.enum(INJURY_SEVERITIES, {
     message: "Severity is required",
   }),
+  bodyRegion: z.enum(BODY_REGIONS).optional(),
+  mechanism: z.enum(INJURY_MECHANISMS).optional(),
+  side: z.enum(INJURY_SIDES).optional(),
+  expectedReturnDate: z.number().optional(),
   estimatedRecovery: z
     .string()
     .max(200, "Estimated recovery cannot exceed 200 characters")
@@ -35,7 +47,8 @@ export type InjuryCreateFormData = z.infer<typeof injuryCreateSchema>;
 /**
  * Extended Zod schema for the "Update Injury" edit form.
  *
- * Story 5.5 AC #8: Adds status (current/recovered) and optional clearanceDate.
+ * Story 5.5 AC #8: Adds status and optional clearanceDate.
+ * Story 14.1 AC #6: Adds actualReturnDate and updates status enum to 4 values.
  * Uses shared constants from @packages/shared/players per Dev Notes.
  */
 export const injuryEditSchema = injuryCreateSchema.extend({
@@ -43,6 +56,7 @@ export const injuryEditSchema = injuryCreateSchema.extend({
     message: "Status is required",
   }),
   clearanceDate: z.number().optional(),
+  actualReturnDate: z.number().optional(),
 });
 
 export type InjuryEditFormData = z.infer<typeof injuryEditSchema>;

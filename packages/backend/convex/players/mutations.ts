@@ -3,7 +3,14 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "../_generated/api";
 import { mutation } from "../_generated/server";
 import { requireAuth, requireRole, getTeamResource } from "../lib/auth";
-import { INJURY_SEVERITIES, INJURY_STATUSES, PLAYER_STATUSES } from "@packages/shared/players";
+import {
+  INJURY_SEVERITIES,
+  INJURY_STATUSES,
+  PLAYER_STATUSES,
+  BODY_REGIONS,
+  INJURY_MECHANISMS,
+  INJURY_SIDES,
+} from "@packages/shared/players";
 
 /**
  * Valid player positions — must match shared/players.ts PLAYER_POSITIONS.
@@ -153,6 +160,10 @@ function validateInjuryFields(args: {
   estimatedRecovery?: string;
   notes?: string;
   status?: string;
+  bodyRegion?: string;
+  mechanism?: string;
+  side?: string;
+  expectedReturnDate?: number;
 }) {
   // Validate injuryType
   if (!args.injuryType || args.injuryType.trim().length === 0) {
@@ -192,11 +203,40 @@ function validateInjuryFields(args: {
     });
   }
 
-  // Validate status if provided (using shared constants)
+  // Validate status if provided (Story 14.1: now validates against 4-value enum)
   if (args.status !== undefined && !(INJURY_STATUSES as readonly string[]).includes(args.status)) {
     throw new ConvexError({
       code: "VALIDATION_ERROR" as const,
-      message: "Status must be current or recovered",
+      message: "Status must be active, rehab, assessment, or cleared",
+    });
+  }
+
+  // Story 14.1: Validate clinical classification fields
+  if (args.bodyRegion !== undefined && !(BODY_REGIONS as readonly string[]).includes(args.bodyRegion)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Invalid body region",
+    });
+  }
+
+  if (args.mechanism !== undefined && !(INJURY_MECHANISMS as readonly string[]).includes(args.mechanism)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Invalid injury mechanism",
+    });
+  }
+
+  if (args.side !== undefined && !(INJURY_SIDES as readonly string[]).includes(args.side)) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Invalid injury side",
+    });
+  }
+
+  if (args.expectedReturnDate !== undefined && args.expectedReturnDate <= 0) {
+    throw new ConvexError({
+      code: "VALIDATION_ERROR" as const,
+      message: "Expected return date must be a positive number",
     });
   }
 }
@@ -217,6 +257,10 @@ export const logInjury = mutation({
     date: v.number(),
     injuryType: v.string(),
     severity: v.string(),
+    bodyRegion: v.optional(v.string()),
+    mechanism: v.optional(v.string()),
+    side: v.optional(v.string()),
+    expectedReturnDate: v.optional(v.number()),
     estimatedRecovery: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
@@ -234,9 +278,14 @@ export const logInjury = mutation({
       date: args.date,
       injuryType: args.injuryType,
       severity: args.severity,
+      bodyRegion: args.bodyRegion,
+      mechanism: args.mechanism,
+      side: args.side,
+      expectedReturnDate: args.expectedReturnDate,
       estimatedRecovery: args.estimatedRecovery,
       notes: args.notes,
-      status: "current",
+      status: "active",
+      actualReturnDate: undefined,
       clearanceDate: undefined,
       createdBy: user._id,
       createdAt: now,
@@ -257,10 +306,15 @@ export const updateInjury = mutation({
     date: v.number(),
     injuryType: v.string(),
     severity: v.string(),
+    bodyRegion: v.optional(v.string()),
+    mechanism: v.optional(v.string()),
+    side: v.optional(v.string()),
+    expectedReturnDate: v.optional(v.number()),
     estimatedRecovery: v.optional(v.string()),
     notes: v.optional(v.string()),
     status: v.string(),
     clearanceDate: v.optional(v.number()),
+    actualReturnDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { teamId } = await requireRole(ctx, ["admin", "physio"]);
@@ -273,16 +327,31 @@ export const updateInjury = mutation({
       estimatedRecovery: args.estimatedRecovery,
       notes: args.notes,
       status: args.status,
+      bodyRegion: args.bodyRegion,
+      mechanism: args.mechanism,
+      side: args.side,
+      expectedReturnDate: args.expectedReturnDate,
     });
+
+    // Story 14.1 AC #4: Auto-set actualReturnDate when status changes to "cleared"
+    const actualReturnDate =
+      args.status === "cleared" && args.actualReturnDate === undefined
+        ? Date.now()
+        : args.actualReturnDate;
 
     await ctx.db.patch(args.injuryId, {
       date: args.date,
       injuryType: args.injuryType,
       severity: args.severity,
+      bodyRegion: args.bodyRegion,
+      mechanism: args.mechanism,
+      side: args.side,
+      expectedReturnDate: args.expectedReturnDate,
       estimatedRecovery: args.estimatedRecovery,
       notes: args.notes,
       status: args.status,
       clearanceDate: args.clearanceDate,
+      actualReturnDate,
       updatedAt: Date.now(),
     });
 
@@ -306,6 +375,193 @@ export const deleteInjury = mutation({
     await getTeamResource(ctx, teamId, "playerInjuries", injuryId);
 
     await ctx.db.delete(injuryId);
+  },
+});
+
+// ---------------------------------------------------------------------------
+// RTP Status Workflow (Story 14.3 AC #2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Allowed forward-only status transitions for RTP workflow.
+ * Re-injury exception: cleared -> active.
+ * Backward-compat: current -> rehab, recovered -> active.
+ */
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  active: ["rehab"],
+  rehab: ["assessment"],
+  assessment: ["cleared"],
+  cleared: ["active"], // re-injury
+  // Backward compat
+  current: ["rehab"],
+  recovered: ["active"],
+};
+
+/**
+ * Advance an injury through the RTP workflow. Admin or physio only.
+ *
+ * Story 14.3 AC #2: Forward-only transitions with re-injury exception.
+ * Story 14.3 AC #2.3: Auto-set/clear clearanceDate on cleared transitions.
+ */
+export const updateInjuryRtpStatus = mutation({
+  args: {
+    injuryId: v.id("playerInjuries"),
+    newStatus: v.string(),
+  },
+  handler: async (ctx, { injuryId, newStatus }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    // Validate newStatus is a valid RTP status
+    const validStatuses = ["active", "rehab", "assessment", "cleared"];
+    if (!validStatuses.includes(newStatus)) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: `Invalid status value: ${newStatus}`,
+      });
+    }
+
+    const injury = await ctx.db.get(injuryId);
+    if (!injury || injury.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Injury not found",
+      });
+    }
+
+    const currentStatus = injury.status;
+    const allowed = ALLOWED_TRANSITIONS[currentStatus];
+    if (!allowed || !allowed.includes(newStatus)) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: `Invalid status transition from ${currentStatus} to ${newStatus}`,
+      });
+    }
+
+    const now = Date.now();
+    const patch: Record<string, unknown> = {
+      status: newStatus,
+      updatedAt: now,
+    };
+
+    // Auto-set clearanceDate when transitioning to cleared
+    if (newStatus === "cleared" && injury.clearanceDate === undefined) {
+      patch.clearanceDate = now;
+    }
+
+    // Clear clearanceDate on re-injury (cleared -> active)
+    if (currentStatus === "cleared" && newStatus === "active") {
+      patch.clearanceDate = undefined;
+    }
+
+    await ctx.db.patch(injuryId, patch);
+    return injuryId;
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Rehab Notes CRUD mutations (Story 14.2 AC #7, #8, #9, #15)
+// ---------------------------------------------------------------------------
+
+/**
+ * Add a rehab note to an injury. Admin or physio only.
+ *
+ * Story 14.2 AC #7: Creates an injuryRehabNotes entry with validation.
+ * Story 14.2 AC #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const addRehabNote = mutation({
+  args: {
+    injuryId: v.id("playerInjuries"),
+    note: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { user, teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const injury = await ctx.db.get(args.injuryId);
+    if (!injury || injury.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Injury not found" });
+    }
+
+    const trimmed = args.note.trim();
+    if (!trimmed) {
+      throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Note is required" });
+    }
+    if (trimmed.length > 2000) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Note cannot exceed 2000 characters",
+      });
+    }
+
+    const now = Date.now();
+    return await ctx.db.insert("injuryRehabNotes", {
+      teamId,
+      injuryId: args.injuryId,
+      authorId: user._id,
+      note: trimmed,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+/**
+ * Update an existing rehab note. Admin or physio only.
+ *
+ * Story 14.2 AC #8: Patches the note text and updatedAt.
+ * Story 14.2 AC #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const updateRehabNote = mutation({
+  args: {
+    noteId: v.id("injuryRehabNotes"),
+    note: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const existingNote = await ctx.db.get(args.noteId);
+    if (!existingNote || existingNote.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Note not found" });
+    }
+
+    const trimmed = args.note.trim();
+    if (!trimmed) {
+      throw new ConvexError({ code: "VALIDATION_ERROR" as const, message: "Note is required" });
+    }
+    if (trimmed.length > 2000) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "Note cannot exceed 2000 characters",
+      });
+    }
+
+    await ctx.db.patch(args.noteId, {
+      note: trimmed,
+      updatedAt: Date.now(),
+    });
+
+    return args.noteId;
+  },
+});
+
+/**
+ * Delete a rehab note. Admin or physio only.
+ *
+ * Story 14.2 AC #9: Removes the injuryRehabNotes document.
+ * Story 14.2 AC #15: Team-scoped via requireRole(["admin", "physio"]).
+ */
+export const deleteRehabNote = mutation({
+  args: {
+    noteId: v.id("injuryRehabNotes"),
+  },
+  handler: async (ctx, { noteId }) => {
+    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+
+    const existingNote = await ctx.db.get(noteId);
+    if (!existingNote || existingNote.teamId !== teamId) {
+      throw new ConvexError({ code: "NOT_FOUND" as const, message: "Note not found" });
+    }
+
+    await ctx.db.delete(noteId);
   },
 });
 

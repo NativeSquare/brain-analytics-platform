@@ -25,6 +25,7 @@ export interface Dictionary {
     players: string;
     calendar: string;
     documents: string;
+    staff: string;
     team: string;
     account: string;
     getHelp: string;
@@ -82,6 +83,56 @@ export interface Dictionary {
     position: string;
     squadNumber: string;
   };
+  staff: {
+    title: string;
+    addStaff: string;
+    editStaff: string;
+    newStaff: string;
+    backToStaff: string;
+    noStaff: string;
+    addFirstStaff: string;
+    tabs: {
+      overview: string;
+      certifications: string;
+      roleInfo: string;
+    };
+    certComingSoon: string;
+    roleInfoComingSoon: string;
+    fields: {
+      firstName: string;
+      lastName: string;
+      jobTitle: string;
+      department: string;
+      phone: string;
+      email: string;
+      bio: string;
+      dateJoined: string;
+      photo: string;
+      status: string;
+    };
+    departments: {
+      Coaching: string;
+      Medical: string;
+      Operations: string;
+      Analytics: string;
+      Management: string;
+      Academy: string;
+    };
+    statuses: {
+      active: string;
+      inactive: string;
+    };
+    toast: {
+      created: string;
+      updated: string;
+      deleted: string;
+    };
+    notFound: string;
+    notFoundDescription: string;
+    filterByDepartment: string;
+    allDepartments: string;
+    search: string;
+  };
   calendar: {
     title: string;
     createEvent: string;
@@ -116,6 +167,37 @@ export interface Dictionary {
     calendarEvents: string;
     contracts: string;
   };
+  injuryTimeline: {
+    viewTable: string;
+    viewTimeline: string;
+    totalInjuries: string;
+    totalDaysLost: string;
+    currentlyActive: string;
+    avgRecovery: string;
+    injuredOn: string;
+    expectedReturn: string;
+    returnedOn: string;
+    daysOut: string;
+    ongoing: string;
+    tbd: string;
+    noInjuries: string;
+    active: string;
+  };
+  rehabNotes: {
+    title: string;
+    addNote: string;
+    saveNote: string;
+    editNote: string;
+    deleteNote: string;
+    deleteConfirm: string;
+    noNotes: string;
+    notePlaceholder: string;
+    noteAdded: string;
+    noteUpdated: string;
+    noteDeleted: string;
+    noteRequired: string;
+    noteTooLong: string;
+  };
   breadcrumbs: {
     home: string;
     calendar: string;
@@ -125,6 +207,9 @@ export interface Dictionary {
     settings: string;
     team: string;
     dashboard: string;
+    staff: string;
+    staffProfile: string;
+    addStaff: string;
     playerProfile: string;
     memberDetails: string;
     addPlayer: string;
@@ -158,6 +243,7 @@ export const en: Dictionary = {
     players: "Players",
     calendar: "Calendar",
     documents: "Documents",
+    staff: "Staff",
     team: "Team",
     account: "Account",
     getHelp: "Get Help",
@@ -215,6 +301,56 @@ export const en: Dictionary = {
     position: "Position",
     squadNumber: "Squad Number",
   },
+  staff: {
+    title: "Staff Directory",
+    addStaff: "Add Staff Member",
+    editStaff: "Edit Staff Member",
+    newStaff: "New Staff Member",
+    backToStaff: "Back to Staff",
+    noStaff: "No staff members yet",
+    addFirstStaff: "Add your first staff member",
+    tabs: {
+      overview: "Overview",
+      certifications: "Certifications",
+      roleInfo: "Role Info",
+    },
+    certComingSoon: "Certifications will be available in a future update",
+    roleInfoComingSoon: "Role information will be available in a future update",
+    fields: {
+      firstName: "First Name",
+      lastName: "Last Name",
+      jobTitle: "Job Title",
+      department: "Department",
+      phone: "Phone",
+      email: "Email",
+      bio: "Biography",
+      dateJoined: "Date Joined",
+      photo: "Photo",
+      status: "Status",
+    },
+    departments: {
+      Coaching: "Coaching",
+      Medical: "Medical",
+      Operations: "Operations",
+      Analytics: "Analytics",
+      Management: "Management",
+      Academy: "Academy",
+    },
+    statuses: {
+      active: "Active",
+      inactive: "Inactive",
+    },
+    toast: {
+      created: "Staff member created",
+      updated: "Staff member updated",
+      deleted: "Staff member deactivated",
+    },
+    notFound: "Staff member not found",
+    notFoundDescription: "This staff member does not exist or you don't have access.",
+    filterByDepartment: "Filter by department",
+    allDepartments: "All Departments",
+    search: "Search staff...",
+  },
   calendar: {
     title: "Calendar",
     createEvent: "Create Event",
@@ -249,6 +385,37 @@ export const en: Dictionary = {
     calendarEvents: "Calendar Events",
     contracts: "Contracts",
   },
+  injuryTimeline: {
+    viewTable: "Table",
+    viewTimeline: "Timeline",
+    totalInjuries: "Total Injuries",
+    totalDaysLost: "Total Days Lost",
+    currentlyActive: "Currently Active",
+    avgRecovery: "Avg Recovery",
+    injuredOn: "Injured",
+    expectedReturn: "Expected return",
+    returnedOn: "Returned",
+    daysOut: "days",
+    ongoing: "ongoing",
+    tbd: "TBD",
+    noInjuries: "No injury records to display.",
+    active: "Active",
+  },
+  rehabNotes: {
+    title: "Rehab Notes",
+    addNote: "Add Note",
+    saveNote: "Save Note",
+    editNote: "Edit",
+    deleteNote: "Delete",
+    deleteConfirm: "Delete this rehab note? This action cannot be undone.",
+    noNotes: "No rehab notes yet.",
+    notePlaceholder: "Add a rehab note...",
+    noteAdded: "Rehab note added",
+    noteUpdated: "Rehab note updated",
+    noteDeleted: "Rehab note deleted",
+    noteRequired: "Note is required",
+    noteTooLong: "Note cannot exceed 2000 characters",
+  },
   breadcrumbs: {
     home: "Home",
     calendar: "Calendar",
@@ -258,6 +425,9 @@ export const en: Dictionary = {
     settings: "Settings",
     team: "Team",
     dashboard: "Dashboard",
+    staff: "Staff",
+    staffProfile: "Staff Profile",
+    addStaff: "Add Staff",
     playerProfile: "Player Profile",
     memberDetails: "Member Details",
     addPlayer: "Add Player",

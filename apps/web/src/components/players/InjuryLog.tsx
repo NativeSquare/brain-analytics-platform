@@ -12,7 +12,18 @@ import {
   IconPencil,
   IconTrash,
   IconDots,
+  IconTable,
+  IconTimeline,
+  IconChevronDown,
+  IconChevronRight,
+  IconArrowRight,
 } from "@tabler/icons-react";
+import {
+  BODY_REGION_LABELS,
+  INJURY_MECHANISM_LABELS,
+  INJURY_SIDE_LABELS,
+} from "@packages/shared/players";
+import type { BodyRegion, InjuryMechanism, InjurySide } from "@packages/shared/players";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,8 +50,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { useTranslation } from "@/hooks/useTranslation";
 import { InjuryFormDialog } from "./InjuryFormDialog";
 import { DeleteInjuryDialog } from "./DeleteInjuryDialog";
+import { InjuryTimeline } from "./InjuryTimeline";
+import { RehabNotesSection } from "./RehabNotesSection";
+import { RtpStatusBadge } from "./rtp-status";
+import { RtpStatusDialog } from "./RtpStatusDialog";
 
 interface InjuryLogProps {
   playerId: Id<"players">;
@@ -48,25 +64,18 @@ interface InjuryLogProps {
 
 type PlayerInjury = Doc<"playerInjuries">;
 
-// Badge styling maps (AC #3)
+// Badge styling maps (AC #3, updated Story 14.2: minor = green per Epic 14 spec)
 const severityClasses: Record<string, string> = {
-  minor: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300",
+  minor: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
   moderate: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
   severe: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
-const statusVariant: Record<string, "destructive" | "default"> = {
-  current: "destructive",
-  recovered: "default",
-};
-
-const statusClasses: Record<string, string> = {
-  current: "",
-  recovered: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-};
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+/**
+ * Check if a status represents an active (non-cleared) injury.
+ */
+function isActiveStatus(status: string): boolean {
+  return status !== "cleared" && status !== "recovered";
 }
 
 // ---------------------------------------------------------------------------
@@ -77,79 +86,123 @@ const InjuryRow = React.memo(function InjuryRow({
   entry,
   onEdit,
   onDelete,
+  onChangeStatus,
+  isExpanded,
+  onToggleExpand,
 }: {
   entry: PlayerInjury;
   onEdit: (entry: PlayerInjury) => void;
   onDelete: (entry: PlayerInjury) => void;
+  onChangeStatus: (entry: PlayerInjury) => void;
+  isExpanded: boolean;
+  onToggleExpand: (id: string) => void;
 }) {
   const handleEdit = useCallback(() => onEdit(entry), [onEdit, entry]);
   const handleDelete = useCallback(() => onDelete(entry), [onDelete, entry]);
+  const handleChangeStatus = useCallback(() => onChangeStatus(entry), [onChangeStatus, entry]);
+  const handleToggle = useCallback(() => onToggleExpand(entry._id), [onToggleExpand, entry._id]);
 
   return (
-    <TableRow>
-      <TableCell>
-        {format(new Date(entry.date), "dd/MM/yyyy")}
-      </TableCell>
-      <TableCell>
-        <NotesCell text={entry.injuryType} maxLen={40} />
-      </TableCell>
-      <TableCell>
-        <Badge
-          variant="outline"
-          className={severityClasses[entry.severity] ?? ""}
-        >
-          {capitalize(entry.severity)}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <Badge
-          variant={statusVariant[entry.status] ?? "default"}
-          className={statusClasses[entry.status] ?? ""}
-        >
-          {capitalize(entry.status)}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        {entry.estimatedRecovery || "\u2014"}
-      </TableCell>
-      <TableCell>
-        {entry.clearanceDate
-          ? format(new Date(entry.clearanceDate), "dd/MM/yyyy")
-          : "\u2014"}
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm">
-              <IconDots className="size-4" />
-              <span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleEdit}>
-              <IconPencil className="mr-2 size-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={handleDelete}
-            >
-              <IconTrash className="mr-2 size-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
+    <>
+      <TableRow
+        className="cursor-pointer"
+        onClick={handleToggle}
+      >
+        <TableCell className="w-8">
+          {isExpanded ? (
+            <IconChevronDown className="text-muted-foreground size-4" />
+          ) : (
+            <IconChevronRight className="text-muted-foreground size-4" />
+          )}
+        </TableCell>
+        <TableCell>
+          {format(new Date(entry.date), "dd/MM/yyyy")}
+        </TableCell>
+        <TableCell>
+          <NotesCell text={entry.injuryType} maxLen={40} />
+        </TableCell>
+        <TableCell>
+          {entry.bodyRegion
+            ? BODY_REGION_LABELS[entry.bodyRegion as BodyRegion] ?? entry.bodyRegion
+            : "\u2014"}
+        </TableCell>
+        <TableCell>
+          <Badge
+            variant="outline"
+            className={severityClasses[entry.severity] ?? ""}
+          >
+            {entry.severity.charAt(0).toUpperCase() + entry.severity.slice(1)}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          {entry.mechanism
+            ? INJURY_MECHANISM_LABELS[entry.mechanism as InjuryMechanism] ?? entry.mechanism
+            : "\u2014"}
+        </TableCell>
+        <TableCell>
+          {entry.side
+            ? INJURY_SIDE_LABELS[entry.side as InjurySide] ?? entry.side
+            : "\u2014"}
+        </TableCell>
+        <TableCell>
+          <RtpStatusBadge status={entry.status} />
+        </TableCell>
+        <TableCell>
+          {entry.expectedReturnDate
+            ? format(new Date(entry.expectedReturnDate), "dd/MM/yyyy")
+            : "\u2014"}
+        </TableCell>
+        <TableCell onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm">
+                <IconDots className="size-4" />
+                <span className="sr-only">Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleChangeStatus}>
+                <IconArrowRight className="mr-2 size-4" />
+                Change Status
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleEdit}>
+                <IconPencil className="mr-2 size-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                <IconTrash className="mr-2 size-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+      {isExpanded && (
+        <TableRow>
+          <TableCell colSpan={10} className="bg-muted/30 p-4">
+            <RehabNotesSection injuryId={entry._id} />
+          </TableCell>
+        </TableRow>
+      )}
+    </>
   );
 });
 
+type ViewMode = "table" | "timeline";
+
 export function InjuryLog({ playerId }: InjuryLogProps) {
+  const { t } = useTranslation();
   const entries = useQuery(api.players.queries.getPlayerInjuries, { playerId });
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<PlayerInjury | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<PlayerInjury | undefined>(undefined);
+  const [statusTarget, setStatusTarget] = useState<PlayerInjury | undefined>(undefined);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [expandedInjuryId, setExpandedInjuryId] = useState<string | null>(null);
 
   // Memoized callbacks to avoid re-creating on every render
   const handleOpenCreate = useCallback(() => {
@@ -175,18 +228,30 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
     setDeleteTarget(undefined);
   }, []);
 
-  // AC #13: Current injury summary computation
+  const handleChangeStatus = useCallback((entry: PlayerInjury) => {
+    setStatusTarget(entry);
+  }, []);
+
+  const handleStatusClose = useCallback(() => {
+    setStatusTarget(undefined);
+  }, []);
+
+  const handleToggleExpand = useCallback((id: string) => {
+    setExpandedInjuryId((prev) => (prev === id ? null : id));
+  }, []);
+
+  // Story 14.1 AC #8: Updated summary computation
   const summary = useMemo(() => {
     if (!entries) return null;
 
-    const current = entries.filter((e) => e.status === "current");
-    const recovered = entries.filter((e) => e.status === "recovered");
+    const active = entries.filter((e) => isActiveStatus(e.status));
+    const cleared = entries.filter((e) => !isActiveStatus(e.status));
 
     return {
-      currentCount: current.length,
-      recoveredCount: recovered.length,
+      activeCount: active.length,
+      clearedCount: cleared.length,
       totalCount: entries.length,
-      currentInjuries: current,
+      activeInjuries: active,
     };
   }, [entries]);
 
@@ -232,30 +297,30 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header: summary + log button */}
+      {/* Header: summary + controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* AC #13: Summary section */}
+        {/* Story 14.1 AC #8: Updated summary section */}
         {summary && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <SummaryCard
-                label="Current Injuries"
-                value={String(summary.currentCount)}
-                accent={summary.currentCount > 0}
+                label="Active Injuries"
+                value={String(summary.activeCount)}
+                accent={summary.activeCount > 0}
               />
               <SummaryCard
-                label="Recovered"
-                value={String(summary.recoveredCount)}
+                label="Cleared"
+                value={String(summary.clearedCount)}
               />
               <SummaryCard
                 label="Total Records"
                 value={String(summary.totalCount)}
               />
             </div>
-            {/* Current injury list */}
-            {summary.currentInjuries.length > 0 && (
+            {/* Active injury list */}
+            {summary.activeInjuries.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {summary.currentInjuries.map((inj) => (
+                {summary.activeInjuries.map((inj) => (
                   <Badge key={inj._id} variant="destructive" className="text-xs">
                     {inj.injuryType} — {format(new Date(inj.date), "dd/MM/yyyy")}
                   </Badge>
@@ -264,45 +329,78 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
             )}
           </div>
         )}
-        <Button
-          onClick={handleOpenCreate}
-          className="shrink-0"
-        >
-          <IconPlus className="mr-1.5 size-4" />
-          Log Injury
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Story 14.2: Table/Timeline view toggle */}
+          <div className="flex rounded-md border">
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-r-none"
+              onClick={() => setViewMode("table")}
+            >
+              <IconTable className="mr-1.5 size-4" />
+              {t.injuryTimeline.viewTable}
+            </Button>
+            <Button
+              variant={viewMode === "timeline" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode("timeline")}
+            >
+              <IconTimeline className="mr-1.5 size-4" />
+              {t.injuryTimeline.viewTimeline}
+            </Button>
+          </div>
+          <Button
+            onClick={handleOpenCreate}
+          >
+            <IconPlus className="mr-1.5 size-4" />
+            Log Injury
+          </Button>
+        </div>
       </div>
 
-      {/* AC #3: Injury data table */}
-      <TooltipProvider>
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Injury Type</TableHead>
-                  <TableHead>Severity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Est. Recovery</TableHead>
-                  <TableHead>Clearance Date</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entries.map((entry) => (
-                  <InjuryRow
-                    key={entry._id}
-                    entry={entry}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </TooltipProvider>
+      {/* Story 14.2: Conditional view rendering */}
+      {viewMode === "timeline" ? (
+        <InjuryTimeline injuries={entries} />
+      ) : (
+        /* Story 14.1 AC #8: Extended injury data table */
+        <TooltipProvider>
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8" />
+                    <TableHead>Date</TableHead>
+                    <TableHead>Injury Type</TableHead>
+                    <TableHead>Body Region</TableHead>
+                    <TableHead>Severity</TableHead>
+                    <TableHead>Mechanism</TableHead>
+                    <TableHead>Side</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Est. Return</TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((entry) => (
+                    <InjuryRow
+                      key={entry._id}
+                      entry={entry}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onChangeStatus={handleChangeStatus}
+                      isExpanded={expandedInjuryId === entry._id}
+                      onToggleExpand={handleToggleExpand}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
+      )}
 
       {/* Dialogs */}
       <InjuryFormDialog
@@ -317,6 +415,14 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
           date={deleteTarget.date}
           open={!!deleteTarget}
           onClose={handleDeleteClose}
+        />
+      )}
+      {statusTarget && (
+        <RtpStatusDialog
+          injuryId={statusTarget._id}
+          currentStatus={statusTarget.status}
+          open={!!statusTarget}
+          onClose={handleStatusClose}
         />
       )}
     </div>
@@ -356,7 +462,7 @@ function NotesCell({ text, maxLen }: { text: string; maxLen: number }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="cursor-help">{text.slice(0, maxLen)}\u2026</span>
+        <span className="cursor-help">{text.slice(0, maxLen)}&hellip;</span>
       </TooltipTrigger>
       <TooltipContent className="max-w-sm">
         <p>{text}</p>

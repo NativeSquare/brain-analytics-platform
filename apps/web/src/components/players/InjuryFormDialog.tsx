@@ -10,7 +10,19 @@ import type { Id, Doc } from "@packages/backend/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { IconCalendar } from "@tabler/icons-react";
-import { INJURY_SEVERITIES, INJURY_STATUSES } from "@packages/shared/players";
+import {
+  INJURY_SEVERITIES,
+  INJURY_STATUSES,
+  INJURY_STATUS_LABELS,
+  BODY_REGIONS,
+  BODY_REGION_LABELS,
+  INJURY_MECHANISMS,
+  INJURY_MECHANISM_LABELS,
+  INJURY_SIDES,
+  INJURY_SIDE_LABELS,
+  LEGACY_STATUS_MAP,
+} from "@packages/shared/players";
+import type { InjuryStatus } from "@packages/shared/players";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -56,8 +68,14 @@ interface InjuryFormDialogProps {
   onClose: () => void;
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+/**
+ * Map a potentially legacy status value to a valid new status.
+ */
+function normalizeStatus(status: string): InjuryStatus {
+  if ((INJURY_STATUSES as readonly string[]).includes(status)) {
+    return status as InjuryStatus;
+  }
+  return LEGACY_STATUS_MAP[status] ?? "active";
 }
 
 export function InjuryFormDialog({
@@ -71,31 +89,45 @@ export function InjuryFormDialog({
   const updateInjury = useMutation(api.players.mutations.updateInjury);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Always use the edit schema (superset) as the resolver — it validates
-  // status + clearanceDate fields that are present even in create mode
-  // (defaulting to "current" / undefined). This avoids type mismatch.
+  const defaultCreateValues: InjuryEditFormData = {
+    date: Date.now(),
+    injuryType: "",
+    severity: undefined as unknown as InjuryEditFormData["severity"],
+    bodyRegion: undefined,
+    mechanism: undefined,
+    side: undefined,
+    expectedReturnDate: undefined,
+    estimatedRecovery: "",
+    notes: "",
+    status: "active" as const,
+    clearanceDate: undefined,
+    actualReturnDate: undefined,
+  };
+
+  function getEditValues(entry: Doc<"playerInjuries">): InjuryEditFormData {
+    return {
+      date: entry.date,
+      injuryType: entry.injuryType,
+      severity: entry.severity as InjuryEditFormData["severity"],
+      bodyRegion: entry.bodyRegion as InjuryEditFormData["bodyRegion"],
+      mechanism: entry.mechanism as InjuryEditFormData["mechanism"],
+      side: entry.side as InjuryEditFormData["side"],
+      expectedReturnDate: entry.expectedReturnDate,
+      estimatedRecovery: entry.estimatedRecovery ?? "",
+      notes: entry.notes ?? "",
+      status: normalizeStatus(entry.status),
+      clearanceDate: entry.clearanceDate,
+      actualReturnDate: entry.actualReturnDate,
+    };
+  }
+
+  // Always use the edit schema (superset) as the resolver
   const form = useForm<InjuryEditFormData>({
     resolver: zodResolver(injuryEditSchema),
     mode: "onChange",
     defaultValues: existingEntry
-      ? {
-          date: existingEntry.date,
-          injuryType: existingEntry.injuryType,
-          severity: existingEntry.severity as InjuryEditFormData["severity"],
-          estimatedRecovery: existingEntry.estimatedRecovery ?? "",
-          notes: existingEntry.notes ?? "",
-          status: existingEntry.status as InjuryEditFormData["status"],
-          clearanceDate: existingEntry.clearanceDate,
-        }
-      : {
-          date: Date.now(),
-          injuryType: "",
-          severity: undefined,
-          estimatedRecovery: "",
-          notes: "",
-          status: "current" as const,
-          clearanceDate: undefined,
-        },
+      ? getEditValues(existingEntry)
+      : defaultCreateValues,
   });
 
   const watchedStatus = form.watch("status");
@@ -105,27 +137,12 @@ export function InjuryFormDialog({
     if (open) {
       form.reset(
         existingEntry
-          ? {
-              date: existingEntry.date,
-              injuryType: existingEntry.injuryType,
-              severity: existingEntry.severity as InjuryEditFormData["severity"],
-              estimatedRecovery: existingEntry.estimatedRecovery ?? "",
-              notes: existingEntry.notes ?? "",
-              status: existingEntry.status as InjuryEditFormData["status"],
-              clearanceDate: existingEntry.clearanceDate,
-            }
-          : {
-              date: Date.now(),
-              injuryType: "",
-              severity: undefined,
-              estimatedRecovery: "",
-              notes: "",
-              status: "current" as const,
-              clearanceDate: undefined,
-            }
+          ? getEditValues(existingEntry)
+          : defaultCreateValues
       );
     }
-  }, [open, existingEntry, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, existingEntry]);
 
   const onSubmit = async (data: InjuryEditFormData) => {
     setIsSubmitting(true);
@@ -144,10 +161,15 @@ export function InjuryFormDialog({
           date: data.date,
           injuryType: data.injuryType,
           severity: data.severity,
+          bodyRegion: data.bodyRegion,
+          mechanism: data.mechanism,
+          side: data.side,
+          expectedReturnDate: data.expectedReturnDate,
           estimatedRecovery,
           notes,
           status: data.status,
           clearanceDate: data.clearanceDate,
+          actualReturnDate: data.actualReturnDate,
         });
         toast.success("Injury updated");
       } else {
@@ -156,6 +178,10 @@ export function InjuryFormDialog({
           date: data.date,
           injuryType: data.injuryType,
           severity: data.severity,
+          bodyRegion: data.bodyRegion,
+          mechanism: data.mechanism,
+          side: data.side,
+          expectedReturnDate: data.expectedReturnDate,
           estimatedRecovery,
           notes,
         });
@@ -176,7 +202,7 @@ export function InjuryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Update Injury" : "Log Injury"}
@@ -248,6 +274,99 @@ export function InjuryFormDialog({
               )}
             />
 
+            {/* Body Region (Story 14.1) */}
+            <Controller
+              name="bodyRegion"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid || undefined}>
+                  <FieldLabel>Body Region</FieldLabel>
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={(val) =>
+                      field.onChange(val === "" ? undefined : val)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select body region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BODY_REGIONS.map((region) => (
+                        <SelectItem key={region} value={region}>
+                          {BODY_REGION_LABELS[region]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            {/* Mechanism (Story 14.1) */}
+            <Controller
+              name="mechanism"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid || undefined}>
+                  <FieldLabel>Mechanism</FieldLabel>
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={(val) =>
+                      field.onChange(val === "" ? undefined : val)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select mechanism" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INJURY_MECHANISMS.map((mech) => (
+                        <SelectItem key={mech} value={mech}>
+                          {INJURY_MECHANISM_LABELS[mech]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
+            {/* Side (Story 14.1) */}
+            <Controller
+              name="side"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid || undefined}>
+                  <FieldLabel>Side</FieldLabel>
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={(val) =>
+                      field.onChange(val === "" ? undefined : val)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select side" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INJURY_SIDES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {INJURY_SIDE_LABELS[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
             {/* Severity */}
             <Controller
               name="severity"
@@ -267,7 +386,7 @@ export function InjuryFormDialog({
                     <SelectContent>
                       {INJURY_SEVERITIES.map((sev) => (
                         <SelectItem key={sev} value={sev}>
-                          {capitalize(sev)}
+                          {sev.charAt(0).toUpperCase() + sev.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -302,6 +421,46 @@ export function InjuryFormDialog({
               )}
             />
 
+            {/* Expected Return Date (Story 14.1) */}
+            <Controller
+              name="expectedReturnDate"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid || undefined}>
+                  <FieldLabel>Expected Return Date</FieldLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        <IconCalendar className="mr-2 size-4" />
+                        {field.value
+                          ? format(new Date(field.value), "dd/MM/yyyy")
+                          : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) => field.onChange(date?.getTime())}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {fieldState.error && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+
             {/* Notes */}
             <Controller
               name="notes"
@@ -323,7 +482,7 @@ export function InjuryFormDialog({
               )}
             />
 
-            {/* Edit-only fields: Status + Clearance Date (AC #8) */}
+            {/* Edit-only fields: Status + Clearance Date + Actual Return Date */}
             {isEdit && (
               <>
                 {/* Status */}
@@ -336,11 +495,15 @@ export function InjuryFormDialog({
                         Status <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Select
-                        value={field.value ?? "current"}
+                        value={field.value ?? "active"}
                         onValueChange={(val) => {
                           field.onChange(val);
-                          // Auto-suggest today for clearance date when switching to recovered
-                          if (val === "recovered" && !form.getValues("clearanceDate")) {
+                          // Auto-suggest today for actualReturnDate when switching to cleared
+                          if (val === "cleared" && !form.getValues("actualReturnDate")) {
+                            form.setValue("actualReturnDate", Date.now());
+                          }
+                          // Backward compat: also auto-set clearanceDate
+                          if (val === "cleared" && !form.getValues("clearanceDate")) {
                             form.setValue("clearanceDate", Date.now());
                           }
                         }}
@@ -351,7 +514,7 @@ export function InjuryFormDialog({
                         <SelectContent>
                           {INJURY_STATUSES.map((st) => (
                             <SelectItem key={st} value={st}>
-                              {capitalize(st)}
+                              {INJURY_STATUS_LABELS[st]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -371,8 +534,53 @@ export function InjuryFormDialog({
                     <Field data-invalid={fieldState.invalid || undefined}>
                       <FieldLabel>
                         Clearance Date
-                        {watchedStatus === "recovered" && (
+                        {watchedStatus === "cleared" && (
                           <span className="text-muted-foreground ml-1 text-xs">(recommended)</span>
+                        )}
+                      </FieldLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <IconCalendar className="mr-2 size-4" />
+                            {field.value
+                              ? format(new Date(field.value), "dd/MM/yyyy")
+                              : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={
+                              field.value ? new Date(field.value) : undefined
+                            }
+                            onSelect={(date) => field.onChange(date?.getTime())}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {fieldState.error && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+
+                {/* Actual Return Date (Story 14.1) */}
+                <Controller
+                  name="actualReturnDate"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid || undefined}>
+                      <FieldLabel>
+                        Actual Return Date
+                        {watchedStatus === "cleared" && (
+                          <span className="text-muted-foreground ml-1 text-xs">(auto-set when cleared)</span>
                         )}
                       </FieldLabel>
                       <Popover>

@@ -1,0 +1,50 @@
+[
+  {
+    "injuryId": "mock-injury-1",
+    "authorName": "Dr. Marco Rossi",
+    "note": "Initial assessment: Grade 2 hamstring strain, right leg. MRI confirms partial tear of the biceps femoris. Estimated 4-6 weeks recovery. Ice and compression protocol initiated.",
+    "createdAt": 1711900800000
+  },
+  {
+    "injuryId": "mock-injury-1",
+    "authorName": "Dr. Marco Rossi",
+    "note": "Day 5: Swelling reduced significantly. Patient reports reduced pain at rest (3/10). Started passive ROM exercises. No weight-bearing activities yet.",
+    "createdAt": 1712332800000
+  },
+  {
+    "injuryId": "mock-injury-1",
+    "authorName": "Lucia Bianchi",
+    "note": "Week 2: Progressed to active ROM and light resistance band work. Pain-free walking achieved. Hydrotherapy sessions 3x/week.",
+    "createdAt": 1712937600000
+  },
+  {
+    "injuryId": "mock-injury-1",
+    "authorName": "Dr. Marco Rossi",
+    "note": "Week 4: Cleared for light jogging on grass. Strength at 80% of contralateral limb. Continue progressive loading protocol.",
+    "createdAt": 1714147200000
+  },
+  {
+    "injuryId": "mock-injury-1",
+    "authorName": "Lucia Bianchi",
+    "note": "Week 5: Completed return-to-run programme. Full sprint testing scheduled for next session. No adverse reaction to increased load.",
+    "createdAt": 1714752000000
+  },
+  {
+    "injuryId": "mock-injury-2",
+    "authorName": "Dr. Marco Rossi",
+    "note": "Initial assessment: Right ankle lateral ligament sprain (Grade 1). RICE protocol initiated. X-ray negative for fracture. Expected return 10-14 days.",
+    "createdAt": 1713542400000
+  },
+  {
+    "injuryId": "mock-injury-2",
+    "authorName": "Lucia Bianchi",
+    "note": "Day 7: Ankle stability improving. Started proprioception exercises on wobble board. Strapping for light training from tomorrow.",
+    "createdAt": 1714147200000
+  },
+  {
+    "injuryId": "mock-injury-2",
+    "authorName": "Dr. Marco Rossi",
+    "note": "Day 12: Full range of motion restored. Completed agility drills without pain. Cleared for full training and match selection.",
+    "createdAt": 1714579200000
+  }
+]

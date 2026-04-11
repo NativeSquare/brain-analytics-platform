@@ -1,0 +1,77 @@
+[
+  {
+    "date": 1775001600000,
+    "injuryType": "Hamstring strain",
+    "severity": "moderate",
+    "bodyRegion": "thigh",
+    "mechanism": "non_contact",
+    "side": "right",
+    "expectedReturnDate": 1778371200000,
+    "estimatedRecovery": "4-6 weeks",
+    "notes": "Grade 2 hamstring strain sustained during sprint training. MRI confirmed partial tear of the biceps femoris.",
+    "status": "active"
+  },
+  {
+    "date": 1769644800000,
+    "injuryType": "Ankle sprain",
+    "severity": "minor",
+    "bodyRegion": "ankle",
+    "mechanism": "contact",
+    "side": "left",
+    "expectedReturnDate": 1770854400000,
+    "actualReturnDate": 1770681600000,
+    "estimatedRecovery": "2 weeks",
+    "notes": "Lateral ankle sprain from a tackle. Grade 1 inversion injury. Ice and compression applied immediately.",
+    "status": "cleared",
+    "clearanceDate": 1770681600000
+  },
+  {
+    "date": 1772236800000,
+    "injuryType": "ACL reconstruction",
+    "severity": "severe",
+    "bodyRegion": "knee",
+    "mechanism": "contact",
+    "side": "right",
+    "expectedReturnDate": 1793491200000,
+    "estimatedRecovery": "8-10 months",
+    "notes": "Complete ACL rupture following collision during match. Surgical reconstruction performed on 05/01/2026. Rehabilitation protocol initiated.",
+    "status": "rehab"
+  },
+  {
+    "date": 1775088000000,
+    "injuryType": "Concussion",
+    "severity": "moderate",
+    "bodyRegion": "head",
+    "mechanism": "contact",
+    "side": "na",
+    "estimatedRecovery": "Variable - protocol dependent",
+    "notes": "Head-to-head collision during aerial duel. Post-concussion symptoms: headache, dizziness. Following graduated return-to-play protocol.",
+    "status": "assessment"
+  },
+  {
+    "date": 1774742400000,
+    "injuryType": "Groin strain",
+    "severity": "minor",
+    "bodyRegion": "groin",
+    "mechanism": "overuse",
+    "side": "bilateral",
+    "expectedReturnDate": 1776038400000,
+    "estimatedRecovery": "2-3 weeks",
+    "notes": "Bilateral adductor tightness progressing to strain. Likely overuse from fixture congestion. Modified training load recommended.",
+    "status": "active"
+  },
+  {
+    "date": 1766966400000,
+    "injuryType": "Shoulder dislocation",
+    "severity": "severe",
+    "bodyRegion": "shoulder",
+    "mechanism": "contact",
+    "side": "left",
+    "expectedReturnDate": 1772150400000,
+    "actualReturnDate": 1771891200000,
+    "estimatedRecovery": "8-12 weeks",
+    "notes": "Anterior shoulder dislocation from a fall during match. Closed reduction performed pitch-side. Immobilisation followed by physiotherapy.",
+    "status": "cleared",
+    "clearanceDate": 1771891200000
+  }
+]

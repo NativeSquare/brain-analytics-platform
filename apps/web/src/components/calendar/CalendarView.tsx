@@ -177,6 +177,7 @@ export function CalendarView({
     views: [createViewMonthGrid()],
     defaultView: "month-grid",
     theme: "shadcn",
+    locale: "en-GB",
     events: [],
     calendars: CALENDAR_TYPES,
     callbacks: {

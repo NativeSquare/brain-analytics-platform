@@ -1,11 +1,14 @@
 "use client";
 
 import { Suspense, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
+import { IconUserPlus } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { StaffDirectoryFilters } from "@/components/staff/StaffDirectoryFilters";
@@ -23,10 +26,7 @@ function StaffDirectoryContent() {
     setSearchTerm,
     department,
     setDepartment,
-    role,
-    setRole,
     departments,
-    roles,
     isLoading,
   } = useStaffDirectory();
 
@@ -40,9 +40,19 @@ function StaffDirectoryContent() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
       {/* Page header */}
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-semibold">Staff Directory</h1>
-        <Badge variant="secondary">{filteredStaff.length}</Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold">Staff Directory</h1>
+          <Badge variant="secondary">{filteredStaff.length}</Badge>
+        </div>
+        {isAdmin && (
+          <Button variant="outline" asChild>
+            <Link href="/staff/new">
+              <IconUserPlus className="mr-1.5 size-4" />
+              Add Staff
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Admin certification alerts */}
@@ -54,10 +64,7 @@ function StaffDirectoryContent() {
         onSearchChange={setSearchTerm}
         department={department}
         onDepartmentChange={setDepartment}
-        role={role}
-        onRoleChange={setRole}
         departments={departments}
-        roles={roles}
       />
 
       {/* Staff grid */}

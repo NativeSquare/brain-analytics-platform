@@ -7,7 +7,17 @@ import { api } from "@packages/backend/convex/_generated/api";
 import { toast } from "sonner";
 
 import { StaffForm, type StaffFormData } from "@/components/staff/StaffForm";
+import { InviteStaffDialog } from "@/components/staff/InviteStaffDialog";
 import { useTranslation } from "@/hooks/useTranslation";
+
+interface InviteDialogState {
+  open: boolean;
+  staffId: string | null;
+  firstName: string;
+  lastName: string;
+  email: string | undefined;
+  department: string;
+}
 
 export default function AddStaffPage() {
   const router = useRouter();
@@ -15,6 +25,14 @@ export default function AddStaffPage() {
   const currentUser = useQuery(api.table.users.currentUser);
   const createStaff = useMutation(api.staff.mutations.createStaff);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [inviteDialog, setInviteDialog] = React.useState<InviteDialogState>({
+    open: false,
+    staffId: null,
+    firstName: "",
+    lastName: "",
+    email: undefined,
+    department: "",
+  });
 
   const handleSubmit = React.useCallback(
     async (data: StaffFormData) => {
@@ -32,7 +50,15 @@ export default function AddStaffPage() {
           dateJoined: data.dateJoined,
         });
         toast.success(t.staff.toast.created);
-        router.push(`/staff/${staffId}`);
+        // Open invite dialog instead of navigating immediately
+        setInviteDialog({
+          open: true,
+          staffId: staffId as string,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          department: data.department,
+        });
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : "Failed to create staff member";
@@ -41,8 +67,15 @@ export default function AddStaffPage() {
         setIsSubmitting(false);
       }
     },
-    [createStaff, router, t]
+    [createStaff, t]
   );
+
+  const handleInviteClose = React.useCallback(() => {
+    setInviteDialog((prev) => ({ ...prev, open: false }));
+    if (inviteDialog.staffId) {
+      router.push(`/staff/${inviteDialog.staffId}`);
+    }
+  }, [inviteDialog.staffId, router]);
 
   // Auth guard: redirect non-admin users
   if (currentUser !== undefined && currentUser?.role !== "admin") {
@@ -60,6 +93,15 @@ export default function AddStaffPage() {
           isSubmitting={isSubmitting}
         />
       </div>
+
+      <InviteStaffDialog
+        firstName={inviteDialog.firstName}
+        lastName={inviteDialog.lastName}
+        email={inviteDialog.email}
+        department={inviteDialog.department}
+        open={inviteDialog.open}
+        onClose={handleInviteClose}
+      />
     </div>
   );
 }

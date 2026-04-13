@@ -37,7 +37,7 @@ import { CertificationFormDialog } from "./CertificationFormDialog";
 import { DeleteCertificationDialog } from "./DeleteCertificationDialog";
 
 interface CertificationLogProps {
-  staffId: Id<"users">;
+  staffId: Id<"staff">;
   canEdit: boolean;
 }
 
@@ -239,48 +239,60 @@ export function CertificationLog({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header: summary + add button */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {summary && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <SummaryCard label="Total" value={String(summary.total)} />
-            <SummaryCard
-              label="Valid"
-              value={String(summary.valid)}
-              color="green"
-            />
-            <SummaryCard
-              label="Expiring"
-              value={String(summary.expiring)}
-              color="amber"
-            />
-            <SummaryCard
-              label="Expired"
-              value={String(summary.expired)}
-              color="red"
-            />
-          </div>
-        )}
-        {canEdit && (
-          <Button onClick={handleOpenCreate} className="shrink-0">
+    <div className="space-y-6">
+      {/* Summary stats row */}
+      {summary && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="flex items-center justify-between">
+              <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
+                <SummaryCard label="Total" value={String(summary.total)} />
+                <SummaryCard
+                  label="Valid"
+                  value={String(summary.valid)}
+                  color="text-green-600 dark:text-green-400"
+                />
+                <SummaryCard
+                  label="Expiring"
+                  value={String(summary.expiring)}
+                  color="text-amber-600 dark:text-amber-400"
+                />
+                <SummaryCard
+                  label="Expired"
+                  value={String(summary.expired)}
+                  color="text-red-600 dark:text-red-400"
+                />
+              </div>
+              {canEdit && (
+                <Button onClick={handleOpenCreate} className="ml-4 shrink-0">
+                  <IconPlus className="mr-1.5 size-4" />
+                  Add Certification
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {!summary && canEdit && (
+        <div className="flex justify-end">
+          <Button onClick={handleOpenCreate}>
             <IconPlus className="mr-1.5 size-4" />
             Add Certification
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Data table */}
-      <Card>
+      <Card className="overflow-hidden py-0">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Issuing Body</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Expiry Date</TableHead>
-                <TableHead>Status</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold">Name</TableHead>
+                <TableHead className="font-semibold">Issuing Body</TableHead>
+                <TableHead className="font-semibold">Issue Date</TableHead>
+                <TableHead className="font-semibold">Expiry Date</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
                 {canEdit && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
@@ -329,23 +341,12 @@ function SummaryCard({
 }: {
   label: string;
   value: string;
-  color?: "green" | "amber" | "red";
+  color?: string;
 }) {
-  const textColor =
-    color === "green"
-      ? "text-green-600 dark:text-green-400"
-      : color === "amber"
-        ? "text-amber-600 dark:text-amber-400"
-        : color === "red"
-          ? "text-red-600 dark:text-red-400"
-          : "";
-
   return (
-    <Card>
-      <CardContent className="px-3 py-2">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p className={`text-lg font-semibold ${textColor}`}>{value}</p>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-center text-center">
+      <p className={`text-2xl font-black tabular-nums ${color ?? "text-foreground"}`}>{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+    </div>
   );
 }

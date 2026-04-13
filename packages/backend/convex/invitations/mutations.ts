@@ -81,11 +81,9 @@ export const createInvite = mutation({
         inv.teamId === teamId,
     );
 
+    // Cancel any existing pending invite so we can create a fresh one
     if (pendingInvite) {
-      throw new ConvexError({
-        code: "VALIDATION_ERROR" as const,
-        message: "An invitation is already pending for this email address.",
-      });
+      await ctx.db.patch(pendingInvite._id, { cancelledAt: now });
     }
 
     // Create invitation
@@ -189,6 +187,24 @@ export const acceptInvite = mutation({
       status: "active" as const,
       name: invite.name,
     });
+
+    // Link user to their staff profile if one exists (match by email + teamId).
+    // Staff invites may use roles like "coach", "physio", "analyst" based on department.
+    {
+      const staffMembers = await ctx.db
+        .query("staff")
+        .withIndex("by_teamId", (q) => q.eq("teamId", invite.teamId))
+        .collect();
+      const matchingStaff = staffMembers.find(
+        (s) => s.email?.toLowerCase() === invite.email && !s.userId,
+      );
+      if (matchingStaff) {
+        await ctx.db.patch(matchingStaff._id, {
+          userId,
+          updatedAt: Date.now(),
+        });
+      }
+    }
 
     // Mark invitation as accepted
     await ctx.db.patch(invite._id, {

@@ -51,7 +51,7 @@ interface CertificationEntry {
 }
 
 interface CertificationFormDialogProps {
-  staffId: Id<"users">;
+  staffId: Id<"staff">;
   existingCertification?: CertificationEntry;
   open: boolean;
   onClose: () => void;

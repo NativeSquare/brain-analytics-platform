@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { useMutation } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import { STAFF_DEPARTMENTS } from "@packages/shared/staff";
+import { IconCalendar, IconUpload, IconX, IconPhoto } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -81,17 +82,21 @@ export function StaffForm({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
 
   const handlePhotoUpload = React.useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
+    async (file: File) => {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setErrors((prev) => ({ ...prev, photo: "Only JPEG, PNG, and WebP images are supported" }));
+        return;
+      }
       if (file.size > 5 * 1024 * 1024) {
         setErrors((prev) => ({ ...prev, photo: "Image must be less than 5MB" }));
         return;
       }
 
+      setIsUploading(true);
       try {
         const uploadUrl = await generateUploadUrl();
         const response = await fetch(uploadUrl, {
@@ -101,6 +106,10 @@ export function StaffForm({
         });
         const { storageId } = await response.json();
         setPhoto(storageId);
+        setPhotoPreview((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(file);
+        });
         setErrors((prev) => {
           const next = { ...prev };
           delete next.photo;
@@ -111,10 +120,18 @@ export function StaffForm({
           ...prev,
           photo: "Failed to upload photo",
         }));
+      } finally {
+        setIsUploading(false);
       }
     },
     [generateUploadUrl]
   );
+
+  const removePhoto = React.useCallback(() => {
+    setPhoto(undefined);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+  }, [photoPreview]);
 
   const validate = React.useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -161,6 +178,54 @@ export function StaffForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Photo upload */}
+      <div className="space-y-2">
+        <Label>{t.staff.fields.photo}</Label>
+        <div className="flex items-center gap-4">
+          {photoPreview ? (
+            <div className="relative">
+              <img
+                src={photoPreview}
+                alt="Preview"
+                className="size-20 rounded-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="bg-destructive text-destructive-foreground absolute -right-1 -top-1 rounded-full p-0.5"
+              >
+                <IconX className="size-3" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex size-20 cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/25 transition-colors hover:border-muted-foreground/50">
+              {isUploading ? (
+                <Spinner className="size-5" />
+              ) : (
+                <IconPhoto className="text-muted-foreground size-6" />
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoUpload(file);
+                }}
+                disabled={isUploading}
+              />
+            </label>
+          )}
+          <div className="text-sm text-muted-foreground">
+            <p>JPEG, PNG or WebP. Max 5MB.</p>
+          </div>
+        </div>
+        {errors.photo && (
+          <p className="text-destructive text-sm">{errors.photo}</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* First Name */}
         <div className="space-y-2">
@@ -169,6 +234,7 @@ export function StaffForm({
             id="firstName"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
+            className="bg-white dark:bg-card"
             required
           />
           {errors.firstName && (
@@ -183,6 +249,7 @@ export function StaffForm({
             id="lastName"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
+            className="bg-white dark:bg-card"
             required
           />
           {errors.lastName && (
@@ -197,6 +264,7 @@ export function StaffForm({
             id="jobTitle"
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
+            className="bg-white dark:bg-card"
             required
           />
           {errors.jobTitle && (
@@ -208,7 +276,7 @@ export function StaffForm({
         <div className="space-y-2">
           <Label>{t.staff.fields.department} *</Label>
           <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-white dark:bg-card">
               <SelectValue placeholder={t.staff.filterByDepartment} />
             </SelectTrigger>
             <SelectContent>
@@ -232,6 +300,7 @@ export function StaffForm({
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            className="bg-white dark:bg-card"
           />
         </div>
 
@@ -243,6 +312,7 @@ export function StaffForm({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="bg-white dark:bg-card"
           />
         </div>
 
@@ -254,12 +324,12 @@ export function StaffForm({
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full justify-start bg-white text-left font-normal dark:bg-card",
                   !dateJoined && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 size-4" />
-                {dateJoined ? format(dateJoined, "PPP") : "Select date"}
+                <IconCalendar className="mr-2 size-4" />
+                {dateJoined ? format(dateJoined, "dd/MM/yyyy") : "dd/mm/yyyy"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -267,26 +337,12 @@ export function StaffForm({
                 mode="single"
                 selected={dateJoined}
                 onSelect={setDateJoined}
+                captionLayout="dropdown"
+                fromYear={1970}
+                toYear={new Date().getFullYear()}
               />
             </PopoverContent>
           </Popover>
-        </div>
-
-        {/* Photo */}
-        <div className="space-y-2">
-          <Label>{t.staff.fields.photo}</Label>
-          <Input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-          />
-          {photo && (
-            <p className="text-muted-foreground text-xs">Photo uploaded</p>
-          )}
-          {errors.photo && (
-            <p className="text-destructive text-sm">{errors.photo}</p>
-          )}
         </div>
       </div>
 
@@ -302,6 +358,7 @@ export function StaffForm({
           id="bio"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
+          className="bg-white dark:bg-card"
           rows={4}
           maxLength={5000}
         />
@@ -311,7 +368,7 @@ export function StaffForm({
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || isUploading}>
           {isSubmitting ? t.common.loading : submitLabel}
         </Button>
       </div>

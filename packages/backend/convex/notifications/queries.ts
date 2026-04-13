@@ -1,14 +1,20 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { query } from "../_generated/server";
 import { requireAuth } from "../lib/auth";
 
 /**
  * Returns the count of unread notifications for the authenticated user,
- * scoped to their team.
+ * scoped to their team. Returns 0 gracefully if user has no team.
  */
 export const getUnreadCount = query({
   args: {},
   handler: async (ctx) => {
-    const { user, teamId } = await requireAuth(ctx);
+    // Graceful: return 0 if user not authenticated or has no team
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return 0;
+    const user = await ctx.db.get(userId);
+    if (!user || !user.teamId) return 0;
+    const teamId = user.teamId;
 
     const unread = await ctx.db
       .query("notifications")

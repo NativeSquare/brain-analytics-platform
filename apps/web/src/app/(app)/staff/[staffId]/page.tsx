@@ -1,8 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useCallback, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 import { IconArrowLeft } from "@tabler/icons-react";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StaffProfileHeader } from "@/components/staff/StaffProfileHeader";
 import { StaffProfileTabs } from "@/components/staff/StaffProfileTabs";
+import { InviteStaffDialog } from "@/components/staff/InviteStaffDialog";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface StaffProfilePageProps {
@@ -26,8 +27,12 @@ export default function StaffProfilePage({ params }: StaffProfilePageProps) {
     staffId: typedStaffId,
   });
   const currentUser = useQuery(api.table.users.currentUser);
+  const inviteStatus = useQuery(api.staff.queries.getStaffInviteStatus, {
+    staffId: typedStaffId,
+  });
 
   const isAdmin = currentUser?.role === "admin";
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   // Loading state
   if (staff === undefined) {
@@ -54,12 +59,28 @@ export default function StaffProfilePage({ params }: StaffProfilePageProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-      <StaffProfileHeader staff={staff} isAdmin={isAdmin} />
+      <StaffProfileHeader
+        staff={staff}
+        isAdmin={isAdmin}
+        inviteStatus={inviteStatus}
+        onInviteClick={() => setInviteDialogOpen(true)}
+      />
       <StaffProfileTabs
         staff={staff}
         isAdmin={isAdmin}
         currentUserId={currentUser?._id}
       />
+
+      {isAdmin && (
+        <InviteStaffDialog
+          firstName={staff.firstName}
+          lastName={staff.lastName}
+          email={staff.email}
+          department={staff.department}
+          open={inviteDialogOpen}
+          onClose={() => setInviteDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -185,6 +185,65 @@ export const deleteStaff = mutation({
   },
 });
 
+/**
+ * Permanently delete a staff member and all associated data (GDPR cascade).
+ * Admin only. Deletes: certifications, invitations, photo, and the staff record.
+ */
+export const permanentlyDeleteStaff = mutation({
+  args: {
+    staffId: v.id("staff"),
+  },
+  handler: async (ctx, { staffId }) => {
+    const { user, teamId } = await requireRole(ctx, ["admin"]);
+
+    const staff = await getTeamResource(ctx, teamId, "staff", staffId);
+
+    // Prevent admin from deleting their own staff profile
+    if (staff.userId && staff.userId === user._id) {
+      throw new ConvexError({
+        code: "VALIDATION_ERROR" as const,
+        message: "You cannot delete your own staff profile.",
+      });
+    }
+
+    // 1. Delete certifications
+    const certs = await ctx.db
+      .query("certifications")
+      .withIndex("by_staffId", (q) => q.eq("staffId", staffId))
+      .collect();
+    for (const cert of certs) {
+      if (cert.documentId) {
+        try { await ctx.storage.delete(cert.documentId); } catch { /* ignore */ }
+      }
+      await ctx.db.delete(cert._id);
+    }
+
+    // 2. Delete/cancel related invitations (by email)
+    if (staff.email) {
+      const invites = await ctx.db
+        .query("invitations")
+        .withIndex("by_email", (q) => q.eq("email", staff.email!.toLowerCase()))
+        .collect();
+      for (const inv of invites) {
+        if (inv.teamId === teamId && !inv.acceptedAt) {
+          await ctx.db.delete(inv._id);
+        }
+      }
+    }
+
+    // 3. Delete photo from storage
+    if (staff.photo) {
+      try { await ctx.storage.delete(staff.photo as Parameters<typeof ctx.storage.delete>[0]); } catch { /* ignore */ }
+    }
+
+    // 4. If linked to a user, unlink but don't delete the user account
+    // (they may have other roles or data)
+
+    // 5. Delete the staff record
+    await ctx.db.delete(staffId);
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Staff self-service (Story 13.4 AC #4, #6)
 // ---------------------------------------------------------------------------
@@ -345,7 +404,7 @@ export const updateStaffStatus = mutation({
  */
 export const addCertification = mutation({
   args: {
-    staffId: v.id("users"),
+    staffId: v.id("staff"),
     name: v.string(),
     issuingBody: v.string(),
     issueDate: v.number(),
@@ -356,23 +415,23 @@ export const addCertification = mutation({
   handler: async (ctx, args) => {
     const { user, teamId } = await requireAuth(ctx);
 
-    // Authorization: admin or self
+    // Validate staff member belongs to same team
+    const staffMember = await ctx.db.get(args.staffId);
+    if (!staffMember || staffMember.teamId !== teamId) {
+      throw new ConvexError({
+        code: "NOT_FOUND" as const,
+        message: "Staff member not found",
+      });
+    }
+
+    // Authorization: admin or self (user linked to this staff profile)
     const isAdmin = user.role === "admin";
-    const isSelf = user._id === args.staffId;
+    const isSelf = staffMember.userId !== undefined && staffMember.userId === user._id;
     if (!isAdmin && !isSelf) {
       throw new ConvexError({
         code: "NOT_AUTHORIZED" as const,
         message:
           "Only admins or the staff member themselves can manage certifications",
-      });
-    }
-
-    // Validate staff member belongs to same team
-    const staffUser = await ctx.db.get(args.staffId);
-    if (!staffUser || staffUser.teamId !== teamId) {
-      throw new ConvexError({
-        code: "NOT_FOUND" as const,
-        message: "Staff member not found",
       });
     }
 
@@ -458,9 +517,10 @@ export const updateCertification = mutation({
       });
     }
 
-    // Authorization: admin or owner
+    // Authorization: admin or owner (user linked to the staff profile)
     const isAdmin = user.role === "admin";
-    const isSelf = user._id === cert.staffId;
+    const staffMember = await ctx.db.get(cert.staffId);
+    const isSelf = staffMember?.userId !== undefined && staffMember.userId === user._id;
     if (!isAdmin && !isSelf) {
       throw new ConvexError({
         code: "NOT_AUTHORIZED" as const,
@@ -542,9 +602,10 @@ export const deleteCertification = mutation({
       });
     }
 
-    // Authorization: admin or owner
+    // Authorization: admin or owner (user linked to the staff profile)
     const isAdmin = user.role === "admin";
-    const isSelf = user._id === cert.staffId;
+    const staffMember = await ctx.db.get(cert.staffId);
+    const isSelf = staffMember?.userId !== undefined && staffMember.userId === user._id;
     if (!isAdmin && !isSelf) {
       throw new ConvexError({
         code: "NOT_AUTHORIZED" as const,

@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 export const certifications = defineTable({
   teamId: v.id("teams"),
-  staffId: v.id("users"),
+  staffId: v.id("staff"),
   name: v.string(),
   issuingBody: v.string(),
   issueDate: v.number(),

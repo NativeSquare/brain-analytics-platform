@@ -2,16 +2,18 @@
 
 import React from "react";
 import Link from "next/link";
-import { IconArrowLeft, IconPencil } from "@tabler/icons-react";
+import { IconArrowLeft, IconMail, IconPencil, IconTrash } from "@tabler/icons-react";
 import { UserX, UserCheck } from "lucide-react";
 import type { StaffStatus } from "@packages/shared/staff";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { StaffStatusBadge } from "./StaffStatusBadge";
 import { StaffDepartmentBadge } from "./StaffDepartmentBadge";
 import { StaffStatusChangeDialog } from "./StaffStatusChangeDialog";
+import { DeleteStaffDialog } from "./DeleteStaffDialog";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export interface StaffProfileData {
@@ -26,11 +28,14 @@ export interface StaffProfileData {
   email?: string;
   bio?: string;
   dateJoined?: number;
+  userId?: string;
 }
 
 interface StaffProfileHeaderProps {
   staff: StaffProfileData;
   isAdmin: boolean;
+  inviteStatus?: string | null;
+  onInviteClick?: () => void;
 }
 
 function getInitials(firstName: string, lastName: string): string {
@@ -40,9 +45,12 @@ function getInitials(firstName: string, lastName: string): string {
 export const StaffProfileHeader = React.memo(function StaffProfileHeader({
   staff,
   isAdmin,
+  inviteStatus,
+  onInviteClick,
 }: StaffProfileHeaderProps) {
   const { t } = useTranslation();
   const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
   const isActive = staff.status === "active";
 
@@ -70,9 +78,16 @@ export const StaffProfileHeader = React.memo(function StaffProfileHeader({
           </Avatar>
 
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">
-              {staff.firstName} {staff.lastName}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold">
+                {staff.firstName} {staff.lastName}
+              </h1>
+              {inviteStatus === "pending" && (
+                <Badge variant="secondary" className="text-xs">
+                  Invited — awaiting response
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-muted-foreground">{staff.jobTitle}</span>
               <StaffDepartmentBadge department={staff.department} />
@@ -101,11 +116,25 @@ export const StaffProfileHeader = React.memo(function StaffProfileHeader({
                   </>
                 )}
               </Button>
+              {!staff.userId && onInviteClick && (
+                <Button variant="outline" size="sm" onClick={onInviteClick}>
+                  <IconMail className="mr-1 size-4" />
+                  {inviteStatus === "pending" ? "Resend Invite" : "Invite to Platform"}
+                </Button>
+              )}
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/staff/${staff._id}/edit`}>
                   <IconPencil className="mr-1 size-4" />
                   {t.common.edit}
                 </Link>
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <IconTrash className="mr-1 size-4" />
+                Delete
               </Button>
             </>
           )}
@@ -113,13 +142,21 @@ export const StaffProfileHeader = React.memo(function StaffProfileHeader({
       </div>
 
       {isAdmin && (
-        <StaffStatusChangeDialog
-          staffId={staff._id as Id<"staff">}
-          currentStatus={staff.status}
-          staffName={`${staff.firstName} ${staff.lastName}`}
-          open={statusDialogOpen}
-          onClose={() => setStatusDialogOpen(false)}
-        />
+        <>
+          <StaffStatusChangeDialog
+            staffId={staff._id as Id<"staff">}
+            currentStatus={staff.status}
+            staffName={`${staff.firstName} ${staff.lastName}`}
+            open={statusDialogOpen}
+            onClose={() => setStatusDialogOpen(false)}
+          />
+          <DeleteStaffDialog
+            staffId={staff._id as Id<"staff">}
+            staffName={`${staff.firstName} ${staff.lastName}`}
+            open={deleteDialogOpen}
+            onClose={() => setDeleteDialogOpen(false)}
+          />
+        </>
       )}
     </div>
   );

@@ -56,6 +56,7 @@ function getRouteLabelMap(t: Dictionary): Record<string, string> {
     calendar: t.breadcrumbs.calendar,
     documents: t.breadcrumbs.documents,
     players: t.breadcrumbs.players,
+    staff: t.breadcrumbs.staff,
     dashboards: t.breadcrumbs.dashboards,
     settings: t.breadcrumbs.settings,
     team: t.breadcrumbs.team,
@@ -66,6 +67,7 @@ function getRouteLabelMap(t: Dictionary): Record<string, string> {
 function getNestedLabelMap(t: Dictionary): Record<string, string> {
   return {
     players: t.breadcrumbs.playerProfile,
+    staff: t.breadcrumbs.staffProfile,
     team: t.breadcrumbs.memberDetails,
   }
 }
@@ -94,6 +96,7 @@ function getBreadcrumbs(pathname: string, t: Dictionary): BreadcrumbEntry[] {
 
   const knownNestedRoutes: Record<string, string> = {
     "players/new": t.breadcrumbs.addPlayer,
+    "staff/new": t.breadcrumbs.addStaff,
   }
 
   const nestedKey = segments.slice(0, 2).join("/")

@@ -31,7 +31,7 @@
 | **ACs Covered** | AC1, AC3, AC4, AC5 |
 | **Steps** | 1. Navigate to `/`. 2. Check: match countdown has gradient header, VS divider, team logo placeholders with ring borders. 3. Check: recent results have colored W/D/L circle badges (green/gray/red). 4. Check: upcoming fixtures have Home/Away outline badges. 5. Check: quick access cards have icon hover-to-fill transition and arrow reveal on hover. 6. Check: recent/pinned dashboards have bordered cards with hover states. 7. Hover over buttons and links → verify pointer cursor. 8. Toggle dark mode → verify sidebar neutral tones (not blue-tinted), card backgrounds, teal accent. 9. Open browser DevTools → verify `--font-sans` resolves to `var(--font-manrope)` in computed styles. |
 | **Expected** | Homepage matches original platform design. Dark mode palette correct. Pointer cursor on interactive elements. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-12.2-01: Calendar Navigation
 
@@ -40,16 +40,16 @@
 | **Story** | 12.2 |
 | **Steps** | 1. Navigate to `/calendar`. 2. Go forward to May, back to current month. 3. Go forward 2 months, back 2 months. 4. Verify no visual glitches, no duplicate events, no stale day labels. |
 | **Expected** | Calendar renders cleanly after each navigation. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-12.2-02: Players Page Card Layout
 
 | Field | Value |
 |---|---|
 | **Story** | 12.2 |
-| **Steps** | 1. Navigate to `/players`. 2. Verify cards grouped by position: Goalkeepers, Defenders, Midfielders, Forwards. 3. Verify each card: circular avatar, name, squad number, status badge. 4. Verify empty position groups are hidden. 5. Click a card → verify navigation to player profile. 6. Compare with client screenshots in `docs/reference/screenshots/player profile screenshots/`. |
-| **Expected** | Card-based layout grouped by position matching client mockup. |
-| **Pass/Fail** | [ ] |
+| **Steps** | 1. Navigate to `/players`. 2. Verify cards grouped by medical status: Available, Modified Training, Rehab, Injured. 3. Verify each card: gradient overlay, squad number watermark, medical status label, circular avatar, name, appearances stat connected to backend. 4. Verify empty groups are hidden. 5. Click a card → verify navigation to player profile. 6. Verify summary badges show medical status counts. |
+| **Expected** | Card-based layout grouped by medical status. Appearances connected to backend. |
+| **Pass/Fail** | PASS |
 
 ### TC-12.2-03: Nationality Dropdown & Date Format
 
@@ -58,7 +58,7 @@
 | **Story** | 12.2 |
 | **Steps** | 1. Navigate to `/players` → "Add Player". 2. Verify nationality is a searchable dropdown. 3. Type "Ita" → verify "Italy" appears. Type "Eng" → verify "England" (separate from UK). 4. After saving, verify dates are DD/MM/YYYY across: player DOB, stats log, fitness log, documents, calendar events, homepage fixtures. |
 | **Expected** | Searchable country dropdown. All dates DD/MM/YYYY across the platform. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-12.3-01: Admin Edit Player Contact Info
 
@@ -67,7 +67,7 @@
 | **Story** | 12.3 |
 | **Steps** | 1. Open any player profile as admin. 2. Verify "Edit Contact Info" button visible in Bio tab. 3. Modify phone and email → save → verify updated. 4. Log in as non-admin → verify the edit button is NOT visible. |
 | **Expected** | Admin can edit any player's contact info. Non-admin cannot. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-12.3-02: GDPR Player Deletion
 
@@ -77,7 +77,7 @@
 | **Prerequisites** | Create a test player with stats, fitness data, and a contract. |
 | **Steps** | 1. Open the test player's profile. 2. Click "Delete Player". 3. Verify confirmation dialog requires typing the player's full name. 4. Type wrong name → delete button stays disabled. 5. Type correct name → "Permanently Delete". 6. Verify toast, redirect to `/players`, player gone from list. 7. Check Convex dashboard: no orphaned records. |
 | **Expected** | Two-step confirmation. Cascade deletes all data. Player fully removed. Self-deletion blocked (covered by unit tests). |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ---
 
@@ -88,8 +88,8 @@
 | Field | Value |
 |---|---|
 | **Story** | 13.1 |
-| **Steps** | 1. Verify "Staff" in sidebar. 2. Navigate to `/staff`. 3. Click "Add Staff". 4. Fill in: name, job title, department (dropdown), phone, email, bio. 5. Submit → verify toast and staff appears in directory with department badge and "Active" status. |
-| **Expected** | Staff profile created and visible. |
+| **Steps** | 1. Verify "Staff" in sidebar. 2. Navigate to `/staff`. 3. Click "Add Staff" (admin only). 4. Fill in: name, job title, department (dropdown), phone, email, bio. All inputs on white background. 5. Submit → verify toast. 6. Verify invite dialog appears with option to send email or skip. 7. Close dialog → redirects to staff profile. 8. Navigate to `/staff` → verify staff appears in directory grouped by department with card design (gradient, colored border-top, department label). |
+| **Expected** | Staff profile created, invite dialog shown, staff visible in directory grouped by department. |
 | **Pass/Fail** | [ ] |
 
 ### TC-13.1-02: View, Edit & Filter Staff
@@ -97,8 +97,8 @@
 | Field | Value |
 |---|---|
 | **Story** | 13.1, 13.2 |
-| **Steps** | 1. Click a staff card → profile page loads with 3 tabs (Overview, Certifications, Role Info). 2. Verify Overview shows all fields. 3. Click "Edit" → change job title → save → verify updated. 4. Back to `/staff` → filter by department → verify filtering. 5. Search by full name → verify results. 6. Combine department + search → verify both apply. 7. Resize browser → verify responsive grid (1/2/3 cols). 8. Switch language to Italian in settings → verify staff-related labels translated (sidebar, page title, buttons). |
-| **Expected** | Profile displays and edits correctly. All filters work. Responsive layout. |
+| **Steps** | 1. Click a staff card → profile page loads with 3 tabs (Overview, Certifications, Role Info). 2. Verify Overview shows all fields. 3. Click "Edit" → change job title → save → verify updated. 4. Back to `/staff` → filter by department → verify filtering (connected to Convex query). 5. Search by name → verify debounced results. 6. Combine department + search → verify both apply. 7. Resize browser → verify responsive grid (2/3/4/5 cols). |
+| **Expected** | Profile displays and edits correctly. All filters work via Convex. Responsive layout. |
 | **Pass/Fail** | [ ] |
 
 ### TC-13.1-03: Non-Admin Staff Access
@@ -107,8 +107,8 @@
 |---|---|
 | **Story** | 13.1, 13.2 |
 | **Prerequisites** | Logged in as non-admin (coach) |
-| **Steps** | 1. Navigate to `/staff` → verify directory visible. 2. Verify "Add Staff" button NOT visible. 3. Click a card → verify profile viewable. 4. Verify "Edit" button NOT visible. |
-| **Expected** | Non-admins can view but not create/edit staff. |
+| **Steps** | 1. Navigate to `/staff` → verify directory visible. 2. Verify "Add Staff" button NOT visible. 3. Click a card → verify profile viewable. 4. Verify "Edit" button NOT visible. 5. Verify only active staff are shown (non-admins cannot see inactive). |
+| **Expected** | Non-admins can view but not create/edit staff. Only active staff visible. |
 | **Pass/Fail** | [ ] |
 
 ### TC-13.3-01: Certification CRUD & Status Badges
@@ -125,7 +125,7 @@
 | Field | Value |
 |---|---|
 | **Story** | 13.3, 13.4 |
-| **Steps** | 1. Navigate to `/staff` as admin → verify "Expiring Certifications" alert section with staff name, cert name, date. 2. Log in as non-admin → verify alert section NOT visible. 3. As a staff member, navigate to own profile → Certifications. 4. Verify "Add Certification" visible. 5. Add a cert → verify it works. 6. Navigate to another staff member's certs → verify "Add" NOT visible. |
+| **Steps** | 1. Navigate to `/staff` as admin → verify "Expiring Certifications" alert section with staff name, cert name, date. 2. Log in as non-admin → verify alert section NOT visible. 3. As a staff member with linked profile, navigate to own profile → Certifications. 4. Verify "Add Certification" visible. 5. Add a cert → verify it works. 6. Navigate to another staff member's certs → verify "Add" NOT visible. |
 | **Expected** | Admin sees team-wide alerts. Staff can manage own certs only. |
 | **Pass/Fail** | [ ] |
 
@@ -134,8 +134,8 @@
 | Field | Value |
 |---|---|
 | **Story** | 13.4 |
-| **Prerequisites** | Logged in as staff member (non-admin) with linked profile |
-| **Steps** | 1. Navigate to own profile (sidebar "My Profile" or direct URL). 2. Verify "Edit Profile" button on Overview tab. 3. Click → verify form shows phone, email, bio only (no role/department/job title). 4. Modify phone and bio → save → verify updated. 5. Navigate to another staff profile → verify "Edit Profile" NOT visible. |
+| **Prerequisites** | Logged in as staff member (non-admin) with linked profile (accepted invite) |
+| **Steps** | 1. Navigate to own profile (sidebar "My Profile" or direct URL). 2. Verify "Edit Profile" button on Overview tab. 3. Click → verify form shows phone, email, bio only (no department/job title). 4. Modify phone and bio → save → verify updated. 5. Navigate to another staff profile → verify "Edit Profile" NOT visible. |
 | **Expected** | Self-edit limited to phone/email/bio. Cannot edit others. |
 | **Pass/Fail** | [ ] |
 
@@ -144,7 +144,7 @@
 | Field | Value |
 |---|---|
 | **Story** | 13.4 |
-| **Steps** | 1. As admin, open staff profile → click "Deactivate" → confirm. 2. Verify "Inactive" badge. 3. Navigate to `/staff` → verify inactive staff shows with muted styling. 4. Click "Reactivate" → verify status returns to Active. 5. Log in as non-admin → navigate to `/staff` → verify inactive staff NOT visible. 6. Verify "My Profile" sidebar link visible only for users with staff profiles. |
+| **Steps** | 1. As admin, open staff profile → click "Deactivate" → confirm. 2. Verify "Inactive" badge. 3. Navigate to `/staff` → verify inactive staff shows with muted styling (opacity-60). 4. Click "Reactivate" → verify status returns to Active. 5. Log in as non-admin → navigate to `/staff` → verify inactive staff NOT visible. 6. Verify "My Profile" sidebar link visible only for users with linked staff profiles. |
 | **Expected** | Deactivation/reactivation works. Non-admins don't see inactive staff. Sidebar link conditional. |
 | **Pass/Fail** | [ ] |
 

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { query } from "../_generated/server";
 import { requireAuth, requireRole } from "../lib/auth";
 
@@ -106,7 +107,12 @@ export const getStaff = query({
 export const getOwnStaffProfile = query({
   args: {},
   handler: async (ctx) => {
-    const { user, teamId } = await requireAuth(ctx);
+    // Graceful auth — return null instead of throwing if user has no team yet
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const user = await ctx.db.get(userId);
+    if (!user || !user.teamId) return null;
+    const teamId = user.teamId;
 
     const member = await ctx.db
       .query("staff")
@@ -189,13 +195,13 @@ function computeCertStatus(
  * Each entry includes a computed `status` field.
  */
 export const getStaffCertifications = query({
-  args: { staffId: v.id("users") },
+  args: { staffId: v.id("staff") },
   handler: async (ctx, { staffId }) => {
     const { teamId } = await requireAuth(ctx);
 
     // Validate the staff member belongs to the same team
-    const staffUser = await ctx.db.get(staffId);
-    if (!staffUser || staffUser.teamId !== teamId) {
+    const staffMember = await ctx.db.get(staffId);
+    if (!staffMember || staffMember.teamId !== teamId) {
       throw new ConvexError({
         code: "NOT_FOUND" as const,
         message: "Staff member not found",
@@ -258,15 +264,12 @@ export const getExpiringCertifications = query({
     // Enrich with staff member name and status
     const enriched = await Promise.all(
       expiring.map(async (entry) => {
-        const staffUser = await ctx.db.get(entry.staffId);
-        const displayName =
-          staffUser?.fullName ?? staffUser?.name ?? staffUser?.email ?? "Unknown";
-        const nameParts = displayName.split(" ");
+        const staffMember = await ctx.db.get(entry.staffId);
         return {
           ...entry,
           status: computeCertStatus(entry.expiryDate, now),
-          firstName: nameParts[0] ?? "Unknown",
-          lastName: nameParts.slice(1).join(" "),
+          firstName: staffMember?.firstName ?? "Unknown",
+          lastName: staffMember?.lastName ?? "",
         };
       }),
     );
@@ -280,5 +283,44 @@ export const getExpiringCertifications = query({
     });
 
     return enriched;
+  },
+});
+
+/**
+ * Get the invite status for a staff member.
+ * Looks up the invitations table by email + teamId.
+ * Returns "pending", "accepted", "expired", or null (no invite sent).
+ */
+export const getStaffInviteStatus = query({
+  args: { staffId: v.id("staff") },
+  handler: async (ctx, { staffId }) => {
+    const { teamId } = await requireAuth(ctx);
+
+    const staff = await ctx.db.get(staffId);
+    if (!staff || staff.teamId !== teamId || !staff.email) {
+      return null;
+    }
+
+    const invites = await ctx.db
+      .query("invitations")
+      .withIndex("by_email", (q) => q.eq("email", staff.email!.toLowerCase()))
+      .collect();
+
+    // Filter to same team, exclude player invites and cancelled ones
+    const teamInvites = invites.filter(
+      (inv) => inv.teamId === teamId && inv.role !== "player" && !inv.cancelledAt,
+    );
+
+    if (teamInvites.length === 0) return null;
+
+    // Return most recent invite status
+    const sorted = teamInvites.sort(
+      (a, b) => (b.acceptedAt ?? b.expiresAt) - (a.acceptedAt ?? a.expiresAt),
+    );
+    const latest = sorted[0];
+
+    if (latest.acceptedAt) return "accepted";
+    if (latest.expiresAt < Date.now()) return "expired";
+    return "pending";
   },
 });

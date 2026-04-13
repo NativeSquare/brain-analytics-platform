@@ -18,9 +18,6 @@ interface StaffDirectoryFiltersProps {
   department: string;
   onDepartmentChange: (value: string) => void;
   departments: string[];
-  role: string;
-  onRoleChange: (value: string) => void;
-  roles: string[];
 }
 
 export function StaffDirectoryFilters({
@@ -29,9 +26,6 @@ export function StaffDirectoryFilters({
   department,
   onDepartmentChange,
   departments,
-  role,
-  onRoleChange,
-  roles,
 }: StaffDirectoryFiltersProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -41,7 +35,7 @@ export function StaffDirectoryFilters({
           placeholder="Search staff by name..."
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-8"
+          className="bg-white pl-8 dark:bg-card"
         />
       </div>
 
@@ -51,7 +45,7 @@ export function StaffDirectoryFilters({
           onDepartmentChange(value === "all" ? "" : value)
         }
       >
-        <SelectTrigger className="w-full sm:w-48">
+        <SelectTrigger className="w-full bg-white dark:bg-card sm:w-48">
           <SelectValue placeholder="All Departments" />
         </SelectTrigger>
         <SelectContent>
@@ -59,23 +53,6 @@ export function StaffDirectoryFilters({
           {departments.map((dept) => (
             <SelectItem key={dept} value={dept}>
               {dept}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={role || "all"}
-        onValueChange={(value) => onRoleChange(value === "all" ? "" : value)}
-      >
-        <SelectTrigger className="w-full sm:w-40">
-          <SelectValue placeholder="All Roles" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Roles</SelectItem>
-          {roles.map((r) => (
-            <SelectItem key={r} value={r}>
-              {r.charAt(0).toUpperCase() + r.slice(1)}
             </SelectItem>
           ))}
         </SelectContent>

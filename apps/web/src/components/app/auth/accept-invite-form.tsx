@@ -318,8 +318,10 @@ function AcceptStaffInviteForm({
   );
   const legacyAcceptInvite = useMutation(api.table.admin.acceptInvite);
 
+  const { isAuthenticated } = useConvexAuth();
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [pendingToken, setPendingToken] = React.useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -353,6 +355,30 @@ function AcceptStaffInviteForm({
     : "Admin";
   const teamName = isNewInvite ? inviteData.teamName : undefined;
 
+  // Wait for auth propagation before accepting invite (same pattern as player flow)
+  React.useEffect(() => {
+    if (!pendingToken || !isAuthenticated) return;
+
+    let cancelled = false;
+    async function accept() {
+      try {
+        if (isNewInvite) {
+          await acceptInviteMutation({ token: pendingToken! });
+        } else {
+          await legacyAcceptInvite({ token: pendingToken! });
+        }
+        if (!cancelled) router.replace("/");
+      } catch (error) {
+        if (!cancelled) {
+          setFormError(getConvexErrorMessage(error));
+          setIsLoading(false);
+        }
+      }
+    }
+    accept();
+    return () => { cancelled = true; };
+  }, [pendingToken, isAuthenticated, isNewInvite, acceptInviteMutation, legacyAcceptInvite, router]);
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
     if (!isNewInvite && !isLegacyInvite) return;
 
@@ -367,18 +393,10 @@ function AcceptStaffInviteForm({
         flow: "signUp",
       });
 
-      // Accept the invite via the appropriate mutation
-      if (isNewInvite) {
-        await acceptInviteMutation({ token });
-      } else {
-        await legacyAcceptInvite({ token });
-      }
-
-      // Redirect to homepage
-      router.replace("/");
+      // Signal to wait for auth propagation before accepting
+      setPendingToken(token);
     } catch (error) {
       setFormError(getConvexErrorMessage(error));
-    } finally {
       setIsLoading(false);
     }
   }

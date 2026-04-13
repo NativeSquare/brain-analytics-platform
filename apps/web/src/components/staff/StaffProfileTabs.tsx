@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { IconAward, IconInfoCircle, IconPencil } from "@tabler/icons-react";
+import { IconInfoCircle, IconPencil } from "@tabler/icons-react";
 import type { Id } from "@packages/backend/convex/_generated/dataModel";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { CertificationLog } from "./CertificationLog";
 import { StaffProfileEditDialog } from "./StaffProfileEditDialog";
 
 interface StaffData {
+  _id: Id<"staff">;
   firstName: string;
   lastName: string;
   jobTitle: string;
@@ -51,20 +52,7 @@ function InfoField({
   );
 }
 
-function PlaceholderTab({
-  icon: Icon,
-  message,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  message: string;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Icon className="text-muted-foreground mb-4 size-12" />
-      <p className="text-muted-foreground text-sm">{message}</p>
-    </div>
-  );
-}
+
 
 export function StaffProfileTabs({
   staff,
@@ -165,21 +153,10 @@ export function StaffProfileTabs({
       </TabsContent>
 
       <TabsContent value="certifications">
-        {staff.userId ? (
-          <CertificationLog
-            staffId={staff.userId}
-            canEdit={canEditCertifications}
-          />
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <PlaceholderTab
-                icon={IconAward}
-                message="This staff member is not linked to a user account. Certifications require a user account."
-              />
-            </CardContent>
-          </Card>
-        )}
+        <CertificationLog
+          staffId={staff._id}
+          canEdit={canEditCertifications}
+        />
       </TabsContent>
 
       <TabsContent value="roleInfo">

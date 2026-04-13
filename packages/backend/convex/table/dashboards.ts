@@ -14,7 +14,8 @@ export const dashboards = defineTable({
     v.literal("Opposition"),
     v.literal("Trends"),
     v.literal("Officials"),
-    v.literal("Possession")
+    v.literal("Possession"),
+    v.literal("Medical")
   ),
   icon: v.string(),
   slug: v.string(),

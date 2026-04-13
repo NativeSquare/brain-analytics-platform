@@ -5,7 +5,7 @@
 **Epics Covered:** 12 (Sprint 1 Polish), 13 (Staff Profiles), 14 (Injury Reporting), 15 (Live Data Integration)
 **Date:** 2026-04-12
 **Author:** QA Lead
-**Status:** In Progress
+**Status:** Complete — All tests PASS
 
 ---
 
@@ -90,7 +90,7 @@
 | **Story** | 13.1 |
 | **Steps** | 1. Verify "Staff" in sidebar. 2. Navigate to `/staff`. 3. Click "Add Staff" (admin only). 4. Fill in: name, job title, department (dropdown), phone, email, bio. All inputs on white background. 5. Submit → verify toast. 6. Verify invite dialog appears with option to send email or skip. 7. Close dialog → redirects to staff profile. 8. Navigate to `/staff` → verify staff appears in directory grouped by department with card design (gradient, colored border-top, department label). |
 | **Expected** | Staff profile created, invite dialog shown, staff visible in directory grouped by department. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-13.1-02: View, Edit & Filter Staff
 
@@ -99,7 +99,7 @@
 | **Story** | 13.1, 13.2 |
 | **Steps** | 1. Click a staff card → profile page loads with 3 tabs (Overview, Certifications, Role Info). 2. Verify Overview shows all fields. 3. Click "Edit" → change job title → save → verify updated. 4. Back to `/staff` → filter by department → verify filtering (connected to Convex query). 5. Search by name → verify debounced results. 6. Combine department + search → verify both apply. 7. Resize browser → verify responsive grid (2/3/4/5 cols). |
 | **Expected** | Profile displays and edits correctly. All filters work via Convex. Responsive layout. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-13.1-03: Non-Admin Staff Access
 
@@ -109,7 +109,7 @@
 | **Prerequisites** | Logged in as non-admin (coach) |
 | **Steps** | 1. Navigate to `/staff` → verify directory visible. 2. Verify "Add Staff" button NOT visible. 3. Click a card → verify profile viewable. 4. Verify "Edit" button NOT visible. 5. Verify only active staff are shown (non-admins cannot see inactive). |
 | **Expected** | Non-admins can view but not create/edit staff. Only active staff visible. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-13.3-01: Certification CRUD & Status Badges
 
@@ -118,7 +118,7 @@
 | **Story** | 13.3 |
 | **Steps** | 1. Open staff profile → Certifications tab. 2. Add cert with expiry 1 year from now → verify green badge (Valid). 3. Add cert expiring in 15 days → verify amber badge (Expiring). 4. Add cert expired → verify red badge (Expired). 5. Edit a cert (change expiry) → verify update. 6. Delete a cert → verify removal. 7. Verify dates DD/MM/YYYY. |
 | **Expected** | CRUD works. Color-coded status badges. European date format. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-13.3-02: Admin Expiry Alerts & Self-Service Certs
 
@@ -127,7 +127,7 @@
 | **Story** | 13.3, 13.4 |
 | **Steps** | 1. Navigate to `/staff` as admin → verify "Expiring Certifications" alert section with staff name, cert name, date. 2. Log in as non-admin → verify alert section NOT visible. 3. As a staff member with linked profile, navigate to own profile → Certifications. 4. Verify "Add Certification" visible. 5. Add a cert → verify it works. 6. Navigate to another staff member's certs → verify "Add" NOT visible. |
 | **Expected** | Admin sees team-wide alerts. Staff can manage own certs only. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-13.4-01: Staff Self-Service Edit
 
@@ -137,7 +137,7 @@
 | **Prerequisites** | Logged in as staff member (non-admin) with linked profile (accepted invite) |
 | **Steps** | 1. Navigate to own profile (sidebar "My Profile" or direct URL). 2. Verify "Edit Profile" button on Overview tab. 3. Click → verify form shows phone, email, bio only (no department/job title). 4. Modify phone and bio → save → verify updated. 5. Navigate to another staff profile → verify "Edit Profile" NOT visible. |
 | **Expected** | Self-edit limited to phone/email/bio. Cannot edit others. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-13.4-02: Staff Deactivation & Directory Filtering
 
@@ -146,7 +146,7 @@
 | **Story** | 13.4 |
 | **Steps** | 1. As admin, open staff profile → click "Deactivate" → confirm. 2. Verify "Inactive" badge. 3. Navigate to `/staff` → verify inactive staff shows with muted styling (opacity-60). 4. Click "Reactivate" → verify status returns to Active. 5. Log in as non-admin → navigate to `/staff` → verify inactive staff NOT visible. 6. Verify "My Profile" sidebar link visible only for users with linked staff profiles. |
 | **Expected** | Deactivation/reactivation works. Non-admins don't see inactive staff. Sidebar link conditional. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ---
 
@@ -160,7 +160,7 @@
 | **Prerequisites** | Logged in as admin or physio, at least one player |
 | **Steps** | 1. Open player profile → verify "Injuries" tab visible. 2. Click "Log Injury". 3. Verify form: date, injury type, severity, body region (20 options), mechanism (3 options), side (4 options), expected return date, notes. 4. Fill all fields → submit. 5. Verify injury in table with correct columns and "Active" red badge. 6. Log in as coach → verify Injuries tab NOT visible. |
 | **Expected** | Injury created with clinical fields. Non-medical users excluded. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-14.1-02: RTP Status Transitions (via Edit Form)
 
@@ -169,7 +169,7 @@
 | **Story** | 14.1 |
 | **Steps** | 1. Edit an active injury → change status to Rehab → save → verify orange badge. 2. Edit → Assessment → yellow badge. 3. Edit → Cleared → green badge + actual return date auto-set. 4. Edit → back to Active (re-injury) → red badge. |
 | **Expected** | All 4 statuses work via edit form. Auto-set return date on cleared. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-14.2-01: Timeline View & Rehab Notes
 
@@ -179,7 +179,7 @@
 | **Prerequisites** | Player with 2+ injuries (mix of active and cleared) |
 | **Steps** | 1. Injuries tab → click "Timeline" toggle. 2. Verify vertical timeline with severity-colored dots (green/amber/red). 3. Verify active injuries have red left border, cleared don't. 4. Verify days out counter and DD/MM/YYYY dates. 5. Verify summary stats bar at top (total injuries, total days lost, currently active, avg recovery). 6. Switch to Table view → expand an injury (chevron). 7. Add a rehab note → verify it appears with name and timestamp. 8. Edit the note → verify update. 9. Delete the note → verify removal. |
 | **Expected** | Timeline and table views both work. Rehab notes CRUD functional. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-14.3-01: RTP Status Dots & Transitions (via Dialog)
 
@@ -189,7 +189,7 @@
 | **Prerequisites** | Players with injuries at different statuses |
 | **Steps** | 1. Navigate to `/players` as admin/physio → verify colored dots (red/amber/blue) next to injured players. 2. Log in as coach → verify only generic red dot (no colored RTP). 3. As admin, open injury → "Change Status" in dropdown → verify dialog shows next step → confirm. 4. Walk through: Active → Rehab → Assessment → Cleared. 5. On cleared injury → "Change Status" → verify "Report Re-injury" → confirm → back to Active. |
 | **Expected** | Medical see detailed dots, others see generic. Forward-only transitions via dialog. |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ### TC-14.3-02: Medical Dashboard
 
@@ -197,8 +197,8 @@
 |---|---|
 | **Story** | 14.3 |
 | **Steps** | 1. Navigate to `/dashboards/medical-overview` as admin. 2. Verify: Squad Availability % card, Currently Injured table, Upcoming Returns list, Injury by Region bar chart, Injury by Type donut chart. 3. Log in as coach → same URL → verify access denied. |
-| **Expected** | 5 widgets render with mock data. Restricted to admin + physio. |
-| **Pass/Fail** | [ ] |
+| **Expected** | 5 widgets render with real Convex data. Restricted to admin + physio. |
+| **Pass/Fail** | PASS |
 
 ### TC-14.4-01: Injury Reports (Admin Only)
 
@@ -207,6 +207,6 @@
 | **Story** | 14.4 |
 | **Steps** | 1. Verify "Injury Reports" in sidebar (admin only). 2. Navigate to `/injuries/reports`. 3. Verify: Injuries by Player table, Injuries by Season bar chart (Aug-Jul), Injuries by Type table. 4. Log in as physio → verify link NOT in sidebar. 5. Navigate directly → verify redirect. |
 | **Expected** | 3 report sections. Admin-only (physio excluded). |
-| **Pass/Fail** | [ ] |
+| **Pass/Fail** | PASS |
 
 ---

@@ -1,17 +1,22 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { mockSquadAvailability } from "./mock-data";
+
+interface SquadAvailabilityData {
+  totalPlayers: number;
+  injuredPlayers: number;
+  availablePercentage: number;
+}
 
 /**
  * Squad Availability widget.
  * Story 14.3 AC #11: Big number showing % of squad available.
  */
-export default function SquadAvailabilityCard() {
-  const data = mockSquadAvailability;
-  const diff = data.availablePercentage - data.previousMonthPercentage;
-
+export default function SquadAvailabilityCard({
+  data,
+}: {
+  data: SquadAvailabilityData;
+}) {
   const colorClass =
     data.availablePercentage >= 85
       ? "text-green-600 dark:text-green-400"
@@ -26,23 +31,9 @@ export default function SquadAvailabilityCard() {
         ? "bg-amber-50 dark:bg-amber-950/30"
         : "bg-red-50 dark:bg-red-950/30";
 
-  const TrendIcon =
-    data.trend === "up"
-      ? TrendingUp
-      : data.trend === "down"
-        ? TrendingDown
-        : Minus;
-
-  const trendColor =
-    data.trend === "up"
-      ? "text-green-600 dark:text-green-400"
-      : data.trend === "down"
-        ? "text-red-600 dark:text-red-400"
-        : "text-muted-foreground";
-
   return (
-    <Card className={bgClass}>
-      <CardContent className="flex flex-col items-center justify-center py-6">
+    <Card className={`h-full ${bgClass}`}>
+      <CardContent className="flex h-full flex-col items-center justify-center py-6">
         <p className="text-muted-foreground mb-1 text-sm font-medium">
           Squad Availability
         </p>
@@ -53,13 +44,6 @@ export default function SquadAvailabilityCard() {
           {data.totalPlayers - data.injuredPlayers} of {data.totalPlayers}{" "}
           players available
         </p>
-        <div className={`mt-2 flex items-center gap-1 text-sm ${trendColor}`}>
-          <TrendIcon className="size-4" />
-          <span>
-            {diff > 0 ? "+" : ""}
-            {diff}% vs last month
-          </span>
-        </div>
       </CardContent>
     </Card>
   );

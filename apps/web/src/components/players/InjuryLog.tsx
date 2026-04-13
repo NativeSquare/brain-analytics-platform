@@ -296,40 +296,27 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header: summary + controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* Story 14.1 AC #8: Updated summary section */}
-        {summary && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <SummaryCard
-                label="Active Injuries"
-                value={String(summary.activeCount)}
-                accent={summary.activeCount > 0}
-              />
-              <SummaryCard
-                label="Cleared"
-                value={String(summary.clearedCount)}
-              />
-              <SummaryCard
-                label="Total Records"
-                value={String(summary.totalCount)}
-              />
-            </div>
-            {/* Active injury list */}
-            {summary.activeInjuries.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {summary.activeInjuries.map((inj) => (
-                  <Badge key={inj._id} variant="destructive" className="text-xs">
-                    {inj.injuryType} — {format(new Date(inj.date), "dd/MM/yyyy")}
-                  </Badge>
-                ))}
+    <div className="space-y-6">
+      {/* Summary + controls */}
+      {summary && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="flex items-center justify-between">
+              <div className="grid flex-1 grid-cols-3 gap-4">
+                <div className="flex flex-col items-center text-center">
+                  <p className={`text-2xl font-black tabular-nums ${summary.activeCount > 0 ? "text-red-600 dark:text-red-400" : "text-foreground"}`}>{summary.activeCount}</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Active Injuries</p>
+                </div>
+                <div className="flex flex-col items-center text-center">
+                  <p className="text-2xl font-black tabular-nums text-green-600 dark:text-green-400">{summary.clearedCount}</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cleared</p>
+                </div>
+                <div className="flex flex-col items-center text-center">
+                  <p className="text-2xl font-black tabular-nums text-foreground">{summary.totalCount}</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total Records</p>
+                </div>
               </div>
-            )}
-          </div>
-        )}
-        <div className="flex items-center gap-2 shrink-0">
+              <div className="ml-4 flex items-center gap-2 shrink-0">
           {/* Story 14.2: Table/Timeline view toggle */}
           <div className="flex rounded-md border">
             <Button
@@ -357,8 +344,21 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
             <IconPlus className="mr-1.5 size-4" />
             Log Injury
           </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {/* Active injury badges */}
+      {summary && summary.activeInjuries.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {summary.activeInjuries.map((inj) => (
+            <Badge key={inj._id} variant="destructive" className="text-xs">
+              {inj.injuryType} — {format(new Date(inj.date), "dd/MM/yyyy")}
+            </Badge>
+          ))}
         </div>
-      </div>
+      )}
 
       {/* Story 14.2: Conditional view rendering */}
       {viewMode === "timeline" ? (
@@ -366,20 +366,20 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
       ) : (
         /* Story 14.1 AC #8: Extended injury data table */
         <TooltipProvider>
-          <Card>
+          <Card className="overflow-hidden py-0">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
                     <TableHead className="w-8" />
-                    <TableHead>Date</TableHead>
-                    <TableHead>Injury Type</TableHead>
-                    <TableHead>Body Region</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Mechanism</TableHead>
-                    <TableHead>Side</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Est. Return</TableHead>
+                    <TableHead className="font-semibold">Date</TableHead>
+                    <TableHead className="font-semibold">Injury Type</TableHead>
+                    <TableHead className="font-semibold">Body Region</TableHead>
+                    <TableHead className="font-semibold">Severity</TableHead>
+                    <TableHead className="font-semibold">Mechanism</TableHead>
+                    <TableHead className="font-semibold">Side</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Est. Return</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -433,26 +433,6 @@ export function InjuryLog({ playerId }: InjuryLogProps) {
 // Helper components
 // ---------------------------------------------------------------------------
 
-function SummaryCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <Card>
-      <CardContent className="px-3 py-2">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p className={`text-lg font-semibold ${accent ? "text-destructive" : ""}`}>
-          {value}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
 
 function NotesCell({ text, maxLen }: { text: string; maxLen: number }) {
   if (text.length <= maxLen) {

@@ -175,6 +175,7 @@ export function RehabNotesSection({ injuryId }: RehabNotesSectionProps) {
                         <Textarea
                           value={editingText}
                           onChange={(e) => setEditingText(e.target.value)}
+                          className="bg-white dark:bg-card"
                           maxLength={2000}
                           rows={3}
                         />
@@ -230,6 +231,7 @@ export function RehabNotesSection({ injuryId }: RehabNotesSectionProps) {
           placeholder={t.rehabNotes.notePlaceholder}
           value={newNoteText}
           onChange={(e) => setNewNoteText(e.target.value)}
+          className="bg-white dark:bg-card"
           maxLength={2000}
           rows={3}
         />

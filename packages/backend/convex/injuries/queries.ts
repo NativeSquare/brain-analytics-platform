@@ -90,6 +90,128 @@ export const getPlayerInjuryDetails = query({
 });
 
 // ---------------------------------------------------------------------------
+// getMedicalDashboardData — Story 14.3 Part B
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns all data needed by the Medical Overview dashboard in a single query.
+ * Restricted to admin/physio roles — returns null for other users.
+ */
+export const getMedicalDashboardData = query({
+  args: {},
+  handler: async (ctx) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    // Role check — return null, not error
+    if (user.role !== "admin" && user.role !== "physio") {
+      return null;
+    }
+
+    // Fetch all team players and injuries
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    const injuries = await ctx.db
+      .query("playerInjuries")
+      .withIndex("by_teamId", (q) => q.eq("teamId", teamId))
+      .collect();
+
+    const now = Date.now();
+    const fourteenDaysMs = 14 * 86400000;
+
+    // Build player name map
+    const playerMap = new Map(
+      players.map((p) => [p._id, `${p.firstName} ${p.lastName}`])
+    );
+
+    // Active injuries: status is not "cleared" and not "recovered"
+    const activeInjuries = injuries.filter(
+      (inj) => inj.status !== "cleared" && inj.status !== "recovered"
+    );
+
+    // --- squadAvailability ---
+    const totalPlayers = players.length;
+    // Count distinct injured player IDs
+    const injuredPlayerIds = new Set(activeInjuries.map((inj) => inj.playerId));
+    const injuredPlayers = injuredPlayerIds.size;
+    const availablePercentage =
+      totalPlayers > 0
+        ? Math.round(((totalPlayers - injuredPlayers) / totalPlayers) * 100)
+        : 100;
+
+    const squadAvailability = {
+      totalPlayers,
+      injuredPlayers,
+      availablePercentage,
+    };
+
+    // --- currentlyInjured ---
+    const currentlyInjured = activeInjuries
+      .map((inj) => ({
+        id: inj._id,
+        playerName: playerMap.get(inj.playerId) ?? "Unknown",
+        injuryType: inj.injuryType,
+        rtpStatus: inj.status,
+        daysOut: Math.ceil((now - inj.date) / 86400000),
+        expectedReturn: inj.expectedReturnDate ?? null,
+      }))
+      .sort((a, b) => b.daysOut - a.daysOut);
+
+    // --- upcomingReturns ---
+    const upcomingReturns = activeInjuries
+      .filter(
+        (inj) =>
+          inj.expectedReturnDate != null &&
+          inj.expectedReturnDate >= now &&
+          inj.expectedReturnDate <= now + fourteenDaysMs
+      )
+      .map((inj) => ({
+        id: inj._id,
+        playerName: playerMap.get(inj.playerId) ?? "Unknown",
+        injuryType: inj.injuryType,
+        expectedReturnDate: inj.expectedReturnDate!,
+        daysUntilReturn: Math.ceil((inj.expectedReturnDate! - now) / 86400000),
+      }))
+      .sort((a, b) => a.daysUntilReturn - b.daysUntilReturn);
+
+    // --- injuryByRegion ---
+    const regionCounts = new Map<string, number>();
+    for (const inj of injuries) {
+      const region = inj.bodyRegion ?? "Unknown";
+      regionCounts.set(region, (regionCounts.get(region) ?? 0) + 1);
+    }
+    const injuryByRegion = Array.from(regionCounts.entries())
+      .map(([region, count]) => ({ region, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // --- injuryByType ---
+    const typeCounts = new Map<string, { displayName: string; count: number }>();
+    for (const inj of injuries) {
+      const key = inj.injuryType.toLowerCase();
+      const existing = typeCounts.get(key) ?? {
+        displayName: inj.injuryType,
+        count: 0,
+      };
+      existing.count += 1;
+      typeCounts.set(key, existing);
+    }
+    const injuryByType = Array.from(typeCounts.values())
+      .map((d) => ({ type: d.displayName, count: d.count }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      squadAvailability,
+      currentlyInjured,
+      upcomingReturns,
+      injuryByRegion,
+      injuryByType,
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------
 // getInjuryReportByPlayer — AC5 (Story 14.4)
 // ---------------------------------------------------------------------------
 

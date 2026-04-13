@@ -310,7 +310,14 @@ export const getPlayersInjuryStatuses = query({
 export const getPlayersRtpStatuses = query({
   args: { playerIds: v.array(v.id("players")) },
   handler: async (ctx, { playerIds }) => {
-    const { teamId } = await requireRole(ctx, ["admin", "physio"]);
+    const { user, teamId } = await requireAuth(ctx);
+
+    // Non-medical roles get all players as "available" (no RTP detail)
+    if (user.role !== "admin" && user.role !== "physio") {
+      const result: Record<string, string | null> = {};
+      for (const id of playerIds) result[id] = "available";
+      return result;
+    }
 
     const RTP_PRIORITY: Record<string, number> = {
       active: 3,

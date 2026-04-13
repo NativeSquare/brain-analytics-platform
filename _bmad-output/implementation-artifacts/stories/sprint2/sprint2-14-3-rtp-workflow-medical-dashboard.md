@@ -23,7 +23,7 @@ The existing dashboard infrastructure uses:
 - `packages/backend/convex/dashboards/queries.ts` — `getDashboardsForRole` filters by role via `roleDashboards` table
 - Dynamic route `apps/web/src/app/(app)/dashboards/[slug]/page.tsx` renders any registered dashboard
 
-**Data approach: USE MOCK DATA** — The Medical Dashboard widgets use hardcoded mock data arrays defined in local files, following the same pattern as Sprint 1 dashboards. No new API routes or Convex queries for dashboard chart data.
+**Data approach: USE REAL CONVEX DATA** — The Medical Dashboard widgets must query real injury data from the Convex backend. Existing queries in `packages/backend/convex/injuries/queries.ts` (`getInjuryReportByPlayer`, `getInjuryReportByType`) provide aggregated data. A new query `getMedicalDashboardData` must be created to return squad availability, currently injured players, and upcoming returns in a single call. All mock data files must be removed and replaced with live Convex `useQuery` calls.
 
 ---
 
@@ -64,7 +64,7 @@ The existing dashboard infrastructure uses:
 
 ### Part B — Medical Dashboard
 
-8. **Dashboard component created** — A new dashboard component is created at `apps/web/src/components/dashboards/medical-overview/index.tsx` that exports a default component accepting `{ slug: string }`. It renders a medical dashboard layout with the widgets described below. All data is **mock data** defined in a local `mock-data.ts` file within the same directory.
+8. **Dashboard component created** — A new dashboard component is created at `apps/web/src/components/dashboards/medical-overview/index.tsx` that exports a default component accepting `{ slug: string }`. It renders a medical dashboard layout with the widgets described below. All data comes from **real Convex queries** — a new `getMedicalDashboardData` query returns squad availability, currently injured list, and upcoming returns. Existing queries `getInjuryReportByType` and injury data by body region provide chart data.
 
 9. **Dashboard registered in registry** — The `medical-overview` slug is added to `apps/web/src/lib/dashboard-registry.ts`:
    ```
@@ -95,7 +95,7 @@ The existing dashboard infrastructure uses:
 
 17. **Dashboard header** — The dashboard has a header with a medical icon (e.g., `IconActivityHeartbeat` from `@tabler/icons-react` or `Stethoscope` from `lucide-react`) and title "Medical Overview". Consistent with the `SeasonOverview` dashboard header pattern.
 
-18. **Mock data file** — All mock data is defined in `apps/web/src/components/dashboards/medical-overview/mock-data.ts`. The file exports typed arrays/objects for each widget. Mock data is realistic: uses plausible player names, injury types, dates relative to the current date, and statistically reasonable distributions.
+18. **Backend query `getMedicalDashboardData`** — A new query in `packages/backend/convex/injuries/queries.ts` returns all data needed by the Medical Dashboard in a single call. Restricted to admin/physio. Returns: `{ squadAvailability: { totalPlayers, injuredPlayers, availablePercentage }, currentlyInjured: [{ playerId, playerName, injuryType, rtpStatus, daysOut, expectedReturn }], upcomingReturns: [{ playerId, playerName, injuryType, expectedReturnDate, daysUntilReturn }], injuryByRegion: [{ region, count }], injuryByType: [{ type, count }] }`. Mock data files are removed.
 
 ---
 
@@ -224,7 +224,7 @@ The existing dashboard infrastructure uses:
 
 - **Backward compatibility**: The existing `"current"` and `"recovered"` status values must continue to work. The `normalizeRtpStatus` helper handles UI mapping. The backend mutations accept both old and new values. No data migration is needed — old entries display correctly through normalization.
 - **No schema migration**: The `playerInjuries.status` field is already `v.string()`, so no schema change is required to support the new status values. The validation is purely at the mutation layer.
-- **Mock data only for dashboard**: The Medical Dashboard (Part B) uses hardcoded mock data. It does NOT query Convex for injury aggregates. This follows the Sprint 1 pattern where dashboards used mock/API data rather than Convex queries.
+- **Real data for dashboard**: The Medical Dashboard (Part B) queries real Convex injury data via `getMedicalDashboardData` and existing injury report queries. Mock data files are removed.
 - **Recharts**: Already installed and used across multiple dashboards. Import from `recharts` directly.
 - **Role check for dots**: The RTP dots on PlayerTable require a role-aware conditional query. Use the existing auth hook to check the user's role before calling `getPlayersRtpStatuses`. If the user is not admin/physio, pass `"skip"` to the query and do not render dots.
 - **Do NOT auto-run Convex CLI commands** — provide them to the developer to execute manually (per project rules).

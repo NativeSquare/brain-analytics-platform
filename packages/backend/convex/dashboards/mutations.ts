@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { mutation } from "../_generated/server";
+import { internalMutation, mutation } from "../_generated/server";
 import { requireAdmin } from "../lib/auth";
 
 // ---------------------------------------------------------------------------
@@ -24,7 +24,8 @@ const categoryValidator = v.union(
   v.literal("Opposition"),
   v.literal("Trends"),
   v.literal("Officials"),
-  v.literal("Possession")
+  v.literal("Possession"),
+  v.literal("Medical")
 );
 
 // ---------------------------------------------------------------------------
@@ -191,6 +192,58 @@ export const updateDashboard = mutation({
       slug: newSlug,
     });
 
+    return dashboardId;
+  },
+});
+
+/**
+ * Internal seed mutation — creates the Medical Overview dashboard if missing.
+ * Run via: npx convex run --component convex dashboards/mutations:seedMedicalDashboard
+ */
+export const seedMedicalDashboard = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const team = await ctx.db.query("teams").first();
+    if (!team) throw new Error("No team found");
+
+    const teamId = team._id;
+    const slug = "medical-overview";
+
+    const existing = await ctx.db
+      .query("dashboards")
+      .withIndex("by_teamId_slug", (q) => q.eq("teamId", teamId).eq("slug", slug))
+      .first();
+
+    if (existing) {
+      console.log("Medical Overview dashboard already exists");
+      return existing._id;
+    }
+
+    const dashboardId = await ctx.db.insert("dashboards", {
+      teamId,
+      title: "Medical Overview",
+      description: "Squad availability, injuries, and upcoming returns",
+      category: "Medical",
+      icon: "stethoscope",
+      slug,
+      createdAt: Date.now(),
+    });
+
+    const now2 = Date.now();
+    await ctx.db.insert("roleDashboards", {
+      teamId,
+      role: "admin",
+      dashboardSlug: slug,
+      createdAt: now2,
+    });
+    await ctx.db.insert("roleDashboards", {
+      teamId,
+      role: "physio",
+      dashboardSlug: slug,
+      createdAt: now2,
+    });
+
+    console.log("Medical Overview dashboard seeded:", dashboardId);
     return dashboardId;
   },
 });

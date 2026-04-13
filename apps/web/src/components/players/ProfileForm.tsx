@@ -10,7 +10,11 @@ import { api } from "@packages/backend/convex/_generated/api";
 import { toast } from "sonner";
 import { IconUpload, IconX } from "@tabler/icons-react";
 
+import { format } from "date-fns";
+import { IconCalendar } from "@tabler/icons-react";
+
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Combobox,
@@ -18,9 +22,13 @@ import {
   ComboboxContent,
   ComboboxList,
   ComboboxItem,
-  ComboboxEmpty,
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -36,6 +44,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import { COUNTRIES } from "@/lib/countries";
 
 import {
@@ -59,6 +68,13 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
   const uploadAbortRef = React.useRef<AbortController | null>(null);
+  const [countrySearch, setCountrySearch] = React.useState("");
+
+  const filteredCountries = React.useMemo(() => {
+    if (!countrySearch) return COUNTRIES;
+    const q = countrySearch.toLowerCase();
+    return COUNTRIES.filter((c) => c.toLowerCase().includes(q));
+  }, [countrySearch]);
 
   const router = useRouter();
 
@@ -278,20 +294,37 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid || undefined}>
-                    <FieldLabel htmlFor="dateOfBirth">Date of Birth</FieldLabel>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={
-                        field.value
-                          ? new Date(field.value).toISOString().split("T")[0]
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        field.onChange(val ? new Date(val).getTime() : undefined);
-                      }}
-                    />
+                    <FieldLabel>Date of Birth</FieldLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          <IconCalendar className="mr-2 size-4" />
+                          {field.value
+                            ? format(new Date(field.value), "dd/MM/yyyy")
+                            : "dd/mm/yyyy"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) =>
+                            field.onChange(date ? date.getTime() : undefined)
+                          }
+                          captionLayout="dropdown"
+                          defaultMonth={field.value ? new Date(field.value) : new Date(2000, 0)}
+                          fromYear={1970}
+                          toYear={new Date().getFullYear()}
+                          disabled={{ after: new Date() }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     {fieldState.error && (
                       <FieldError errors={[fieldState.error]} />
                     )}
@@ -306,7 +339,11 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
                     <FieldLabel htmlFor="nationality">Nationality</FieldLabel>
                     <Combobox
                       value={field.value || null}
-                      onValueChange={(val) => field.onChange(val ?? "")}
+                      onValueChange={(val) => {
+                        field.onChange(val ?? "");
+                        setCountrySearch("");
+                      }}
+                      onInputValueChange={(v) => setCountrySearch(v)}
                     >
                       <ComboboxInput
                         placeholder="Select nationality..."
@@ -314,8 +351,12 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
                       />
                       <ComboboxContent>
                         <ComboboxList>
-                          <ComboboxEmpty>No country found.</ComboboxEmpty>
-                          {COUNTRIES.map((country) => (
+                          {filteredCountries.length === 0 && (
+                            <p className="py-2 text-center text-sm text-muted-foreground">
+                              No country found.
+                            </p>
+                          )}
+                          {filteredCountries.map((country) => (
                             <ComboboxItem key={country} value={country}>
                               {country}
                             </ComboboxItem>

@@ -20,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader />
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col bg-[radial-gradient(circle_at_top,rgba(61,145,223,0.08)_0,transparent_52%),linear-gradient(to_bottom,transparent_0%,rgba(61,145,223,0.04)_100%)]">
             <div className="@container/main flex flex-1 flex-col gap-2">
               {children}
             </div>

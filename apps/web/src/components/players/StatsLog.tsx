@@ -114,79 +114,97 @@ export function StatsLog({ playerId, isAdmin }: StatsLogProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header row: summary + add button */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* Summary stats (AC #13) */}
-        {summaryStats && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <SummaryCard label="Matches" value={summaryStats.totalMatches} />
-            <SummaryCard label="Goals" value={summaryStats.totalGoals} />
-            <SummaryCard label="Assists" value={summaryStats.totalAssists} />
-            <SummaryCard
-              label="Yellow Cards"
-              value={summaryStats.totalYellowCards}
-            />
-            <SummaryCard
-              label="Red Cards"
-              value={summaryStats.totalRedCards}
-            />
-            <SummaryCard
-              label="Avg Minutes"
-              value={summaryStats.avgMinutes}
-            />
-          </div>
-        )}
-        {isAdmin && (
+    <div className="space-y-6">
+      {/* Summary stats row */}
+      {summaryStats && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="flex items-center justify-between">
+              <div className="grid flex-1 grid-cols-3 gap-4 sm:grid-cols-6">
+                <SummaryCard label="Matches" value={summaryStats.totalMatches} />
+                <SummaryCard label="Goals" value={summaryStats.totalGoals} />
+                <SummaryCard label="Assists" value={summaryStats.totalAssists} />
+                <SummaryCard
+                  label="Yellow Cards"
+                  value={summaryStats.totalYellowCards}
+                  color="text-yellow-500"
+                />
+                <SummaryCard
+                  label="Red Cards"
+                  value={summaryStats.totalRedCards}
+                  color="text-red-500"
+                />
+                <SummaryCard
+                  label="Avg Minutes"
+                  value={summaryStats.avgMinutes}
+                />
+              </div>
+              {isAdmin && (
+                <Button
+                  onClick={() => {
+                    setEditingStats(undefined);
+                    setFormOpen(true);
+                  }}
+                  className="ml-4 shrink-0"
+                >
+                  <IconPlus className="mr-1.5 size-4" />
+                  Add Match Stats
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {!summaryStats && isAdmin && (
+        <div className="flex justify-end">
           <Button
             onClick={() => {
               setEditingStats(undefined);
               setFormOpen(true);
             }}
-            className="shrink-0"
           >
             <IconPlus className="mr-1.5 size-4" />
             Add Match Stats
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Stats data table (AC #3) */}
-      <Card>
+      {/* Stats data table */}
+      <Card className="overflow-hidden py-0">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Opponent</TableHead>
-                <TableHead className="text-right">Minutes</TableHead>
-                <TableHead className="text-right">Goals</TableHead>
-                <TableHead className="text-right">Assists</TableHead>
-                <TableHead className="text-right">YC</TableHead>
-                <TableHead className="text-right">RC</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold">Date</TableHead>
+                <TableHead className="font-semibold">Opponent</TableHead>
+                <TableHead className="text-center font-semibold">Minutes</TableHead>
+                <TableHead className="text-center font-semibold">Goals</TableHead>
+                <TableHead className="text-center font-semibold">Assists</TableHead>
+                <TableHead className="text-center font-semibold">YC</TableHead>
+                <TableHead className="text-center font-semibold">RC</TableHead>
                 {isAdmin && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
               {stats.map((entry) => (
                 <TableRow key={entry._id}>
-                  <TableCell>
+                  <TableCell className="font-medium text-muted-foreground">
                     {format(new Date(entry.matchDate), "dd/MM/yyyy")}
                   </TableCell>
-                  <TableCell>{entry.opponent}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="font-semibold">{entry.opponent}</TableCell>
+                  <TableCell className="text-center">
                     {entry.minutesPlayed}
                   </TableCell>
-                  <TableCell className="text-right">{entry.goals}</TableCell>
-                  <TableCell className="text-right">{entry.assists}</TableCell>
-                  <TableCell className="text-right">
-                    <span className="inline-flex items-center gap-1">
+                  <TableCell className="text-center font-semibold">{entry.goals}</TableCell>
+                  <TableCell className="text-center">{entry.assists}</TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center gap-1.5">
                       <span className="inline-block size-2.5 rounded-sm bg-yellow-400" />
                       {entry.yellowCards}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <span className="inline-flex items-center gap-1">
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center gap-1.5">
                       <span className="inline-block size-2.5 rounded-sm bg-red-500" />
                       {entry.redCards}
                     </span>
@@ -255,13 +273,11 @@ export function StatsLog({ playerId, isAdmin }: StatsLogProps) {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <Card>
-      <CardContent className="px-3 py-2">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <p className="text-xl font-semibold">{value}</p>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-center text-center">
+      <p className={`text-2xl font-black tabular-nums ${color ?? "text-foreground"}`}>{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+    </div>
   );
 }

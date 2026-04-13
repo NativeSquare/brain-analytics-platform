@@ -155,6 +155,25 @@ export interface Dictionary {
     nextMatch: string;
     home: string;
     away: string;
+    openDashboards: string;
+    browseDashboards: string;
+    homeVs: string;
+    awayAt: string;
+    postMatch: string;
+    postMatchDesc: string;
+    seasonOverview: string;
+    seasonOverviewDesc: string;
+    matchInHours: string;
+    matchInDays: string;
+    todayEvents: string;
+    todayEventsDesc: string;
+    noEventsToday: string;
+    openCalendar: string;
+    recentDocuments: string;
+    noRecentDocuments: string;
+    openDocuments: string;
+    openContracts: string;
+    noRecentDashboards: string;
   };
   search: {
     placeholder: string;
@@ -373,6 +392,25 @@ export const en: Dictionary = {
     nextMatch: "Next Match",
     home: "Home",
     away: "Away",
+    openDashboards: "Open Dashboards",
+    browseDashboards: "Browse all available dashboards",
+    homeVs: "Home vs {opponent}",
+    awayAt: "Away at {opponent}",
+    postMatch: "Post Match",
+    postMatchDesc: "Post-match analysis dashboard",
+    seasonOverview: "Season Overview",
+    seasonOverviewDesc: "Season overview dashboard",
+    matchInHours: "In {count}h",
+    matchInDays: "In {count} days",
+    todayEvents: "Today",
+    todayEventsDesc: "Today's schedule",
+    noEventsToday: "No events planned for today",
+    openCalendar: "Open Calendar",
+    recentDocuments: "Documents",
+    noRecentDocuments: "No document opened yet",
+    openDocuments: "Open Documents",
+    openContracts: "Open Contracts",
+    noRecentDashboards: "No dashboard opened yet",
   },
   search: {
     placeholder: "Search...",

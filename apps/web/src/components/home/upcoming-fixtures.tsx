@@ -31,6 +31,8 @@ interface Fixture {
   awayTeamId: number;
   homeTeamName: string;
   awayTeamName: string;
+  homeTeamLogo?: string | null;
+  awayTeamLogo?: string | null;
   competitionName: string | null;
   status: string;
 }
@@ -98,6 +100,9 @@ export function UpcomingFixtures() {
               const opponent = isSampdoriaHome
                 ? f.awayTeamName
                 : f.homeTeamName;
+              const opponentLogo = isSampdoriaHome
+                ? f.awayTeamLogo
+                : f.homeTeamLogo;
               const fixtureDate = new Date(getFixtureDate(f));
 
               return (
@@ -105,9 +110,14 @@ export function UpcomingFixtures() {
                   key={f.id ?? f.fixtureId}
                   className="group relative flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/50"
                 >
-                  {/* Opponent logo placeholder */}
+                  {/* Opponent logo */}
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted p-1.5 ring-1 ring-border">
-                    <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
+                    {opponentLogo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={opponentLogo} alt={opponent} className="size-full object-contain" />
+                    ) : (
+                      <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
+                    )}
                   </div>
 
                   {/* Match info */}

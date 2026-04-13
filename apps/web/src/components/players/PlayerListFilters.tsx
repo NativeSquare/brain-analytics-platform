@@ -65,7 +65,7 @@ export function PlayerListFilters({
           placeholder="Search players..."
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
-          className="pl-8"
+          className="bg-white pl-8 dark:bg-card"
         />
       </div>
     </div>

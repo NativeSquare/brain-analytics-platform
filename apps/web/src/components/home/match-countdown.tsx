@@ -4,18 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
   IconCalendarEvent,
+  IconClock,
   IconTrophy,
 } from "@tabler/icons-react";
 
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { SAMPDORIA_SPORTMONKS_TEAM_ID } from "@/lib/sportmonks-config";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,23 +40,62 @@ function getFixtureDate(f: Fixture): string {
   return f.startingAt ?? f.startDate ?? "";
 }
 
-interface CountdownValues {
-  days: number;
-  hours: number;
-  minutes: number;
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function computeCountdown(targetDate: Date): CountdownValues {
-  const now = new Date();
-  const diff = Math.max(0, targetDate.getTime() - now.getTime());
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return { days, hours, minutes };
+function formatCountdown(
+  hoursTotal: number,
+  t: { matchInHours: string; matchInDays: string },
+): string {
+  if (hoursTotal < 48) {
+    return t.matchInHours.replace("{count}", String(hoursTotal));
+  }
+  return t.matchInDays.replace("{count}", String(Math.floor(hoursTotal / 24)));
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Team logo with fallback
+// ---------------------------------------------------------------------------
+
+function TeamLogo({
+  logoUrl,
+  teamName,
+  size = "large",
+}: {
+  logoUrl?: string | null;
+  teamName: string;
+  size?: "large" | "small";
+}) {
+  if (size === "small") {
+    return logoUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={logoUrl}
+        alt={teamName}
+        className="size-full object-contain"
+      />
+    ) : (
+      <IconTrophy
+        className="size-4 text-muted-foreground/40"
+        aria-hidden="true"
+      />
+    );
+  }
+
+  return logoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={logoUrl}
+      alt={teamName}
+      className="size-full object-contain"
+    />
+  ) : (
+    <IconTrophy
+      className="size-8 text-muted-foreground/40"
+      aria-hidden="true"
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -64,25 +103,29 @@ function computeCountdown(targetDate: Date): CountdownValues {
 // ---------------------------------------------------------------------------
 
 export function MatchCountdown() {
-  const [fixture, setFixture] = useState<Fixture | null>(null);
+  const { t, locale } = useTranslation();
+  const dateLocale = locale === "it" ? "it-IT" : "en-US";
+
+  const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [countdown, setCountdown] = useState<CountdownValues>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-  });
 
-  const fetchFixture = useCallback(async (signal: AbortSignal) => {
+  const fetchFixtures = useCallback(async (signal: AbortSignal) => {
     try {
-      const url = `/api/sportmonks/fixtures?teamId=${SAMPDORIA_SPORTMONKS_TEAM_ID}&status=upcoming&limit=1`;
+      const url = `/api/sportmonks/fixtures?teamId=${SAMPDORIA_SPORTMONKS_TEAM_ID}&status=upcoming&limit=3`;
       const res = await fetch(url, { signal });
       if (!res.ok) throw new Error("fetch failed");
       const json = (await res.json()) as { data?: Fixture[] };
-      const fixtures = json.data ?? [];
-      if (fixtures.length > 0) {
-        setFixture(fixtures[0]!);
-      }
+      // Filter to only upcoming matches (mock data doesn't filter server-side)
+      const now = new Date();
+      const upcoming = (json.data ?? [])
+        .filter((f) => {
+          const d = getFixtureDate(f);
+          return d && new Date(d) > now;
+        })
+        .sort((a, b) => new Date(getFixtureDate(a)).getTime() - new Date(getFixtureDate(b)).getTime())
+        .slice(0, 3);
+      setFixtures(upcoming);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setError(true);
@@ -93,149 +136,201 @@ export function MatchCountdown() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetchFixture(controller.signal);
+    void fetchFixtures(controller.signal);
     return () => controller.abort();
-  }, [fetchFixture]);
+  }, [fetchFixtures]);
 
-  // Countdown timer
+  // Force re-render every minute for countdown
+  const [, setTick] = useState(0);
   useEffect(() => {
-    if (!fixture) return;
-    const target = new Date(getFixtureDate(fixture));
-    setCountdown(computeCountdown(target));
-
-    const interval = setInterval(() => {
-      setCountdown(computeCountdown(target));
-    }, 60_000);
-
+    const interval = setInterval(() => setTick((n) => n + 1), 60_000);
     return () => clearInterval(interval);
-  }, [fixture]);
+  }, []);
 
   if (loading) {
     return <Skeleton className="h-48 w-full rounded-xl" />;
   }
 
-  if (error || !fixture) {
+  if (error || fixtures.length === 0) {
     return (
-      <Card className="overflow-hidden rounded-xl">
-        <div className="bg-gradient-to-b from-primary/5 to-transparent px-6 py-8">
-          <div className="flex flex-col items-center justify-center gap-2 text-center">
+      <Card className="overflow-hidden rounded-xl pt-0">
+        <CardContent className="p-0">
+          <div className="p-8 text-center">
             <IconCalendarEvent
-              className="size-10 text-muted-foreground/40"
+              className="mx-auto mb-2 size-10 text-muted-foreground/40"
               aria-hidden="true"
             />
-            <p className="text-sm text-muted-foreground">No upcoming match</p>
+            <p className="text-sm text-muted-foreground">
+              {t.home.noUpcomingMatch}
+            </p>
           </div>
-        </div>
+        </CardContent>
       </Card>
     );
   }
 
-  const isSampdoriaHome =
-    fixture.homeTeamId === SAMPDORIA_SPORTMONKS_TEAM_ID;
-  const opponent = isSampdoriaHome
-    ? fixture.awayTeamName
-    : fixture.homeTeamName;
+  const leadMatch = fixtures[0]!;
+  const subsequentMatches = fixtures.slice(1);
 
-  return (
-    <Card className="overflow-hidden rounded-xl">
-      {/* Gradient header */}
-      <div className="bg-gradient-to-b from-primary/5 to-transparent">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <IconCalendarEvent
-              className="size-3.5 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Next Match
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-6 py-2">
-            {/* Teams row with logos and VS divider */}
-            <div className="flex w-full items-center justify-center gap-6">
-              {/* Home team */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-background p-3 shadow-xs ring-1 ring-border sm:h-20 sm:w-20">
-                  <IconTrophy className="size-8 text-primary sm:size-10" aria-hidden="true" />
-                </div>
-                <span className="max-w-[100px] truncate text-xs font-bold sm:max-w-[120px] sm:text-sm">
-                  {isSampdoriaHome ? "Sampdoria" : opponent}
-                </span>
-              </div>
-
-              {/* VS divider */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[10px] font-black ring-4 ring-background">
-                VS
-              </div>
-
-              {/* Away team */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-background p-3 shadow-xs ring-1 ring-border sm:h-20 sm:w-20">
-                  <IconTrophy className="size-8 text-muted-foreground sm:size-10" aria-hidden="true" />
-                </div>
-                <span className="max-w-[100px] truncate text-xs font-bold sm:max-w-[120px] sm:text-sm">
-                  {isSampdoriaHome ? opponent : "Sampdoria"}
-                </span>
-              </div>
-            </div>
-
-            {/* Competition and venue badges */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Badge variant={isSampdoriaHome ? "default" : "secondary"}>
-                {isSampdoriaHome ? "Home" : "Away"}
-              </Badge>
-              {fixture.competitionName && (
-                <Badge variant="outline">{fixture.competitionName}</Badge>
-              )}
-            </div>
-
-            {/* Date row */}
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-              <IconCalendarEvent className="size-2.5" aria-hidden="true" />
-              <span>
-                {format(
-                  new Date(getFixtureDate(fixture)),
-                  "EEEE dd/MM/yyyy 'at' HH:mm"
-                )}
-              </span>
-            </div>
-
-            {/* Countdown */}
-            {countdown.days === 0 &&
-            countdown.hours === 0 &&
-            countdown.minutes === 0 ? (
-              <Badge className="animate-pulse bg-primary px-3 py-1 text-xs font-bold">
-                Match in progress
-              </Badge>
-            ) : (
-              <div className="flex items-center gap-4">
-                <CountdownBlock value={countdown.days} label="Days" />
-                <CountdownBlock value={countdown.hours} label="Hours" />
-                <CountdownBlock value={countdown.minutes} label="Min" />
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </div>
-    </Card>
+  const leadDate = new Date(getFixtureDate(leadMatch));
+  const currentTime = Date.now();
+  const leadMatchHours = Math.max(
+    0,
+    Math.floor((leadDate.getTime() - currentTime) / (1000 * 60 * 60)),
   );
-}
+  const leadCountdown = formatCountdown(leadMatchHours, {
+    matchInHours: t.home.matchInHours,
+    matchInDays: t.home.matchInDays,
+  });
 
-// ---------------------------------------------------------------------------
-// Sub-component
-// ---------------------------------------------------------------------------
+  const isHome = leadMatch.homeTeamId === SAMPDORIA_SPORTMONKS_TEAM_ID;
+  const homeTeamName = isHome ? "UC Sampdoria" : leadMatch.homeTeamName;
+  const awayTeamName = isHome ? leadMatch.awayTeamName : "UC Sampdoria";
+  const homeTeamLogo = isHome ? null : leadMatch.homeTeamLogo;
+  const awayTeamLogo = isHome ? leadMatch.awayTeamLogo : null;
 
-function CountdownBlock({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex flex-col items-center">
-      <span className="text-3xl font-bold tabular-nums text-primary">
-        {String(value).padStart(2, "0")}
-      </span>
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-    </div>
+    <Card className="overflow-hidden rounded-xl pt-0">
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {/* Featured Match */}
+          <div className="bg-gradient-to-b from-primary/5 to-transparent p-6">
+            {/* Date header + countdown badge */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <IconCalendarEvent className="size-3" aria-hidden="true" />
+                {leadDate.toLocaleDateString(dateLocale, {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+              </div>
+              <Badge
+                variant="default"
+                className="animate-pulse bg-primary px-3 py-1 text-xs font-bold"
+              >
+                {leadCountdown}
+              </Badge>
+            </div>
+
+            {/* Teams row */}
+            <div className="flex items-center justify-between gap-4 md:gap-8">
+              {/* Home Team */}
+              <div className="flex flex-1 flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
+                <div className="relative flex size-16 items-center justify-center rounded-2xl bg-background p-3 shadow-xs ring-1 ring-border sm:size-20">
+                  <TeamLogo logoUrl={homeTeamLogo} teamName={homeTeamName} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t.home.home}
+                  </p>
+                  <p className="text-lg font-bold sm:text-xl">
+                    {homeTeamName}
+                  </p>
+                </div>
+              </div>
+
+              {/* VS Divider */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[10px] font-black tracking-tighter ring-4 ring-background">
+                  VS
+                </div>
+                <div className="flex items-center gap-1.5 text-sm font-medium">
+                  <IconClock
+                    className="size-3.5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  {format(leadDate, "HH:mm")}
+                </div>
+              </div>
+
+              {/* Away Team */}
+              <div className="flex flex-1 flex-col items-center gap-3 text-center sm:flex-row-reverse sm:text-right">
+                <div className="relative flex size-16 items-center justify-center rounded-2xl bg-background p-3 shadow-xs ring-1 ring-border sm:size-20">
+                  <TeamLogo logoUrl={awayTeamLogo} teamName={awayTeamName} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t.home.away}
+                  </p>
+                  <p className="text-lg font-bold sm:text-xl">
+                    {awayTeamName}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subsequent Matches */}
+          {subsequentMatches.length > 0 && (
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+              {subsequentMatches.map((match) => {
+                const matchIsHome =
+                  match.homeTeamId === SAMPDORIA_SPORTMONKS_TEAM_ID;
+                const opponentName = matchIsHome
+                  ? match.awayTeamName
+                  : match.homeTeamName;
+                const opponentLogo = matchIsHome
+                  ? match.awayTeamLogo
+                  : match.homeTeamLogo;
+                const matchDate = new Date(getFixtureDate(match));
+                const matchLabel = matchIsHome
+                  ? t.home.homeVs.replace("{opponent}", opponentName)
+                  : t.home.awayAt.replace("{opponent}", opponentName);
+
+                return (
+                  <div
+                    key={match.id ?? match.fixtureId}
+                    className="group relative flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted p-1.5 ring-1 ring-border group-hover:bg-background">
+                        <TeamLogo
+                          logoUrl={opponentLogo}
+                          teamName={opponentName}
+                          size="small"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">
+                          {matchLabel}
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-0.5">
+                            <IconCalendarEvent
+                              className="size-2.5"
+                              aria-hidden="true"
+                            />
+                            {matchDate.toLocaleDateString(dateLocale, {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            <IconClock
+                              className="size-2.5"
+                              aria-hidden="true"
+                            />
+                            {format(matchDate, "HH:mm")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] font-medium uppercase tracking-tighter"
+                      >
+                        {matchIsHome ? t.home.home : t.home.away}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

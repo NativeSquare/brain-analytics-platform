@@ -6,24 +6,25 @@ import { formatDistanceToNow } from "date-fns";
 import { useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 import { api } from "@packages/backend/convex/_generated/api";
-import { IconArrowRight, IconClock } from "@tabler/icons-react";
+import { IconArrowRight, IconLayoutGrid } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDashboardIcon } from "@/lib/dashboard-icons";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function RecentDashboards() {
+  const { t } = useTranslation();
   const { isAuthenticated } = useConvexAuth();
   const recentEntries = useQuery(
     api.userDashboards.getUserRecentDashboards,
@@ -60,17 +61,17 @@ export function RecentDashboards() {
   }, [recentEntries, allDashboards, dashboardBySlug]);
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconClock
-            className="size-5 text-muted-foreground"
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <IconLayoutGrid
+            className="size-5 text-primary"
             aria-hidden="true"
           />
-          Recent Dashboards
+          {t.home.recentDashboards}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 space-y-3">
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -78,9 +79,17 @@ export function RecentDashboards() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            No recently viewed dashboards
-          </p>
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="mb-2 rounded-full bg-muted p-3">
+              <IconLayoutGrid
+                className="size-6 text-muted-foreground/40"
+                aria-hidden="true"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t.home.noRecentDashboards}
+            </p>
+          </div>
         ) : (
           <ul className="space-y-2">
             {items.map((item) => {
@@ -91,21 +100,23 @@ export function RecentDashboards() {
                 <li key={item.slug}>
                   <Link
                     href={`/dashboards/${item.slug}`}
-                    className="group flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/30 hover:bg-muted/30"
+                    className="group flex items-center justify-between rounded-xl border p-3 transition-all hover:border-primary/30 hover:bg-muted/30"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                      {iconElement}
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="truncate text-sm font-medium">{item.title}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(item.openedAt), {
-                          addSuffix: true,
-                        })}
-                      </span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                        {iconElement}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold">{item.title}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(item.openedAt), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </div>
                     </div>
                     <IconArrowRight
-                      className="size-4 text-primary opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100"
+                      className="size-3.5 text-muted-foreground opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100"
                       aria-hidden="true"
                     />
                   </Link>
@@ -115,11 +126,14 @@ export function RecentDashboards() {
           </ul>
         )}
       </CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full" asChild>
-          <Link href="/dashboards">Browse dashboards</Link>
+      <div className="p-6 pt-0">
+        <Button asChild className="w-full justify-between" variant="outline">
+          <Link href="/dashboards">
+            {t.home.openDashboards}
+            <IconArrowRight className="size-4" aria-hidden="true" />
+          </Link>
         </Button>
-      </CardFooter>
+      </div>
     </Card>
   );
 }

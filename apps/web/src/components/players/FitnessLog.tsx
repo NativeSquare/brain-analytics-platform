@@ -151,53 +151,69 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header row: summary + add button */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* AC #13: Latest metrics summary */}
+    <div className="space-y-6">
+      {/* Summary metrics + action */}
+      <div className="flex items-start justify-between gap-4">
         {latestMetrics && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <SummaryCard
-              label="Latest Weight"
-              value={
-                latestMetrics.latestWeight
-                  ? `${latestMetrics.latestWeight.value.toFixed(1)} kg`
-                  : "—"
-              }
-              subtext={
-                latestMetrics.latestWeight
-                  ? format(
-                      new Date(latestMetrics.latestWeight.date),
-                      "dd/MM/yyyy"
-                    )
-                  : undefined
-              }
-              trend={latestMetrics.weightTrend}
-            />
-            <SummaryCard
-              label="Latest Body Fat"
-              value={
-                latestMetrics.latestBodyFat
-                  ? `${latestMetrics.latestBodyFat.value.toFixed(1)}%`
-                  : "—"
-              }
-              subtext={
-                latestMetrics.latestBodyFat
-                  ? format(
-                      new Date(latestMetrics.latestBodyFat.date),
-                      "dd/MM/yyyy"
-                    )
-                  : undefined
-              }
-            />
-            <SummaryCard
-              label="Entries"
-              value={String(latestMetrics.totalEntries)}
-            />
-            <SummaryCard
-              label="Date Range"
-              value={`${format(new Date(latestMetrics.dateRange.earliest), "dd/MM/yyyy")} — ${format(new Date(latestMetrics.dateRange.latest), "dd/MM/yyyy")}`}
-            />
+          <div className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-4">
+            <Card>
+              <CardContent className="px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Latest Weight</p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <p className="text-2xl font-black text-foreground">
+                    {latestMetrics.latestWeight
+                      ? `${latestMetrics.latestWeight.value.toFixed(1)} kg`
+                      : "—"}
+                  </p>
+                  {latestMetrics.weightTrend === "up" && (
+                    <IconTrendingUp className="size-4 text-red-500" />
+                  )}
+                  {latestMetrics.weightTrend === "down" && (
+                    <IconTrendingDown className="size-4 text-green-500" />
+                  )}
+                  {latestMetrics.weightTrend === "stable" && (
+                    <IconMinus className="text-muted-foreground size-4" />
+                  )}
+                </div>
+                {latestMetrics.latestWeight && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {format(new Date(latestMetrics.latestWeight.date), "dd/MM/yyyy")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Latest Body Fat</p>
+                <p className="mt-1 text-2xl font-black text-foreground">
+                  {latestMetrics.latestBodyFat
+                    ? `${latestMetrics.latestBodyFat.value.toFixed(1)}%`
+                    : "—"}
+                </p>
+                {latestMetrics.latestBodyFat && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {format(new Date(latestMetrics.latestBodyFat.date), "dd/MM/yyyy")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Entries</p>
+                <p className="mt-1 text-2xl font-black text-foreground">{latestMetrics.totalEntries}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="px-4 py-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Date Range</p>
+                <p className="mt-1 text-lg font-bold text-foreground">
+                  {format(new Date(latestMetrics.dateRange.earliest), "dd/MM/yyyy")}
+                </p>
+                <p className="text-lg font-bold text-foreground">
+                  {format(new Date(latestMetrics.dateRange.latest), "dd/MM/yyyy")}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         )}
         {canEdit && (
@@ -214,32 +230,32 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
         )}
       </div>
 
-      {/* AC #3: Fitness data table */}
+      {/* Fitness data table */}
       <TooltipProvider>
-      <Card>
+      <Card className="overflow-hidden py-0">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Weight (kg)</TableHead>
-                <TableHead className="text-right">Body Fat (%)</TableHead>
-                <TableHead>Notes</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold">Date</TableHead>
+                <TableHead className="text-center font-semibold">Weight (kg)</TableHead>
+                <TableHead className="text-center font-semibold">Body Fat (%)</TableHead>
+                <TableHead className="font-semibold">Notes</TableHead>
                 {canEdit && <TableHead className="w-10" />}
               </TableRow>
             </TableHeader>
             <TableBody>
               {entries.map((entry) => (
                 <TableRow key={entry._id}>
-                  <TableCell>
+                  <TableCell className="font-medium text-muted-foreground">
                     {format(new Date(entry.date), "dd/MM/yyyy")}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center font-semibold">
                     {entry.weightKg !== undefined
-                      ? `${entry.weightKg.toFixed(1)} kg`
+                      ? `${entry.weightKg.toFixed(1)}`
                       : "—"}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center font-semibold">
                     {entry.bodyFatPercentage !== undefined
                       ? `${entry.bodyFatPercentage.toFixed(1)}%`
                       : "—"}
@@ -308,41 +324,6 @@ export function FitnessLog({ playerId, canEdit }: FitnessLogProps) {
         </>
       )}
     </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  subtext,
-  trend,
-}: {
-  label: string;
-  value: string;
-  subtext?: string;
-  trend?: "up" | "down" | "stable" | null;
-}) {
-  return (
-    <Card>
-      <CardContent className="px-3 py-2">
-        <p className="text-muted-foreground text-xs">{label}</p>
-        <div className="flex items-center gap-1">
-          <p className="text-lg font-semibold">{value}</p>
-          {trend === "up" && (
-            <IconTrendingUp className="size-4 text-red-500" />
-          )}
-          {trend === "down" && (
-            <IconTrendingDown className="size-4 text-green-500" />
-          )}
-          {trend === "stable" && (
-            <IconMinus className="text-muted-foreground size-4" />
-          )}
-        </div>
-        {subtext && (
-          <p className="text-muted-foreground text-xs">{subtext}</p>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 

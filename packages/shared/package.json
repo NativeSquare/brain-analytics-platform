@@ -10,7 +10,8 @@
     "./players": "./players.ts",
     "./calendar": "./calendar.ts",
     "./documents": "./documents.ts",
-    "./injuries": "./injuries.ts"
+    "./injuries": "./injuries.ts",
+    "./staff": "./staff.ts"
   },
   "dependencies": {
     "zod": "^4.3.6"

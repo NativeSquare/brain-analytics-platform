@@ -508,3 +508,26 @@ export const getExternalProviders = query({
     return { providers, canEdit };
   },
 });
+
+/**
+ * Get the number of match appearances for multiple players in a single batch call.
+ * Returns a record mapping playerId → appearance count.
+ */
+export const getPlayersAppearances = query({
+  args: { playerIds: v.array(v.id("players")) },
+  handler: async (ctx, { playerIds }) => {
+    await requireAuth(ctx);
+
+    const result: Record<string, number> = {};
+    await Promise.all(
+      playerIds.map(async (playerId) => {
+        const stats = await ctx.db
+          .query("playerStats")
+          .withIndex("by_playerId", (q) => q.eq("playerId", playerId))
+          .collect();
+        result[playerId] = stats.length;
+      }),
+    );
+    return result;
+  },
+});

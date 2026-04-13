@@ -589,6 +589,65 @@ export const getReadersDetail = query({
 });
 
 // ---------------------------------------------------------------------------
+// Recently opened documents for current user (Homepage widget)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the 5 most recently opened documents for the current user.
+ * Uses the documentReads table to find which documents the user has opened.
+ */
+export const getRecentlyOpenedDocuments = query({
+  args: {},
+  handler: async (ctx) => {
+    const { user, teamId } = await requireAuth(ctx);
+
+    // Get all read records for this user, sorted by most recent
+    const reads = await ctx.db
+      .query("documentReads")
+      .withIndex("by_userId_documentId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Filter by team and sort by readAt descending
+    const teamReads = reads
+      .filter((r) => r.teamId === teamId)
+      .sort((a, b) => b.readAt - a.readAt);
+
+    // Deduplicate by documentId (keep most recent read per doc)
+    const seen = new Set<string>();
+    const uniqueReads: typeof teamReads = [];
+    for (const read of teamReads) {
+      if (!seen.has(read.documentId as string)) {
+        seen.add(read.documentId as string);
+        uniqueReads.push(read);
+      }
+    }
+
+    // Take top 5
+    const topReads = uniqueReads.slice(0, 5);
+
+    // Resolve document names
+    const results: Array<{
+      documentId: string;
+      name: string;
+      openedAt: number;
+    }> = [];
+
+    for (const read of topReads) {
+      const doc = await ctx.db.get(read.documentId);
+      if (doc && doc.teamId === teamId) {
+        results.push({
+          documentId: doc._id as string,
+          name: doc.name,
+          openedAt: read.readAt,
+        });
+      }
+    }
+
+    return results;
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Search query (Story 4.5)
 // ---------------------------------------------------------------------------
 

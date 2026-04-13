@@ -191,17 +191,28 @@ export function CalendarView({
       },
       onRangeUpdate(range) {
         // Clear the snapshot so the next events sync always pushes fresh data.
-        // Without this, navigating to a month and back can skip the
-        // `calendarApp.events.set()` call because the snapshot string still
-        // matches, even though Schedule-X's visible range has changed.
         prevSnapshotRef.current = "";
 
-        // When the view range changes, figure out which month is displayed
-        const start = new Date(range.start.toString());
-        const end = new Date(range.end.toString());
-        // mid-point gives the most representative month
-        const mid = new Date((start.getTime() + end.getTime()) / 2);
-        onMonthChange(mid.getFullYear(), mid.getMonth() + 1);
+        // Schedule-X v4 returns Temporal-like objects or strings like "2026-04-27"
+        // for range.start/end. Parse safely.
+        const parseRangeDate = (val: unknown): Date | null => {
+          if (!val) return null;
+          // Temporal.ZonedDateTime or PlainDate — use .toString() then extract date part
+          const str = String(val);
+          // Extract YYYY-MM-DD from potential formats like "2026-04-27" or "2026-04-27T00:00:00+02:00[Europe/Paris]"
+          const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+          }
+          return null;
+        };
+
+        const start = parseRangeDate(range.start);
+        const end = parseRangeDate(range.end);
+        if (start && end) {
+          const mid = new Date((start.getTime() + end.getTime()) / 2);
+          onMonthChange(mid.getFullYear(), mid.getMonth() + 1);
+        }
       },
     },
   }, [calendarControls, currentTimePlugin]);
@@ -223,7 +234,9 @@ export function CalendarView({
     if (snapshot === prevSnapshotRef.current) return;
     prevSnapshotRef.current = snapshot;
 
-    calendarApp.events.set(mapEvents(events));
+    const mapped = mapEvents(events);
+    console.log("[CalendarView] Setting events:", mapped.length, "events for current view", mapped.map(e => ({ id: e.id, title: e.title, start: String(e.start) })));
+    calendarApp.events.set(mapped);
   }, [calendarApp, events]);
 
   if (events === undefined) {

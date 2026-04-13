@@ -70,9 +70,9 @@ interface PlayerProfileTabsProps {
 
 function BioField({ label, value }: { label: string; value?: string | number | null }) {
   return (
-    <div>
-      <dt className="text-muted-foreground text-sm">{label}</dt>
-      <dd className="mt-0.5 font-medium">{value ?? "—"}</dd>
+    <div className="space-y-1">
+      <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-semibold text-foreground">{value ?? "—"}</dd>
     </div>
   );
 }
@@ -133,66 +133,71 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
       </TabsList>
 
       <TabsContent value="bio">
-        <Card>
-          <CardContent className="pt-6">
-            {/* Story 5.6 AC #9: Self-service edit button for players */}
-            {/* Story 12.3 AC #5: Admin edit button for any player */}
-            {(showSelfServiceEdit || showAdminContactEdit) && (
-              <div className="mb-4 flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOpenContactEdit}
-                >
-                  <IconPencil className="mr-1 size-4" />
-                  Edit Contact Info
-                </Button>
-              </div>
-            )}
-
-            <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-              <BioField
-                label="Date of Birth"
-                value={
-                  player.dateOfBirth
-                    ? format(new Date(player.dateOfBirth), "dd/MM/yyyy")
-                    : undefined
-                }
-              />
-              <BioField label="Nationality" value={player.nationality} />
-              <BioField label="Position" value={player.position} />
-              <BioField
-                label="Squad Number"
-                value={player.squadNumber != null ? `#${player.squadNumber}` : undefined}
-              />
-              <BioField label="Preferred Foot" value={player.preferredFoot} />
-              <BioField
-                label="Height"
-                value={player.heightCm != null ? `${player.heightCm} cm` : undefined}
-              />
-              <BioField
-                label="Weight"
-                value={player.weightKg != null ? `${player.weightKg} kg` : undefined}
-              />
-              <BioField label="Status" value={PLAYER_STATUS_LABELS[player.status as PlayerStatus]} />
-              <BioField label="Phone" value={player.phone} />
-              <BioField label="Personal Email" value={player.personalEmail} />
-              <BioField label="Address" value={player.address} />
-
-              {/* Emergency Contact section */}
-              <div className="col-span-full mt-2 border-t pt-4">
-                <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Emergency Contact
+        <div className="space-y-6">
+          {/* Personal Information */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                  Personal Information
                 </h3>
-                <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <BioField label="Name" value={player.emergencyContactName} />
-                  <BioField label="Relationship" value={player.emergencyContactRelationship} />
-                  <BioField label="Phone" value={player.emergencyContactPhone} />
-                </div>
+                {(showSelfServiceEdit || showAdminContactEdit) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenContactEdit}
+                  >
+                    <IconPencil className="mr-1.5 size-3.5" />
+                    Edit Contact Info
+                  </Button>
+                )}
               </div>
-            </dl>
-          </CardContent>
-        </Card>
+              <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+                <BioField
+                  label="Date of Birth"
+                  value={
+                    player.dateOfBirth
+                      ? format(new Date(player.dateOfBirth), "dd/MM/yyyy")
+                      : undefined
+                  }
+                />
+                <BioField label="Nationality" value={player.nationality} />
+                <BioField label="Position" value={player.position} />
+                <BioField
+                  label="Squad Number"
+                  value={player.squadNumber != null ? `#${player.squadNumber}` : undefined}
+                />
+                <BioField label="Preferred Foot" value={player.preferredFoot} />
+                <BioField
+                  label="Height"
+                  value={player.heightCm != null ? `${player.heightCm} cm` : undefined}
+                />
+                <BioField
+                  label="Weight"
+                  value={player.weightKg != null ? `${player.weightKg} kg` : undefined}
+                />
+                <BioField label="Status" value={PLAYER_STATUS_LABELS[player.status as PlayerStatus]} />
+                <BioField label="Phone" value={player.phone} />
+                <BioField label="Personal Email" value={player.personalEmail} />
+                <BioField label="Address" value={player.address} />
+              </dl>
+            </CardContent>
+          </Card>
+
+          {/* Emergency Contact */}
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="mb-5 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Emergency Contact
+              </h3>
+              <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+                <BioField label="Name" value={player.emergencyContactName} />
+                <BioField label="Relationship" value={player.emergencyContactRelationship} />
+                <BioField label="Phone" value={player.emergencyContactPhone} />
+              </dl>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Story 5.6 AC #9, #11: Self-service contact info edit dialog */}
         {/* Story 12.3 AC #6: Admin mode with playerId prop */}

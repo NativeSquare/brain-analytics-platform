@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { IconListDetails, IconTrophy } from "@tabler/icons-react";
+import { IconTarget, IconTrophy } from "@tabler/icons-react";
 
 import {
   Card,
@@ -26,6 +26,8 @@ interface Fixture {
   awayTeamId: number;
   homeTeamName: string;
   awayTeamName: string;
+  homeTeamLogo?: string | null;
+  awayTeamLogo?: string | null;
   homeScore: number | null;
   awayScore: number | null;
   competitionName: string | null;
@@ -96,12 +98,12 @@ export function RecentResults() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <IconListDetails
-            className="size-5 text-muted-foreground"
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <IconTarget
+            className="size-5 text-primary"
             aria-hidden="true"
           />
-          Recent Results
+          Results
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -123,6 +125,9 @@ export function RecentResults() {
               const opponent = isSampdoriaHome
                 ? f.awayTeamName
                 : f.homeTeamName;
+              const opponentLogo = isSampdoriaHome
+                ? f.awayTeamLogo
+                : f.homeTeamLogo;
               const sampdoriaScore = isSampdoriaHome
                 ? f.homeScore
                 : f.awayScore;
@@ -136,9 +141,14 @@ export function RecentResults() {
                   key={f.id ?? f.fixtureId}
                   className="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/50"
                 >
-                  {/* Opponent logo placeholder */}
+                  {/* Opponent logo */}
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted p-1.5 ring-1 ring-border">
-                    <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
+                    {opponentLogo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={opponentLogo} alt={opponent} className="size-full object-contain" />
+                    ) : (
+                      <IconTrophy className="size-5 text-muted-foreground" aria-hidden="true" />
+                    )}
                   </div>
 
                   {/* Match info */}

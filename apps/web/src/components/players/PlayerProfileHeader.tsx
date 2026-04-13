@@ -55,15 +55,16 @@ export const PlayerProfileHeader = React.memo(function PlayerProfileHeader({
   onInviteClick,
   isAdmin,
 }: PlayerProfileHeaderProps) {
-  // Story 5.5 AC #12: Injury status indicator for all roles
-  const injuryStatus = useQuery(
-    api.players.queries.getPlayerInjuryStatus,
-    { playerId: player._id as Id<"players"> }
-  );
-
+  // [DEPLOY:I6] Story 5.5 AC #12: Injury status indicator for all roles
+  // const injuryStatus = useQuery(
+  //   api.players.queries.getPlayerInjuryStatus,
+  //   { playerId: player._id as Id<"players"> }
+  // );
   // Story 14.4 AC #4: Determine if current user is medical (admin/physio) for tooltip
-  const canViewInjury = useQuery(api.injuries.queries.canViewInjuryDetails, {});
-  const isMedical = canViewInjury === true;
+  // const canViewInjury = useQuery(api.injuries.queries.canViewInjuryDetails, {});
+  // const isMedical = canViewInjury === true;
+  const injuryStatus = undefined as { hasCurrentInjury: boolean } | undefined;
+  const isMedical = false;
 
   // Story 5.6 AC #1: Status change dialog state
   const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);

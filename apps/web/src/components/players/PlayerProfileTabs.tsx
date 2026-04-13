@@ -113,12 +113,12 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
           <IconHeartbeat className="mr-1.5 size-4" />
           Fitness
         </TabsTrigger>
-        {tabAccess.showInjuries && (
+        {/* [DEPLOY:I2] {tabAccess.showInjuries && (
           <TabsTrigger value="injuries">
             <IconFirstAidKit className="mr-1.5 size-4" />
             Injuries
           </TabsTrigger>
-        )}
+        )} */}
         {/* Story 6.2 AC7: canViewContract is single source of truth for tab visibility */}
         {canViewContract === true && (
           <TabsTrigger value="contract">
@@ -220,11 +220,11 @@ export function PlayerProfileTabs({ tabAccess, player, playerId, isAdmin, canEdi
         <FitnessLog playerId={playerId} canEdit={canEditFitness} />
       </TabsContent>
 
-      {tabAccess.showInjuries && (
+      {/* [DEPLOY:I3] {tabAccess.showInjuries && (
         <TabsContent value="injuries">
           <InjuryLog playerId={playerId} />
         </TabsContent>
-      )}
+      )} */}
 
       {/* Story 6.2 AC1,3,7: Contract tab completely omitted from DOM for unauthorized users */}
       {canViewContract === true && (

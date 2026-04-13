@@ -163,12 +163,12 @@ interface PlayerCardGridProps {
 export function PlayerCardGrid({ players, onPlayerClick }: PlayerCardGridProps) {
   const { isAuthenticated } = useConvexAuth();
 
-  // Fetch RTP statuses for all players
   const playerIds = useMemo(() => players.map((p) => p._id), [players]);
-  const rtpStatuses = useQuery(
-    api.players.queries.getPlayersRtpStatuses,
-    isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",
-  );
+  // [DEPLOY:I4] const rtpStatuses = useQuery(
+  //   api.players.queries.getPlayersRtpStatuses,
+  //   isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",
+  // );
+  const rtpStatuses = undefined;
   const appearancesData = useQuery(
     api.players.queries.getPlayersAppearances,
     isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",

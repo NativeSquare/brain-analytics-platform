@@ -17,7 +17,7 @@ import { useQuery } from "convex/react"
 import { api } from "@packages/backend/convex/_generated/api"
 
 import { useTranslation } from "@/hooks/useTranslation"
-// [DEPLOY:S3] import { useOwnStaffProfile } from "@/hooks/useOwnStaffProfile"
+import { useOwnStaffProfile } from "@/hooks/useOwnStaffProfile"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -34,7 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useTranslation()
   const currentUser = useQuery(api.table.users.currentUser)
-  // [DEPLOY:S3] const ownStaffProfile = useOwnStaffProfile()
+  const ownStaffProfile = useOwnStaffProfile()
 
   const navMain = [
     {
@@ -52,21 +52,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/players",
       icon: IconUsersGroup,
     },
-    // [DEPLOY:S1] {
-    //   title: t.nav.staff,
-    //   url: "/staff",
-    //   icon: IconBriefcase,
-    // },
-    // [DEPLOY:S2] Story 13.4 AC #13: "My Profile" link for staff with linked profile
-    // ...(ownStaffProfile
-    //   ? [
-    //       {
-    //         title: "My Profile",
-    //         url: `/staff/${ownStaffProfile._id}`,
-    //         icon: IconUserCircle,
-    //       },
-    //     ]
-    //   : []),
+    {
+      title: t.nav.staff,
+      url: "/staff",
+      icon: IconBriefcase,
+    },
+    // Story 13.4 AC #13: "My Profile" link for staff with linked profile
+    ...(ownStaffProfile
+      ? [
+          {
+            title: "My Profile",
+            url: `/staff/${ownStaffProfile._id}`,
+            icon: IconUserCircle,
+          },
+        ]
+      : []),
     {
       title: t.nav.calendar,
       url: "/calendar",

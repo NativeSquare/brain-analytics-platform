@@ -82,16 +82,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "/team",
       icon: IconUsers,
     },
-    // [DEPLOY:I1] Story 14.4 AC #9: Admin-only Injury Reports link
-    // ...(currentUser?.role === "admin"
-    //   ? [
-    //       {
-    //         title: "Injury Reports",
-    //         url: "/injuries/reports",
-    //         icon: IconReportMedical,
-    //       },
-    //     ]
-    //   : []),
+    // Story 14.4 AC #9: Admin-only Injury Reports link
+    ...(currentUser?.role === "admin"
+      ? [
+          {
+            title: "Injury Reports",
+            url: "/injuries/reports",
+            icon: IconReportMedical,
+          },
+        ]
+      : []),
   ]
 
   const user = currentUser

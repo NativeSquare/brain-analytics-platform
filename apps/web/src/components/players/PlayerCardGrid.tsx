@@ -164,11 +164,10 @@ export function PlayerCardGrid({ players, onPlayerClick }: PlayerCardGridProps) 
   const { isAuthenticated } = useConvexAuth();
 
   const playerIds = useMemo(() => players.map((p) => p._id), [players]);
-  // [DEPLOY:I4] const rtpStatuses = useQuery(
-  //   api.players.queries.getPlayersRtpStatuses,
-  //   isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",
-  // );
-  const rtpStatuses = undefined;
+  const rtpStatuses = useQuery(
+    api.players.queries.getPlayersRtpStatuses,
+    isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",
+  );
   const appearancesData = useQuery(
     api.players.queries.getPlayersAppearances,
     isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",

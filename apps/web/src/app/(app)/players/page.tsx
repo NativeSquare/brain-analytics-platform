@@ -112,11 +112,10 @@ function PlayersPageContent() {
 function SquadSummary({ players }: { players: PlayerSummary[] }) {
   const { isAuthenticated } = useConvexAuth();
   const playerIds = players.map((p) => p._id);
-  // [DEPLOY:I5] const rtpStatuses = useQuery(
-  //   api.players.queries.getPlayersRtpStatuses,
-  //   isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",
-  // );
-  const rtpStatuses = undefined;
+  const rtpStatuses = useQuery(
+    api.players.queries.getPlayersRtpStatuses,
+    isAuthenticated && playerIds.length > 0 ? { playerIds } : "skip",
+  );
 
   const counts = useMemo(() => {
     const result = { available: 0, rehab: 0, assessment: 0, active: 0 };

@@ -34,7 +34,10 @@ export class ConfigError extends Error {
 export async function getAccessToken(): Promise<string> {
   const clientId = requireEnv("WYSCOUT_CLIENT_ID");
   const clientSecret = requireEnv("WYSCOUT_CLIENT_SECRET");
-  const baseUrl = requireEnv("WYSCOUT_BASE_URL");
+  // Accept WYSCOUT_BASE_URL with or without a trailing "/videos/" segment.
+  const baseUrl = requireEnv("WYSCOUT_BASE_URL")
+    .replace(/\/+$/, "")
+    .replace(/\/videos$/, "");
 
   // Return cached token if still valid (with 60s buffer)
   if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {

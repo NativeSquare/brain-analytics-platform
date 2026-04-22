@@ -144,7 +144,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Save to Convex cache (fire-and-forget)
+    // Save to Convex cache (fire-and-forget). Next call for the same clip
+    // will return the MUX playback ID from cache, by which time the MUX
+    // asset has had time to transcode and is ready to stream.
     convex
       .mutation(api.wyscoutCache.saveVideoCache, {
         wyscoutMatchId,
@@ -160,17 +162,14 @@ export async function GET(request: NextRequest) {
         console.warn("[Wyscout urls] Failed to save cache:", err);
       });
 
-    // Return MUX stream URL if available, otherwise Wyscout URL
-    const responseUrl = muxPlaybackId
-      ? `https://stream.mux.com/${muxPlaybackId}.m3u8`
-      : result.url;
-
+    // Always return the Wyscout URL on first play — even if the MUX upload
+    // completed synchronously, the asset likely isn't transcoded yet, which
+    // causes mux-player to throw MediaError / HLS errors until it finishes.
     return NextResponse.json({
-      url: responseUrl,
+      url: result.url,
       quality: result.quality,
       expiresAt: result.expiresAt,
       cached: false,
-      ...(muxPlaybackId ? { muxPlaybackId } : {}),
     });
   } catch (error) {
     if (error instanceof ConfigError) {

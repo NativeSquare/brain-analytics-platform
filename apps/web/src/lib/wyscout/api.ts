@@ -47,6 +47,14 @@ function requireEnv(name: string): string {
   return value;
 }
 
+// Accept WYSCOUT_BASE_URL as either ".../v3" or ".../v3/videos/" — the code
+// appends "/videos/{id}/..." itself, so strip trailing slashes and a trailing
+// "/videos" segment to avoid producing ".../v3/videos//videos/{id}/...".
+function getNormalizedBaseUrl(): string {
+  const raw = requireEnv("WYSCOUT_BASE_URL");
+  return raw.replace(/\/+$/, "").replace(/\/videos$/, "");
+}
+
 // ---------------------------------------------------------------------------
 // getMatchOffsets
 // ---------------------------------------------------------------------------
@@ -58,7 +66,7 @@ function requireEnv(name: string): string {
 export async function getMatchOffsets(
   wyscoutMatchId: string
 ): Promise<PeriodOffsets> {
-  const baseUrl = requireEnv("WYSCOUT_BASE_URL");
+  const baseUrl = getNormalizedBaseUrl();
   const authHeader = getBasicAuthHeader();
 
   const url = `${baseUrl}/videos/${wyscoutMatchId}/offsets`;
@@ -98,7 +106,7 @@ export async function getVideoUrl(
   endTs: number,
   quality: VideoQuality = "HD"
 ): Promise<{ url: string; quality: VideoQuality; expiresAt: number }> {
-  const baseUrl = requireEnv("WYSCOUT_BASE_URL");
+  const baseUrl = getNormalizedBaseUrl();
   const authHeader = getBasicAuthHeader();
 
   const url = `${baseUrl}/videos/${wyscoutMatchId}?start=${startTs}&end=${endTs}`;

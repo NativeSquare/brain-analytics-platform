@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import MuxPlayer from "@mux/mux-player-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,12 @@ const DetailsPane = ({
   const [videoUrlError, setVideoUrlError] = useState<string | null>(null);
   const [videoDisplayMode, setVideoDisplayMode] = useState<"overlay" | "inline">("overlay");
   const [muxPlaybackId, setMuxPlaybackId] = useState<string | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
+
+  // Portal target (document.body) is only available after client mount.
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   // Clear video when another shot is selected
   useEffect(() => {
@@ -291,40 +298,44 @@ const DetailsPane = ({
         </div>
       </div>
 
-      {bestQualityVideoUrl && videoDisplayMode === "overlay" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-5xl rounded-xl border bg-background p-3 shadow-2xl">
-            <div className="mb-2 flex items-center justify-end gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setVideoDisplayMode("inline")}
-              >
-                Close
-              </Button>
+      {portalReady &&
+        bestQualityVideoUrl &&
+        videoDisplayMode === "overlay" &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="w-full max-w-5xl rounded-xl border bg-background p-3 shadow-2xl">
+              <div className="mb-2 flex items-center justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setVideoDisplayMode("inline")}
+                >
+                  Close
+                </Button>
+              </div>
+              {muxPlaybackId ? (
+                <MuxPlayer
+                  playbackId={muxPlaybackId}
+                  streamType="on-demand"
+                  autoPlay
+                  className="w-full rounded-lg"
+                  style={{ maxHeight: "80vh" }}
+                />
+              ) : (
+                <video
+                  src={bestQualityVideoUrl}
+                  controls
+                  autoPlay
+                  className="w-full rounded-lg"
+                  style={{ maxHeight: "80vh" }}
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
             </div>
-            {muxPlaybackId ? (
-              <MuxPlayer
-                playbackId={muxPlaybackId}
-                streamType="on-demand"
-                autoPlay
-                className="w-full rounded-lg"
-                style={{ maxHeight: "80vh" }}
-              />
-            ) : (
-              <video
-                src={bestQualityVideoUrl}
-                controls
-                autoPlay
-                className="w-full rounded-lg"
-                style={{ maxHeight: "80vh" }}
-              >
-                Your browser does not support the video tag.
-              </video>
-            )}
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

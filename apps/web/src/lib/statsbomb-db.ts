@@ -1,7 +1,13 @@
 import "server-only";
 
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, types, type QueryResultRow } from "pg";
 import type { ConnectionOptions } from "tls";
+
+// Return Postgres bigint (int8, OID 20) as JS number instead of string.
+// IDs in StatsBomb / SportMonks fit well under Number.MAX_SAFE_INTEGER (2^53).
+// Without this, strict equality checks like `m.match_id === selectedMatchId`
+// break as soon as one side is coerced to a number.
+types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
 
 function getSslConfig(): ConnectionOptions | boolean | undefined {
   const caRaw = process.env.STATSBOMB_DATABASE_SSL_CA;

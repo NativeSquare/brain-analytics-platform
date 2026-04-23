@@ -134,9 +134,11 @@ At the conclusion of this Sprint, the Provider will deliver:
 
 By signing below, both Parties confirm their agreement to the scope, functional requirements, and assumptions described in this SOW. This SOW is governed by the Sprint Engagement Agreement between NativeSquare SAS and Brain Analytics Ltd.
 
-| For NativeSquare SAS       | For Brain Analytics Ltd    |
-| -------------------------- | -------------------------- |
-| Name: Maxime Gey           | Name: Remi Vincent         |
-| Title: Founder             | Title: COO                 |
-| Date: ******\_\_\_\_****** | Date: ******\_\_\_\_****** |
-| Signature:                 | Signature:                 |
+| For NativeSquare SAS           | For Brain Analytics Ltd        |
+| ------------------------------ | ------------------------------ |
+| Name: Maxime Gey               | Name: Remi Vincent             |
+| Title: Founder                 | Title: COO                     |
+| Date: **\*\***\_\_\_\_**\*\*** | Date: **\*\***\_\_\_\_**\*\*** |
+| Signature:                     | Signature:                     |
+
+shadow team layout example : https://support.hudl.com/s/article/create-a-shadow-team-wyscout?language=en_US&topic=Scouting_and_Transfer

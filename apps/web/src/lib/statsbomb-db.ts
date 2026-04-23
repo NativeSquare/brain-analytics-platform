@@ -9,6 +9,11 @@ import type { ConnectionOptions } from "tls";
 // break as soon as one side is coerced to a number.
 types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
 
+// Return Postgres numeric/decimal (OID 1700) as JS number instead of string.
+// Stats like fouls_per_match, xg, possession% fit comfortably in f64; without
+// this, UI code calling `.toFixed()` on the value crashes.
+types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
+
 function getSslConfig(): ConnectionOptions | boolean | undefined {
   const caRaw = process.env.STATSBOMB_DATABASE_SSL_CA;
   const ca = caRaw?.replaceAll("\\n", "\n");

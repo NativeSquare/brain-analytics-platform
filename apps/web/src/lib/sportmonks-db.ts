@@ -3,9 +3,11 @@ import "server-only";
 import { Pool, types, type QueryResultRow } from "pg";
 import type { ConnectionOptions } from "tls";
 
-// Return Postgres bigint (int8, OID 20) as JS number instead of string.
-// Idempotent: same call in statsbomb-db.ts — pg type parsers are global.
+// Return Postgres bigint (int8, OID 20) and numeric/decimal (OID 1700) as JS
+// numbers instead of strings. Idempotent: same calls in statsbomb-db.ts —
+// pg type parsers are global.
 types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
+types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 
 /* ------------------------------------------------------------------ */
 /*  Configuration                                                      */
